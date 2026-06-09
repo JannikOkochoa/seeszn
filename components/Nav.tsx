@@ -16,8 +16,8 @@ export default function Nav() {
         right: 0,
         zIndex: 100,
         background: "var(--paper)",
-        borderBottom: "1px solid var(--warm-black)",
-        height: 64,
+        borderBottom: "1px solid rgba(17,16,14,.18)",
+        height: 56,
       }}
     >
       <div
@@ -37,20 +37,20 @@ export default function Nav() {
             style={{
               fontFamily: "var(--font-display), sans-serif",
               fontWeight: 800,
-              fontSize: 20,
-              letterSpacing: "-0.01em",
+              fontSize: "clamp(24px, 2vw, 34px)",
+              letterSpacing: "-0.08em",
               color: "var(--warm-black)",
-              lineHeight: 1,
+              lineHeight: 0.85,
             }}
           >
             SEESZN
           </span>
           <div
             style={{
-              width: 32,
+              width: 40,
               height: 2,
               background: "var(--olive)",
-              marginTop: 4,
+              marginTop: 6,
             }}
           />
         </div>
@@ -101,11 +101,11 @@ export default function Nav() {
           className="nav-cta hidden md:inline-block"
           style={{
             fontFamily: "var(--font-mono), monospace",
-            fontSize: 11,
+            fontSize: 10,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
-            border: "1px solid var(--warm-black)",
-            padding: "10px 20px",
+            border: "1px solid rgba(17,16,14,.45)",
+            padding: "7px 16px",
             color: "var(--warm-black)",
             background: "transparent",
             transition: "background 0.2s, color 0.2s",

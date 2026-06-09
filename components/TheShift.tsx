@@ -14,141 +14,291 @@ const POINTS = [
 
 export default function TheShift() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.15 });
+  const inView = useInView(ref, { once: true, amount: 0.3 });
 
-  const anim = {
-    initial: { opacity: 0, y: 16 },
-    animate: inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
-  };
+  const fadeIn = (delay: number) => ({
+    initial: { opacity: 0, y: 10 },
+    animate: inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 },
+    transition: { duration: 0.5, ease: EASE, delay },
+  });
 
   return (
-    <section
-      ref={ref}
-      style={{
-        background: "var(--warm-black)",
-        padding: "64px 64px 80px",
-      }}
-    >
-      {/* Headline */}
-      <motion.div
-        {...anim}
-        transition={{ duration: 0.5, ease: EASE, delay: 0 }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-display), sans-serif",
-            fontWeight: 700,
-            fontSize: "clamp(28px, 4vw, 48px)",
-            color: "var(--paper)",
-            letterSpacing: "0.02em",
-            lineHeight: 1.1,
-            maxWidth: 900,
-          }}
-        >
+    <section ref={ref} className="shift-section">
+
+      {/* LEFT — headline */}
+      <div className="shift-left">
+        <motion.p {...fadeIn(0)} className="shift-headline">
           SEARCH WAS ONCE A PAGE.
           <br />
           NOW IT IS AN ANSWER.
           <br />
           ANSWERS NEED SOURCES.
-        </p>
-      </motion.div>
+        </motion.p>
+      </div>
 
-      {/* Timeline */}
-      <motion.div
-        {...anim}
-        transition={{ duration: 0.5, ease: EASE, delay: 0.12 }}
-        style={{
-          marginTop: 64,
-          position: "relative",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          maxWidth: 800,
-        }}
-      >
-        {/* Horizontal connecting line */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "4px",
-            right: "4px",
-            height: 1,
-            background: "var(--dust)",
-            transform: "translateY(-50%)",
-            zIndex: 0,
-          }}
-        />
+      {/* RIGHT — timeline + cta */}
+      <div className="shift-right">
+        {/* Timeline outer — clips the scanner sweep */}
+        <motion.div {...fadeIn(0.1)} className="shift-timeline-outer">
+          <div className="shift-timeline">
+            <div className="shift-scanner" aria-hidden="true" />
+            <div className="tl-line-base" />
+            <div className="tl-line-active" />
 
-        {POINTS.map((pt, i) => (
-          <div
-            key={pt.year}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 10,
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {/* Label above */}
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 11,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: i === 3 ? "var(--olive)" : "var(--dust)",
-              }}
-            >
-              {pt.label}
-            </span>
-
-            {/* Dot */}
-            <span
-              className="olive-dot"
-              style={{
-                width: 8,
-                height: 8,
-                background: "var(--olive)",
-                display: "block",
-                flexShrink: 0,
-              }}
-            />
-
-            {/* Year below */}
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 13,
-                color: "var(--paper)",
-              }}
-            >
-              {pt.year}
-            </span>
+            {POINTS.map((pt, i) => (
+              <div
+                key={pt.year}
+                className={`tl-point${i === 3 ? " tl-point--active" : ""}`}
+                style={{ "--tl-delay": `${i * 60}ms` } as React.CSSProperties}
+              >
+                <span className="tl-label">{pt.label}</span>
+                <span className="tl-dot" />
+                <span className="tl-year">{pt.year}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </motion.div>
+        </motion.div>
 
-      {/* Bottom link */}
-      <motion.div
-        {...anim}
-        transition={{ duration: 0.5, ease: EASE, delay: 0.2 }}
-        style={{ marginTop: 48, textAlign: "right", maxWidth: 800 }}
-      >
-        <a
-          href="#contact"
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 12,
-            color: "var(--olive)",
-            letterSpacing: "0.08em",
-          }}
-        >
-          THE SHIFT →
-        </a>
-      </motion.div>
+        {/* CTA */}
+        <motion.div {...fadeIn(0.18)} className="shift-cta-wrap">
+          <a href="#contact" className="shift-cta-link">THE SHIFT →</a>
+        </motion.div>
+      </div>
+
+      <style>{`
+        /* ── Section ─────────────────────────────────── */
+        .shift-section {
+          background: var(--paper);
+          display: grid;
+          grid-template-columns: 36% 64%;
+          align-items: center;
+          min-height: 260px;
+          padding: 0 5vw;
+          border-top: 1px solid rgba(20, 20, 20, .14);
+          border-bottom: 1px solid rgba(20, 20, 20, .14);
+        }
+
+        /* ── Left column ─────────────────────────────── */
+        .shift-left {
+          padding: 32px 0;
+        }
+
+        .shift-headline {
+          font-family: var(--font-display), sans-serif;
+          font-weight: 700;
+          font-size: clamp(28px, 3.2vw, 52px);
+          color: var(--warm-black);
+          letter-spacing: -0.03em;
+          line-height: 0.95;
+          max-width: 420px;
+          text-transform: uppercase;
+          text-align: left;
+        }
+
+        /* ── Right column ────────────────────────────── */
+        .shift-right {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 32px 0;
+        }
+
+        /* ── Timeline outer — clips scanner ──────────── */
+        .shift-timeline-outer {
+          width: 88%;
+          margin-left: auto;
+          overflow: hidden;
+          position: relative;
+        }
+
+        /* ── Timeline flex row ───────────────────────── */
+        .shift-timeline {
+          position: relative;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 0;
+        }
+
+        /* ── Scanner sweep ───────────────────────────── */
+        .shift-scanner {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 80px;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(199, 214, 58, 0.14),
+            transparent
+          );
+          transform: translateX(-100%);
+          opacity: 0;
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .shift-section:hover .shift-scanner {
+          animation: seesznScan 900ms cubic-bezier(.16,1,.3,1) 120ms forwards;
+        }
+
+        @keyframes seesznScan {
+          0%   { transform: translateX(-100%); opacity: 1; }
+          75%  { opacity: 0.75; }
+          100% { transform: translateX(720px); opacity: 0; }
+        }
+
+        /* ── Connector lines ─────────────────────────── */
+        .tl-line-base {
+          position: absolute;
+          top: 50%;
+          left: 4px;
+          right: 4px;
+          height: 1px;
+          background: rgba(20, 20, 20, 0.18);
+          transform: translateY(-50%);
+          z-index: 0;
+        }
+
+        .tl-line-active {
+          position: absolute;
+          top: 50%;
+          left: 4px;
+          right: 4px;
+          height: 1px;
+          background: var(--olive);
+          opacity: 0.6;
+          transform: translateY(-50%) scaleX(0);
+          transform-origin: left center;
+          z-index: 0;
+          transition: transform 1100ms cubic-bezier(.16,1,.3,1) 60ms;
+        }
+
+        .shift-section:hover .tl-line-active {
+          transform: translateY(-50%) scaleX(1);
+        }
+
+        /* ── Point ───────────────────────────────────── */
+        .tl-point {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Label */
+        .tl-label {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #5E574F;
+          transition:
+            transform 500ms cubic-bezier(.16,1,.3,1) var(--tl-delay, 0ms),
+            color      350ms ease                    var(--tl-delay, 0ms);
+        }
+
+        .tl-point--active .tl-label {
+          color: var(--olive);
+        }
+
+        .shift-section:hover .tl-label {
+          transform: translateY(-3px);
+        }
+
+        .shift-section:hover .tl-point--active .tl-label {
+          color: var(--olive);
+        }
+
+        /* Dot */
+        .tl-dot {
+          width: 7px;
+          height: 7px;
+          background: var(--warm-black);
+          display: block;
+          flex-shrink: 0;
+          transition:
+            transform  500ms cubic-bezier(.16,1,.3,1) var(--tl-delay, 0ms),
+            box-shadow 400ms ease                     var(--tl-delay, 0ms);
+        }
+
+        .tl-point--active .tl-dot {
+          background: var(--olive);
+        }
+
+        .shift-section:hover .tl-dot {
+          transform: scale(1.16);
+        }
+
+        .shift-section:hover .tl-point--active .tl-dot {
+          box-shadow:
+            0 0 0 3px rgba(199, 214, 58, 0.2),
+            0 0 10px rgba(199, 214, 58, 0.18);
+        }
+
+        /* Year */
+        .tl-year {
+          font-family: var(--font-mono), monospace;
+          font-size: 12px;
+          color: #5E574F;
+          transition: color 350ms ease var(--tl-delay, 0ms);
+        }
+
+        .tl-point--active .tl-year {
+          color: var(--warm-black);
+        }
+
+        .shift-section:hover .tl-year {
+          color: var(--warm-black);
+        }
+
+        /* ── CTA ─────────────────────────────────────── */
+        .shift-cta-wrap {
+          width: 88%;
+          margin-left: auto;
+          text-align: right;
+        }
+
+        .shift-cta-link {
+          font-family: var(--font-mono), monospace;
+          font-size: 11px;
+          color: var(--dust);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          transition: color 300ms ease;
+        }
+
+        .shift-section:hover .shift-cta-link {
+          color: var(--olive);
+        }
+
+        /* ── Mobile ──────────────────────────────────── */
+        @media (max-width: 768px) {
+          .shift-section {
+            grid-template-columns: 1fr;
+            min-height: auto;
+            padding: 48px 24px;
+            gap: 32px;
+          }
+
+          .shift-left {
+            padding: 0;
+          }
+
+          .shift-right {
+            padding: 0;
+          }
+
+          .shift-timeline-outer,
+          .shift-cta-wrap {
+            width: 100%;
+            margin-left: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }

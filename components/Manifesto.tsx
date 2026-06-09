@@ -72,41 +72,11 @@ export default function Manifesto() {
             <motion.div
               key={row.left}
               {...anim(0.08 + i * 0.06)}
-              style={{
-                borderTop: "1px solid var(--dust)",
-                padding: "16px 0",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                ...(i === CONTRASTS.length - 1
-                  ? { borderBottom: "1px solid var(--dust)" }
-                  : {}),
-              }}
+              className={`mfst-pair${i === CONTRASTS.length - 1 ? " mfst-pair--last" : ""}`}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 13,
-                  color: "var(--dust)",
-                  textDecoration: "line-through",
-                  flex: 1,
-                }}
-              >
-                {row.left}
-              </span>
-              <span style={{ color: "var(--dust)", fontSize: 13, fontFamily: "var(--font-mono), monospace" }}>→</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: "var(--warm-black)",
-                  flex: 1,
-                  textAlign: "right",
-                }}
-              >
-                {row.right}
-              </span>
+              <span className="mfst-left">{row.left}</span>
+              <span className="mfst-arrow">→</span>
+              <span className="mfst-right">{row.right}</span>
             </motion.div>
           ))}
 
@@ -125,6 +95,84 @@ export default function Manifesto() {
           </motion.div>
         </div>
       </div>
+      <style>{`
+        /* ── Contrast pair row ───────────────────────── */
+        .mfst-pair {
+          border-top: 1px solid var(--dust);
+          padding: 16px 0;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .mfst-pair--last {
+          border-bottom: 1px solid var(--dust);
+        }
+
+        /* ── Left — old metric (struck out) ─────────── */
+        .mfst-left {
+          font-family: var(--font-mono), monospace;
+          font-size: 13px;
+          color: var(--dust);
+          text-decoration: line-through;
+          flex: 1;
+          transition:
+            opacity 320ms ease 40ms,
+            filter  320ms ease;
+        }
+        .mfst-pair:hover .mfst-left {
+          opacity: 0.18;
+          filter: blur(0.6px);
+        }
+
+        /* ── Arrow ───────────────────────────────────── */
+        .mfst-arrow {
+          font-family: var(--font-mono), monospace;
+          font-size: 13px;
+          color: var(--dust);
+          transition: color 350ms ease 80ms;
+        }
+        .mfst-pair:hover .mfst-arrow {
+          color: var(--olive);
+        }
+
+        /* ── Right — new metric (confirmed) ─────────── */
+        .mfst-right {
+          font-family: var(--font-mono), monospace;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--warm-black);
+          flex: 1;
+          text-align: right;
+          position: relative;
+          transition: letter-spacing 500ms cubic-bezier(.16,1,.3,1) 100ms;
+        }
+        /* Olive underline sweeps right-to-left */
+        .mfst-right::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          right: 0;
+          width: 100%;
+          height: 1px;
+          background: var(--olive);
+          transform: scaleX(0);
+          transform-origin: right center;
+          transition: transform 560ms cubic-bezier(.16,1,.3,1) 180ms;
+        }
+        .mfst-pair:hover .mfst-right {
+          letter-spacing: 0.02em;
+        }
+        .mfst-pair:hover .mfst-right::after {
+          transform: scaleX(1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .mfst-left, .mfst-arrow, .mfst-right, .mfst-right::after {
+            transition: none !important;
+            animation: none !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

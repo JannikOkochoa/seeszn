@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 
@@ -155,12 +154,18 @@ export default function Contact() {
         </div>
 
         {/* RIGHT — image */}
-        <div style={{ position: "relative", minHeight: 400 }}>
-          <Image
+        <div style={{ position: "relative", minHeight: 400, overflow: "hidden" }}>
+          <img
             src="/seeszn-home-main-04.png"
             alt="SEESZN"
-            fill
-            style={{ objectFit: "cover" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
           />
         </div>
       </div>
@@ -188,7 +193,7 @@ const headlineStyle: React.CSSProperties = {
 const subStyle: React.CSSProperties = {
   fontFamily: "var(--font-mono), monospace",
   fontSize: 13,
-  color: "var(--dust)",
+  color: "#5E574F",
   lineHeight: 1.7,
   maxWidth: 400,
 };

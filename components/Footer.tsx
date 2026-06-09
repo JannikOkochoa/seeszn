@@ -36,5 +36,5 @@ const metaStyle: React.CSSProperties = {
   fontSize: 11,
   letterSpacing: "0.12em",
   textTransform: "uppercase",
-  color: "var(--dust)",
+  color: "#5E574F",
 };

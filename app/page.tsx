@@ -1,5 +1,6 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
+import ScrollReset from "@/components/ScrollReset";
 import TheShift from "@/components/TheShift";
 import Services from "@/components/Services";
 import AbsenceIndex from "@/components/AbsenceIndex";
@@ -11,6 +12,7 @@ import Footer from "@/components/Footer";
 export default function Home() {
   return (
     <>
+      <ScrollReset />
       <Nav />
       <main>
         <Hero />
