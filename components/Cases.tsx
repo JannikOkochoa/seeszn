@@ -47,7 +47,7 @@ export default function Cases() {
           <span className="cases-chip">04</span>
           <span className="cases-chip">SELECTED PROOFS</span>
         </div>
-        <a href="#" className="cases-viewall">
+        <a href="/work" className="cases-viewall">
           VIEW ALL CASES
           <span className="cases-viewall-arrow">→</span>
         </a>
@@ -93,7 +93,7 @@ export default function Cases() {
             {/* Bottom content */}
             <div className="cases-body">
               <p className="cases-headline">{card.headline}</p>
-              <a href="#" className="cases-cta">
+              <a href="/work" className="cases-cta">
                 VIEW CASE
                 <span className="cases-cta-dot" aria-hidden="true" />
                 <span className="cases-cta-arrow">→</span>

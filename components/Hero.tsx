@@ -47,7 +47,7 @@ export default function Hero() {
         display: "grid",
         gridTemplateColumns: "55% 45%",
         borderBottom: "1px solid var(--warm-black)",
-        paddingTop: 56,
+        paddingTop: 106,
       }}
     >
       {/* LEFT COLUMN */}

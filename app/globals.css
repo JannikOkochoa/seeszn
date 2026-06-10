@@ -14,6 +14,12 @@
   --dust:       #B8AEA0;
   --clay:       #9A4F32;
   --olive:      #C7D63A;
+
+  /* Nav system tokens */
+  --muted:   #8A8278;           /* secondary text, column labels  */
+  --line:    rgba(17,16,14,.13);/* thin architectural borders      */
+  --signal:  #C7D63A;           /* accent — same hue as --olive    */
+  --panel:   #E5DFD3;           /* mega panel, slightly darker     */
 }
 
 html {

@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-export default function Contact() {
+export default function Contact({ index = "06" }: { index?: string }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const [email, setEmail] = useState("");
@@ -41,6 +41,7 @@ export default function Contact() {
       style={{
         background: "var(--paper)",
         borderTop: "1px solid var(--warm-black)",
+        scrollMarginTop: 110,
       }}
     >
       <div
@@ -53,7 +54,7 @@ export default function Contact() {
         {/* LEFT */}
         <div style={{ padding: "96px 64px" }}>
           <motion.div {...anim(0)} style={{ display: "flex", gap: 16, marginBottom: 40 }}>
-            <span style={labelStyle}>06</span>
+            <span style={labelStyle}>{index}</span>
           </motion.div>
 
           <motion.h2 {...anim(0.08)} style={headlineStyle}>
@@ -81,7 +82,7 @@ export default function Contact() {
                   lineHeight: 1.7,
                 }}
               >
-                Diagnosis requested. We'll be in touch.
+                Diagnosis requested. We&rsquo;ll be in touch.
               </p>
             ) : (
               <form onSubmit={handleSubmit}>

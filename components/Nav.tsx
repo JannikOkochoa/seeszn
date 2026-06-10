@@ -1,149 +1,774 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import Link from "next/link";
 
-const NAV_ITEMS = ["WORK", "METHOD", "INTELLIGENCE", "ABOUT"];
+// ─── Navigation data ──────────────────────────────────────────────────────────
 
-export default function Nav() {
-  const [active, setActive] = useState<number | null>(null);
+const SERVICES_DATA = [
+  {
+    heading: "SEO",
+    href: "/services#crawl",
+    items: ["Technical SEO", "Content Systems", "Search Architecture", "Analytics"],
+  },
+  {
+    heading: "AI SEARCH",
+    href: "/services#retrieve",
+    items: ["GEO / AIO", "AI Overviews", "Citation Visibility", "Chat Search"],
+  },
+  {
+    heading: "WEBSITES",
+    href: "/services#trust",
+    items: ["Design Systems", "Next.js Development", "Conversion Pages", "Editorial Websites"],
+  },
+  {
+    heading: "AUDITS",
+    href: "/services#diagnose",
+    items: ["Search Diagnosis", "AI Visibility Audit", "Website Review", "Growth Roadmap"],
+  },
+] as const;
+
+const NAV_LINKS = [
+  { label: "WORK", href: "/work" },
+  { label: "INSIGHTS", href: "/insights" },
+  { label: "ABOUT", href: "/about" },
+] as const;
+
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+// ─── CTA (isolated to avoid re-render affecting signal lines) ─────────────────
+
+function CtaButton({
+  onClick,
+  reduced,
+  className,
+  mobile,
+}: {
+  onClick: () => void;
+  reduced: boolean | null;
+  className?: string;
+  mobile?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <nav
+    <Link
+      href="/diagnosis"
+      onClick={onClick}
+      aria-label="Book a diagnosis"
+      className={className}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        background: "var(--paper)",
-        borderBottom: "1px solid rgba(17,16,14,.18)",
-        height: 56,
+        fontFamily: "var(--font-mono), monospace",
+        fontSize: mobile ? 11 : 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        border: `1px solid ${hovered ? "rgba(17,16,14,.65)" : "rgba(17,16,14,.38)"}`,
+        padding: mobile ? "16px 24px" : "10px 18px",
+        color: "var(--warm-black)",
+        background: hovered ? "rgba(17,16,14,.04)" : "transparent",
+        textDecoration: "none",
+        whiteSpace: "nowrap",
+        display: mobile ? "flex" : "inline-flex",
+        alignItems: "center",
+        justifyContent: mobile ? "center" : undefined,
+        gap: 6,
+        minHeight: 44,
+        transition: "background 0.3s, border-color 0.3s",
       }}
     >
-      <div
+      BOOK A DIAGNOSIS
+      <span
+        aria-hidden="true"
         style={{
-          maxWidth: 1280,
-          margin: "0 auto",
-          padding: "0 64px",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          color: "var(--signal)",
+          display: "inline-block",
+          transform:
+            hovered && !reduced ? "translateX(4px)" : "translateX(0px)",
+          transition: reduced ? "none" : "transform 300ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
-        {/* Wordmark */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          <span
+        →
+      </span>
+    </Link>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function Nav() {
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const reduced = useReducedMotion();
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  const servicesBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Scroll detection
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Body scroll lock while mobile drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  // Escape key handler
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (mobileOpen) {
+        setMobileOpen(false);
+        return;
+      }
+      if (servicesOpen) {
+        setServicesOpen(false);
+        servicesBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [servicesOpen, mobileOpen]);
+
+  // Click-outside closes services panel
+  const handleClickOutside = useCallback(
+    (e: MouseEvent) => {
+      const target = e.target as Node;
+      const outsidePanel =
+        !panelRef.current || !panelRef.current.contains(target);
+      const outsideBtn =
+        !servicesBtnRef.current ||
+        !servicesBtnRef.current.contains(target);
+      if (outsidePanel && outsideBtn) setServicesOpen(false);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (servicesOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [servicesOpen, handleClickOutside]);
+
+  const closeAll = () => {
+    setServicesOpen(false);
+    setMobileOpen(false);
+  };
+
+  const mainBarH = scrolled ? 64 : 80;
+
+  const signalLine = (active: boolean, thick?: boolean): React.CSSProperties => ({
+    display: "block",
+    width: "100%",
+    height: thick && active ? 2 : 1,
+    background: "var(--signal)",
+    transform: active ? "scaleX(1)" : "scaleX(0)",
+    transformOrigin: "left",
+    transition: reduced
+      ? "none"
+      : `transform 520ms cubic-bezier(${EASE.join(",")})`,
+    marginTop: 5,
+  });
+
+  return (
+    <>
+      {/* ── Sticky nav shell ─────────────────────────────────────────────── */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+        }}
+      >
+        {/* Utility line */}
+        <div
+          aria-hidden="true"
+          style={{
+            height: scrolled ? 0 : 26,
+            opacity: scrolled ? 0 : 1,
+            overflow: "hidden",
+            background: "var(--paper)",
+            borderBottom: "1px solid var(--line)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: reduced
+              ? "none"
+              : "height 420ms cubic-bezier(0.16,1,0.3,1), opacity 240ms",
+          }}
+        >
+          <p
             style={{
-              fontFamily: "var(--font-display), sans-serif",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 2vw, 34px)",
-              letterSpacing: "-0.08em",
-              color: "var(--warm-black)",
-              lineHeight: 0.85,
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 9,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "var(--muted)",
+              whiteSpace: "nowrap",
             }}
           >
-            SEESZN
-          </span>
+            AI Search visibility for brands that want to be found, cited, chosen
+          </p>
+        </div>
+
+        {/* Main header bar */}
+        <header
+          style={{
+            height: mainBarH,
+            background: "var(--paper)",
+            borderBottom: `1px solid ${
+              scrolled ? "rgba(17,16,14,.26)" : "rgba(17,16,14,.16)"
+            }`,
+            transition: reduced
+              ? "none"
+              : "height 420ms cubic-bezier(0.16,1,0.3,1), border-color 420ms",
+          }}
+        >
           <div
             style={{
-              width: 40,
-              height: 2,
-              background: "var(--olive)",
-              marginTop: 6,
+              maxWidth: 1280,
+              margin: "0 auto",
+              padding: "0 64px",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
-          />
-        </div>
-
-        {/* Center nav — hidden on mobile */}
-        <div
-          className="hidden md:flex"
-          style={{ gap: 40, alignItems: "center" }}
-        >
-          {NAV_ITEMS.map((item, i) => (
-            <button
-              key={item}
-              onClick={() => setActive(active === i ? null : i)}
+          >
+            {/* Wordmark */}
+            <Link
+              href="/"
+              aria-label="SEESZN — Return to home"
+              onClick={closeAll}
               style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 11,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "var(--warm-black)",
-                background: "none",
-                border: "none",
-                padding: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-                cursor: "pointer",
+                textDecoration: "none",
+                display: "inline-block",
+                flexShrink: 0,
               }}
             >
-              {item}
               <span
-                className="olive-dot"
                 style={{
-                  width: 4,
-                  height: 4,
-                  background: "var(--olive)",
-                  opacity: active === i ? 1 : 0,
-                  transition: "opacity 0.15s",
+                  fontFamily: "var(--font-display), sans-serif",
+                  fontWeight: 800,
+                  fontSize: "clamp(24px, 2vw, 34px)",
+                  letterSpacing: "-0.08em",
+                  color: "var(--warm-black)",
+                  lineHeight: 0.85,
+                  display: "block",
                 }}
+              >
+                SEESZN
+              </span>
+              {/* Signal line — draws in on mount */}
+              <motion.div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 2,
+                  background: "var(--signal)",
+                  marginTop: 6,
+                  originX: 0,
+                }}
+                initial={reduced ? { scaleX: 1 } : { scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.7, ease: EASE, delay: 0.45 }}
               />
+            </Link>
+
+            {/* Center nav — desktop */}
+            <nav
+              aria-label="Primary navigation"
+              className="hidden md:flex"
+              style={{ gap: 36, alignItems: "center" }}
+            >
+              {/* SERVICES — mega panel trigger */}
+              <button
+                ref={servicesBtnRef}
+                aria-expanded={servicesOpen}
+                aria-controls="services-panel"
+                onClick={() => setServicesOpen((o) => !o)}
+                onMouseEnter={() => setHoveredNav("SERVICES")}
+                onMouseLeave={() => setHoveredNav(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "var(--warm-black)",
+                  cursor: "pointer",
+                  padding: "8px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  minHeight: 44,
+                  justifyContent: "center",
+                }}
+              >
+                SERVICES
+                <span
+                  aria-hidden="true"
+                  style={signalLine(
+                    servicesOpen || hoveredNav === "SERVICES",
+                    true
+                  )}
+                />
+              </button>
+
+              {/* Standard links */}
+              {NAV_LINKS.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={closeAll}
+                  onMouseEnter={() => setHoveredNav(item.label)}
+                  onMouseLeave={() => setHoveredNav(null)}
+                  style={{
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "var(--warm-black)",
+                    textDecoration: "none",
+                    padding: "8px 0",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    minHeight: 44,
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.label}
+                  <span
+                    aria-hidden="true"
+                    style={signalLine(hoveredNav === item.label)}
+                  />
+                </Link>
+              ))}
+            </nav>
+
+            {/* CTA — desktop */}
+            <CtaButton
+              onClick={closeAll}
+              reduced={reduced}
+              className="hidden md:inline-flex"
+            />
+
+            {/* Mobile menu toggle */}
+            <button
+              className="md:hidden"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-drawer"
+              aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+              style={{
+                background: "none",
+                border: "none",
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "var(--warm-black)",
+                cursor: "pointer",
+                padding: "12px 0",
+                minHeight: 44,
+              }}
+            >
+              {mobileOpen ? "CLOSE" : "MENU"}
             </button>
-          ))}
-        </div>
+          </div>
+        </header>
 
-        {/* CTA */}
-        <a
-          href="#contact"
-          className="nav-cta hidden md:inline-block"
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            border: "1px solid rgba(17,16,14,.45)",
-            padding: "7px 16px",
-            color: "var(--warm-black)",
-            background: "transparent",
-            transition: "background 0.2s, color 0.2s",
-            whiteSpace: "nowrap",
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget;
-            el.style.background = "var(--warm-black)";
-            el.style.color = "var(--paper)";
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget;
-            el.style.background = "transparent";
-            el.style.color = "var(--warm-black)";
-          }}
-        >
-          START A DIAGNOSIS{" "}
-          <span style={{ color: "var(--olive)" }}>→</span>
-        </a>
+        {/* ── Services mega panel ─────────────────────────────────────────── */}
+        <AnimatePresence>
+          {servicesOpen && (
+            <motion.div
+              id="services-panel"
+              ref={panelRef}
+              role="region"
+              aria-label="Services"
+              initial={reduced ? undefined : { opacity: 0, y: -8 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0 }}
+              exit={reduced ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.48, ease: EASE }}
+              style={{
+                background: "var(--panel)",
+                borderTop: "1px solid var(--line)",
+                borderBottom: "1px solid var(--line)",
+                padding: "44px 0 52px",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: 1280,
+                  margin: "0 auto",
+                  padding: "0 64px",
+                  display: "grid",
+                  gridTemplateColumns: "220px repeat(4, 1fr)",
+                  gap: "0 48px",
+                  alignItems: "start",
+                }}
+              >
+                {/* Editorial tagline */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    paddingTop: 24,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "var(--font-editorial), serif",
+                      fontStyle: "italic",
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      color: "var(--muted)",
+                      maxWidth: 180,
+                    }}
+                  >
+                    We build the surfaces machines retrieve and people trust.
+                  </p>
+                  <Link
+                    href="/services"
+                    onClick={closeAll}
+                    style={{
+                      fontFamily: "var(--font-mono), monospace",
+                      fontSize: 9,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: "var(--warm-black)",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginTop: 18,
+                      paddingBottom: 4,
+                      borderBottom: "1px solid var(--signal)",
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    ENTER THE OPERATING ROOM
+                    <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
+                  </Link>
+                </div>
 
-        {/* Mobile: wordmark already left, just show CTA */}
-        <a
-          href="#contact"
-          className="md:hidden"
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            border: "1px solid var(--warm-black)",
-            padding: "8px 14px",
-            color: "var(--warm-black)",
-            background: "transparent",
-          }}
-        >
-          DIAGNOSE <span style={{ color: "var(--olive)" }}>→</span>
-        </a>
+                {/* Service columns */}
+                {SERVICES_DATA.map((col) => (
+                  <div key={col.heading}>
+                    <Link
+                      href={col.href}
+                      onClick={closeAll}
+                      style={{
+                        fontFamily: "var(--font-mono), monospace",
+                        fontSize: 8,
+                        letterSpacing: "0.24em",
+                        textTransform: "uppercase",
+                        color: "var(--muted)",
+                        marginBottom: 16,
+                        paddingBottom: 12,
+                        borderBottom: "1px solid var(--line)",
+                        display: "block",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {col.heading}
+                    </Link>
+                    <ul
+                      style={{
+                        listStyle: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      {col.items.map((item) => (
+                        <li key={item}>
+                          <Link
+                            href={col.href}
+                            onClick={closeAll}
+                            style={{
+                              fontFamily: "var(--font-mono), monospace",
+                              fontSize: 11,
+                              letterSpacing: "0.04em",
+                              color: "var(--ink)",
+                              textDecoration: "none",
+                              display: "block",
+                              padding: "3px 0",
+                              opacity: 0.78,
+                              transition: "opacity 0.25s, letter-spacing 0.3s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.opacity = "1";
+                              e.currentTarget.style.letterSpacing = "0.07em";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = "0.78";
+                              e.currentTarget.style.letterSpacing = "0.04em";
+                            }}
+                          >
+                            {item}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </nav>
+
+      {/* ── Mobile drawer ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            id="mobile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
+            initial={reduced ? undefined : { x: "100%" }}
+            animate={reduced ? undefined : { x: 0 }}
+            exit={reduced ? undefined : { x: "100%" }}
+            transition={{ duration: 0.5, ease: EASE }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "var(--paper)",
+              zIndex: 200,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Drawer header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "24px 32px",
+                borderBottom: "1px solid var(--line)",
+                flexShrink: 0,
+              }}
+            >
+              <Link
+                href="/"
+                onClick={closeAll}
+                aria-label="SEESZN — Home"
+                style={{
+                  fontFamily: "var(--font-display), sans-serif",
+                  fontWeight: 800,
+                  fontSize: 28,
+                  letterSpacing: "-0.08em",
+                  color: "var(--warm-black)",
+                  textDecoration: "none",
+                  lineHeight: 1,
+                }}
+              >
+                SEESZN
+              </Link>
+              <button
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation"
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  color: "var(--warm-black)",
+                  cursor: "pointer",
+                  padding: "12px 0",
+                  minHeight: 44,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Drawer links */}
+            <nav
+              aria-label="Mobile navigation"
+              style={{ flex: 1, padding: "32px 32px 0" }}
+            >
+              {/* Services accordion */}
+              <div style={{ borderBottom: "1px solid var(--line)" }}>
+                <button
+                  onClick={() => setMobileServicesOpen((o) => !o)}
+                  aria-expanded={mobileServicesOpen}
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    fontFamily: "var(--font-display), sans-serif",
+                    fontWeight: 700,
+                    fontSize: "clamp(28px, 8vw, 40px)",
+                    letterSpacing: "-0.04em",
+                    textTransform: "uppercase",
+                    color: "var(--warm-black)",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    padding: "16px 0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    minHeight: 44,
+                  }}
+                >
+                  SERVICES
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      fontFamily: "var(--font-mono), monospace",
+                      fontSize: 16,
+                      color: "var(--muted)",
+                      display: "inline-block",
+                      transform: mobileServicesOpen ? "rotate(45deg)" : "rotate(0deg)",
+                      transition: reduced ? "none" : "transform 320ms",
+                      lineHeight: 1,
+                    }}
+                  >
+                    +
+                  </span>
+                </button>
+
+                <AnimatePresence>
+                  {mobileServicesOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.42, ease: EASE }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <Link
+                        href="/services"
+                        onClick={closeAll}
+                        style={{
+                          fontFamily: "var(--font-mono), monospace",
+                          fontSize: 11,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          color: "var(--warm-black)",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          margin: "12px 0 4px",
+                          paddingBottom: 4,
+                          borderBottom: "1px solid var(--signal)",
+                        }}
+                      >
+                        ALL SERVICES
+                        <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
+                      </Link>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "24px 24px",
+                          padding: "16px 0 28px",
+                        }}
+                      >
+                        {SERVICES_DATA.map((col) => (
+                          <div key={col.heading}>
+                            <p
+                              style={{
+                                fontFamily: "var(--font-mono), monospace",
+                                fontSize: 8,
+                                letterSpacing: "0.22em",
+                                textTransform: "uppercase",
+                                color: "var(--muted)",
+                                marginBottom: 10,
+                              }}
+                            >
+                              {col.heading}
+                            </p>
+                            <ul
+                              style={{
+                                listStyle: "none",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 8,
+                              }}
+                            >
+                              {col.items.map((item) => (
+                                <li key={item}>
+                                  <Link
+                                    href={col.href}
+                                    onClick={closeAll}
+                                    style={{
+                                      fontFamily: "var(--font-mono), monospace",
+                                      fontSize: 11,
+                                      color: "var(--warm-black)",
+                                      textDecoration: "none",
+                                      opacity: 0.68,
+                                      display: "block",
+                                      padding: "3px 0",
+                                    }}
+                                  >
+                                    {item}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {NAV_LINKS.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={closeAll}
+                  style={{
+                    fontFamily: "var(--font-display), sans-serif",
+                    fontWeight: 700,
+                    fontSize: "clamp(28px, 8vw, 40px)",
+                    letterSpacing: "-0.04em",
+                    textTransform: "uppercase",
+                    color: "var(--warm-black)",
+                    textDecoration: "none",
+                    display: "block",
+                    padding: "16px 0",
+                    borderBottom: "1px solid var(--line)",
+                    minHeight: 44,
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Drawer CTA */}
+            <div style={{ padding: "32px", flexShrink: 0 }}>
+              <CtaButton onClick={closeAll} reduced={reduced} mobile />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
