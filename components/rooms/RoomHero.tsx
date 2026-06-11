@@ -136,11 +136,12 @@ export default function RoomHero({
         }
         .rh-label-row { display: flex; gap: 16px; margin-bottom: 24px; align-items: baseline; }
         .rh-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
         .rh-label--acc { margin-left: auto; font-size: 9px; opacity: 0.7; }
         .rh-headline { color: var(--warm-black); margin: 0; }
@@ -163,27 +164,29 @@ export default function RoomHero({
           line-height: 1.08;
         }
         .rh-sub {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.75;
-          letter-spacing: 0.04em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           max-width: 440px;
         }
-        .rh-sub--dim { margin-top: 16px; color: var(--muted); }
+        .rh-sub--dim { margin-top: 16px; color: var(--text-muted); }
         .rh-cta {
           display: inline-block;
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          border: 1px solid var(--warm-black);
-          padding: 14px 26px;
-          color: var(--warm-black);
+          border: 1px solid var(--button-border);
+          padding: 13px 26px;
+          min-height: 44px;
+          color: var(--text-primary);
           background: transparent;
-          transition: background 0.2s, color 0.2s;
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
-        .rh-cta:hover { background: var(--warm-black); color: var(--paper); }
+        .rh-cta:hover { background: var(--warm-black); border-color: var(--warm-black); color: var(--paper); }
         .rh-cta:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
         .rh-vertical {
           position: absolute;

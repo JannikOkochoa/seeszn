@@ -15,7 +15,7 @@ const tag = {
   fontFamily: MONO,
   fontSize: 8,
   letterSpacing: "0.115em",
-  fill: "#5E574F",
+  fill: "var(--text-secondary)",
 } as const;
 
 // ── A-01 — crawl map as depth rings ──────────────────────────────────────────
@@ -131,7 +131,7 @@ export function RadialFanout() {
               stroke="var(--ink)" strokeWidth={0.8} />
           )}
           <text x={s.lx} y={s.ly} textAnchor={s.anchor} {...tag}
-            fill={s.owned ? "var(--olive)" : "#5E574F"}>{s.label}</text>
+            fill={s.owned ? "var(--olive)" : "var(--text-secondary)"}>{s.label}</text>
         </g>
       ))}
 
@@ -210,7 +210,7 @@ export function CoreSample() {
           <line x1={280} y1={s.y + s.h / 2} x2={304} y2={s.y + s.h / 2}
             stroke={s.thin ? "var(--olive)" : "rgba(17,16,14,.25)"} strokeWidth={0.8} />
           <text x={310} y={s.y + s.h / 2 + 3} {...tag}
-            fill={s.thin ? "var(--olive)" : "#5E574F"}>
+            fill={s.thin ? "var(--olive)" : "var(--text-secondary)"}>
             {s.thin ? `${s.label} — THIN LAYER` : s.label}
           </text>
         </g>

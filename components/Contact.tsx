@@ -2,10 +2,13 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function Contact({ index = "06" }: { index?: string }) {
+  const t = useTranslations();
+  const c = t.contact;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const [email, setEmail] = useState("");
@@ -58,17 +61,15 @@ export default function Contact({ index = "06" }: { index?: string }) {
           </motion.div>
 
           <motion.h2 {...anim(0.08)} style={headlineStyle}>
-            This is not a pitch.
+            {c.headlineRoman}
             <br />
-            It is a diagnosis.
+            <em style={{ fontStyle: "italic" }}>{c.headlineItalic}</em>
           </motion.h2>
 
           <motion.p {...anim(0.14)} style={subStyle}>
-            We map your visibility across Google
-            <br />
-            and all major AI platforms before we
-            <br />
-            discuss working together.
+            {c.sub.split("\n").map((line, i, arr) => (
+              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+            ))}
           </motion.p>
 
           {/* Form */}
@@ -76,13 +77,13 @@ export default function Contact({ index = "06" }: { index?: string }) {
             {status === "success" ? (
               <p
                 style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 14,
-                  color: "var(--warm-black)",
-                  lineHeight: 1.7,
+                  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                  fontSize: 15,
+                  color: "var(--text-primary)",
+                  lineHeight: 1.65,
                 }}
               >
-                Diagnosis requested. We&rsquo;ll be in touch.
+                {c.successMessage}
               </p>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -91,15 +92,15 @@ export default function Contact({ index = "06" }: { index?: string }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="your@email.com"
+                  placeholder={c.placeholder}
                   style={{
                     display: "block",
                     width: "100%",
-                    border: "1px solid var(--warm-black)",
+                    border: "1px solid var(--line-strong)",
                     background: "transparent",
-                    fontFamily: "var(--font-mono), monospace",
-                    fontSize: 14,
-                    color: "var(--warm-black)",
+                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                    fontSize: 15,
+                    color: "var(--text-primary)",
                     padding: "14px 16px",
                     outline: "none",
                     marginBottom: 0,
@@ -121,9 +122,10 @@ export default function Contact({ index = "06" }: { index?: string }) {
                     background: "var(--warm-black)",
                     color: "var(--paper)",
                     border: "none",
-                    fontFamily: "var(--font-mono), monospace",
+                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
                     fontSize: 12,
-                    letterSpacing: "0.1em",
+                    fontWeight: 600,
+                    letterSpacing: "0.09em",
                     textTransform: "uppercase",
                     padding: 14,
                     marginTop: 0,
@@ -132,21 +134,21 @@ export default function Contact({ index = "06" }: { index?: string }) {
                     opacity: status === "loading" ? 0.6 : 1,
                   }}
                 >
-                  {status === "loading" ? "..." : (
-                    <>START A DIAGNOSIS <span style={{ color: "var(--olive)" }}>→</span></>
+                  {status === "loading" ? c.buttonLoading : (
+                    <>{c.buttonIdle} <span style={{ color: "var(--olive)" }}>→</span></>
                   )}
                 </button>
 
                 {status === "error" && (
                   <p
                     style={{
-                      fontFamily: "var(--font-mono), monospace",
-                      fontSize: 12,
+                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                      fontSize: 13,
                       color: "var(--clay)",
                       marginTop: 12,
                     }}
                   >
-                    Something went wrong. Write to hello@seeszn.com directly.
+                    {c.errorMessage}
                   </p>
                 )}
               </form>
@@ -175,11 +177,12 @@ export default function Contact({ index = "06" }: { index?: string }) {
 }
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
   fontSize: 11,
-  letterSpacing: "0.12em",
+  fontWeight: 500,
+  letterSpacing: "0.1em",
   textTransform: "uppercase",
-  color: "var(--dust)",
+  color: "var(--text-muted)",
 };
 
 const headlineStyle: React.CSSProperties = {
@@ -192,9 +195,10 @@ const headlineStyle: React.CSSProperties = {
 };
 
 const subStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
-  fontSize: 13,
-  color: "#5E574F",
-  lineHeight: 1.7,
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+  fontSize: 15,
+  fontWeight: 400,
+  color: "var(--text-body)",
+  lineHeight: 1.65,
   maxWidth: 400,
 };

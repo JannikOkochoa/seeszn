@@ -82,11 +82,12 @@ export default function ScanCTA({
         }
         .scta-label-row { display: flex; gap: 16px; margin-bottom: 72px; }
         .scta-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
         .scta-center {
           max-width: 720px;
@@ -106,26 +107,28 @@ export default function ScanCTA({
         }
         .scta-headline em { font-style: italic; }
         .scta-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.8;
-          letter-spacing: 0.05em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           margin-bottom: 40px;
         }
         .scta-cta {
           display: inline-block;
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          border: 1px solid var(--warm-black);
-          padding: 16px 32px;
-          color: var(--warm-black);
+          border: 1px solid var(--button-border);
+          padding: 15px 32px;
+          min-height: 44px;
+          color: var(--text-primary);
           background: transparent;
-          transition: background 0.2s, color 0.2s;
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
-        .scta-cta:hover { background: var(--warm-black); color: var(--paper); }
+        .scta-cta:hover { background: var(--warm-black); border-color: var(--warm-black); color: var(--paper); }
         .scta-cta:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
         .scta-close {
           margin-top: 64px;

@@ -2,10 +2,13 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function DiagnosisCTA() {
+  const t = useTranslations();
+  const dc = t.servicesPage.diagnosisCta;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 
@@ -19,34 +22,32 @@ export default function DiagnosisCTA() {
     <section ref={ref} className="dcta-section">
       <motion.div {...anim(0)} className="dcta-label-row">
         <span className="dcta-label">04</span>
-        <span className="dcta-label">NEXT MOVE</span>
+        <span className="dcta-label">{dc.sectionLabel}</span>
       </motion.div>
 
       <div className="dcta-center">
         <motion.h2 {...anim(0.08)} className="dcta-headline">
-          Not sure where
+          {dc.headlineRoman}
           <br />
-          <em>visibility breaks?</em>
+          <em>{dc.headlineItalic}</em>
         </motion.h2>
 
         <motion.p {...anim(0.16)} className="dcta-copy">
-          WE MAP YOUR CURRENT SEARCH VISIBILITY,
-          <br />
-          AI CITATION POTENTIAL, WEBSITE STRUCTURE
-          <br />
-          AND HIGHEST-LEVERAGE NEXT MOVES.
+          {dc.copy.split("\n").map((line, i, arr) => (
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
         </motion.p>
 
         <motion.div {...anim(0.24)}>
-          <a href="/diagnosis" className="dcta-cta">
-            BOOK A DIAGNOSIS <span style={{ color: "var(--olive)" }}>→</span>
+          <a href={t.locale === "de" ? "/de/diagnosis" : "/diagnosis"} className="dcta-cta">
+            {dc.cta} <span style={{ color: "var(--olive)" }}>→</span>
           </a>
         </motion.div>
 
         <motion.div {...anim(0.34)} className="dcta-close">
           <span className="dcta-rule" aria-hidden="true" />
           <p className="dcta-sentence">
-            We build the surfaces machines retrieve and people trust.
+            {dc.closing}
           </p>
         </motion.div>
       </div>
@@ -59,11 +60,12 @@ export default function DiagnosisCTA() {
         }
         .dcta-label-row { display: flex; gap: 16px; margin-bottom: 72px; }
         .dcta-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         .dcta-center {
@@ -84,26 +86,28 @@ export default function DiagnosisCTA() {
         }
         .dcta-headline em { font-style: italic; }
         .dcta-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.8;
-          letter-spacing: 0.05em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           margin-bottom: 40px;
         }
         .dcta-cta {
           display: inline-block;
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          border: 1px solid var(--warm-black);
-          padding: 16px 32px;
-          color: var(--warm-black);
+          border: 1px solid var(--button-border);
+          padding: 15px 32px;
+          min-height: 44px;
+          color: var(--text-primary);
           background: transparent;
-          transition: background 0.2s, color 0.2s;
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
-        .dcta-cta:hover { background: var(--warm-black); color: var(--paper); }
+        .dcta-cta:hover { background: var(--warm-black); border-color: var(--warm-black); color: var(--paper); }
         .dcta-cta:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
 
         .dcta-close {

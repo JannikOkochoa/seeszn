@@ -2,94 +2,14 @@
 
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-interface Note {
-  id: string;
-  cls: string;
-  title: string;
-  abstract: string;
-  observation: string;
-  move: string;
-}
-
-const NOTES: Note[] = [
-  {
-    id: "FN-01",
-    cls: "RETRIEVAL",
-    title: "One question becomes thirty searches.",
-    abstract: "Query fan-out creates hidden search paths most brands never see.",
-    observation:
-      "AI search systems decompose a single prompt into a fan of sub-queries — comparisons, alternatives, pricing, reviews, local variants. Each path is answered separately, from different surfaces, and reassembled into one response. A brand can dominate the visible query and be absent from the fan that actually feeds the answer.",
-    move: "Map the fan-out for your category before writing a single page.",
-  },
-  {
-    id: "FN-02",
-    cls: "CITATION",
-    title: "The listicle you ignored is answering for you.",
-    abstract: "Models over-cite aggregation surfaces — and someone else built them.",
-    observation:
-      "Answer engines lean on surfaces that compare and rank: listicles, category roundups, buyer's guides, forum threads. These pages get cited because they are dense, structured and already adjudicated. If the only roundup in your category was written by an affiliate site, that site speaks for your market.",
-    move: "Earn placement on the surfaces models already trust — or build the definitive one.",
-  },
-  {
-    id: "FN-03",
-    cls: "STRUCTURE",
-    title: "Machines quote paragraphs, not pages.",
-    abstract: "Retrieval is chunk-level. Most pages cannot be quoted in forty words.",
-    observation:
-      "Retrieval systems split pages into passages and embed each one separately. A page wins by containing chunks that are distinct, self-sufficient and source-worthy — a definition that stands alone, a comparison that needs no context. Long undifferentiated prose embeds as noise and is never selected.",
-    move: "Write in chunks: one claim, one passage, quotable without its page.",
-  },
-  {
-    id: "FN-04",
-    cls: "ENTITY",
-    title: "If the model cannot resolve who you are, it cannot recommend you.",
-    abstract: "Entity clarity decides whether mentions consolidate into memory.",
-    observation:
-      "Models build entity records from corroborating sources: consistent naming, a canonical description, aligned profiles, third-party confirmation. Inconsistent naming and thin corroboration split a brand into fragments too weak to cite. Mentions then accrue to the category — not to you.",
-    move: "One canonical entity record, corroborated everywhere it counts.",
-  },
-  {
-    id: "FN-05",
-    cls: "STRUCTURE",
-    title: "Schema is grammar, not strategy.",
-    abstract: "Markup makes statements legible. It does not make them credible.",
-    observation:
-      "Structured data tells a parser what a statement is — it does not supply the evidence that makes the statement quotable. Schema applied to thin content is a well-formatted absence. The order of operations matters: evidence first, structure second, markup last.",
-    move: "Structure follows evidence. Never the reverse.",
-  },
-  {
-    id: "FN-06",
-    cls: "TRUST",
-    title: "Speed is a trust signal before it is a ranking factor.",
-    abstract: "A slow surface reads as a neglected one — to people and to crawlers.",
-    observation:
-      "Latency shapes judgment in the first contact: visitors read slowness as neglect, and crawl systems allocate attention away from surfaces that waste their budget. Performance is not a technical afterthought; it is part of how credibility is rendered.",
-    move: "Treat performance as brand, budgeted like design.",
-  },
-  {
-    id: "FN-07",
-    cls: "SURFACE",
-    title: "Your category page is a retrieval surface.",
-    abstract: "Commercial fan-out paths retrieve category pages. Most are thin grids.",
-    observation:
-      "When the fan-out turns commercial — best, versus, alternatives, pricing — systems retrieve category and service pages. Most are product grids with no statements worth quoting. A category page that defines, compares and proves becomes the fragment the answer is built from.",
-    move: "Rebuild category pages as evidence: definitions, comparisons, proof.",
-  },
-  {
-    id: "FN-08",
-    cls: "RETRIEVAL",
-    title: "Answers are assembled, not found.",
-    abstract: "An AI answer is a composite of fragments from several surfaces.",
-    observation:
-      "No single page wins an AI answer. The system assembles fragments — a definition from one surface, a comparison from another, a price from a third — and cites the usable ones. Presence means being a fragment the assembly cannot skip.",
-    move: "Design pages as fragment libraries, not narratives.",
-  },
-];
-
 export default function FieldNotes() {
+  const t = useTranslations();
+  const fn = t.insightsPage.fieldNotes;
+  const NOTES = fn.notes;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.08 });
   const [open, setOpen] = useState<number | null>(null);
@@ -99,9 +19,9 @@ export default function FieldNotes() {
       <div className="fn-header">
         <div className="fn-chips">
           <span className="fn-chip">02</span>
-          <span className="fn-chip">FIELD NOTES</span>
+          <span className="fn-chip">{fn.chip}</span>
         </div>
-        <span className="fn-chip fn-chip--right">FILED 2026 — ONGOING</span>
+        <span className="fn-chip fn-chip--right">{fn.dateLabel}</span>
       </div>
 
       <motion.div
@@ -111,12 +31,12 @@ export default function FieldNotes() {
         className="fn-intro"
       >
         <h2 className="fn-intro-headline">
-          We publish what we verify <em>in operation.</em>
+          {fn.introHeadlineRoman} <em>{fn.introHeadlineItalic}</em>
         </h2>
         <p className="fn-intro-copy">
-          EACH NOTE — ONE OBSERVATION, ONE OPERATIVE MOVE.
-          <br />
-          NO ESSAYS. NO PREDICTION THEATER.
+          {fn.introCopy.split("\n").map((line, i, arr) => (
+              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+            ))}
         </p>
       </motion.div>
 
@@ -184,11 +104,12 @@ export default function FieldNotes() {
         }
         .fn-chips { display: flex; gap: 16px; align-items: center; }
         .fn-chip {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         .fn-intro {
@@ -208,11 +129,11 @@ export default function FieldNotes() {
         }
         .fn-intro-headline em { font-style: italic; }
         .fn-intro-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          line-height: 1.8;
-          letter-spacing: 0.05em;
-          color: var(--muted);
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-muted);
         }
 
         /* ── Dossier rows ────────────────────────────── */
@@ -255,10 +176,11 @@ export default function FieldNotes() {
           color: var(--warm-black);
         }
         .fn-abstract {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
           line-height: 1.6;
-          color: #5E574F;
+          color: var(--text-body);
           max-width: 560px;
         }
 
@@ -299,17 +221,19 @@ export default function FieldNotes() {
           max-width: 620px;
         }
         .fn-observation {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          line-height: 1.75;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           margin-bottom: 20px;
         }
         .fn-move {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.7;
-          color: var(--warm-black);
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-primary);
           border-top: 1px solid var(--line);
           padding-top: 14px;
         }

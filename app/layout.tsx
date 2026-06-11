@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Playfair_Display, IBM_Plex_Mono } from "next/font/google";
+import { Barlow_Condensed, Playfair_Display, IBM_Plex_Mono, Inter } from "next/font/google";
+import { TranslationProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
 const barlow = Barlow_Condensed({
@@ -24,6 +25,16 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+// Sets data-theme before first paint — prevents flash of wrong theme
+const themeScript = `(function(){try{var t=localStorage.getItem('seeszn-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}catch(e){}})();`;
+
 export const metadata: Metadata = {
   title: "SEESZN — For brands that intend to be found.",
   description:
@@ -41,9 +52,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${barlow.variable} ${playfair.variable} ${mono.variable}`}
+      data-theme="light"
+      suppressHydrationWarning
+      className={`${barlow.variable} ${playfair.variable} ${mono.variable} ${inter.variable}`}
     >
-      <body>{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
+        <TranslationProvider locale="en">{children}</TranslationProvider>
+      </body>
     </html>
   );
 }

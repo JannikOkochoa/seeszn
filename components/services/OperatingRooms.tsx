@@ -2,8 +2,9 @@
 
 import { motion, useScroll, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { ROOMS, type RoomVisualKind } from "@/lib/services";
+import { ROOMS as ROOMS_EN, type RoomVisualKind } from "@/lib/services";
 import { CrawlMap, FanOut, SurfaceLayers, DiagnosisReport } from "./RoomVisuals";
+import { useTranslations } from "@/lib/i18n/context";
 
 const VISUALS: Record<RoomVisualKind, React.ComponentType> = {
   crawl: CrawlMap,
@@ -13,6 +14,14 @@ const VISUALS: Record<RoomVisualKind, React.ComponentType> = {
 };
 
 export default function OperatingRooms() {
+  const t = useTranslations();
+  const sys = t.servicesPage.system;
+  // Merge translated room text with original visual kind (visual doesn't change per language)
+  const ROOMS = t.servicesPage.rooms.map((r, i) => ({
+    ...r,
+    visual: ROOMS_EN[i].visual as RoomVisualKind,
+    statement: [r.statementRoman, r.statementItalic] as [string, string],
+  }));
   const sectionRef = useRef<HTMLElement>(null);
   const roomRefs = useRef<(HTMLElement | null)[]>([]);
   const [active, setActive] = useState(0);
@@ -69,15 +78,15 @@ export default function OperatingRooms() {
       <div className="or-header">
         <div className="or-chips">
           <span className="or-chip">03</span>
-          <span className="or-chip">THE FOUR ROOMS</span>
+          <span className="or-chip">{sys.roomsHeader}</span>
         </div>
-        <span className="or-chip or-chip--right">ONE SYSTEM — FOUR INSTRUMENTS</span>
+        <span className="or-chip or-chip--right">{sys.roomsSubheader}</span>
       </div>
 
       <div className="or-body">
         {/* ── The Operating Line — sticky station rail ── */}
         <nav className="or-rail" aria-label="Operating line — room index">
-          <span className="or-rail-label">OPERATING LINE</span>
+          <span className="or-rail-label">{t.common.railLabel}</span>
           <div className="or-rail-inner">
             <span className="or-rail-track" aria-hidden="true">
               <motion.span
@@ -176,11 +185,12 @@ export default function OperatingRooms() {
         }
         .or-chips { display: flex; gap: 16px; align-items: center; }
         .or-chip {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         /* ── Body grid — rail + rooms ────────────────── */
@@ -254,7 +264,7 @@ export default function OperatingRooms() {
           color: var(--dust);
           transition: color 400ms ease, letter-spacing 500ms cubic-bezier(.16,1,.3,1);
         }
-        .or-station--seen .or-station-name { color: #5E574F; }
+        .or-station--seen .or-station-name { color: var(--text-secondary); }
         .or-station--live .or-station-tick { width: 18px; background: var(--signal); }
         .or-station--live .or-station-num,
         .or-station--live .or-station-name { color: var(--warm-black); }
@@ -310,9 +320,9 @@ export default function OperatingRooms() {
         .vroom-chip {
           position: relative;
           font-family: var(--font-mono), monospace;
-          font-size: 10px;
-          letter-spacing: 0.22em;
-          color: #5E574F;
+          font-size: 9px;
+          letter-spacing: 0.18em;
+          color: var(--text-secondary);
           padding-bottom: 7px;
           transition: color 400ms ease;
         }
@@ -361,10 +371,11 @@ export default function OperatingRooms() {
           color: var(--ink);
         }
         .vroom-body {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          line-height: 1.75;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           max-width: 460px;
           margin-bottom: 40px;
         }
@@ -385,11 +396,12 @@ export default function OperatingRooms() {
           max-width: 480px;
         }
         .vroom-deliv li {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.06em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
-          color: var(--ink);
+          color: var(--text-body);
           padding: 10px 0;
           border-top: 1px solid var(--line);
         }
@@ -515,7 +527,7 @@ export default function OperatingRooms() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .dxr-status {
           display: flex;
@@ -574,7 +586,7 @@ export default function OperatingRooms() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
           opacity: 0;
           transition: opacity 700ms ease 1100ms;
         }

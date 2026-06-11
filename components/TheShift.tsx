@@ -2,17 +2,13 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const POINTS = [
-  { year: "2000", label: "Rankings" },
-  { year: "2010", label: "Traffic" },
-  { year: "2020", label: "Attention" },
-  { year: "2024+", label: "AI Answers" },
-];
-
 export default function TheShift() {
+  const t = useTranslations();
+  const ts = t.theShift;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 
@@ -28,11 +24,9 @@ export default function TheShift() {
       {/* LEFT — headline */}
       <div className="shift-left">
         <motion.p {...fadeIn(0)} className="shift-headline">
-          SEARCH WAS ONCE A PAGE.
-          <br />
-          NOW IT IS AN ANSWER.
-          <br />
-          ANSWERS NEED SOURCES.
+          {ts.headline.split("\n").map((line, i, arr) => (
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
         </motion.p>
       </div>
 
@@ -45,7 +39,7 @@ export default function TheShift() {
             <div className="tl-line-base" />
             <div className="tl-line-active" />
 
-            {POINTS.map((pt, i) => (
+            {ts.points.map((pt, i) => (
               <div
                 key={pt.year}
                 className={`tl-point${i === 3 ? " tl-point--active" : ""}`}
@@ -61,7 +55,7 @@ export default function TheShift() {
 
         {/* CTA */}
         <motion.div {...fadeIn(0.18)} className="shift-cta-wrap">
-          <a href="#contact" className="shift-cta-link">THE SHIFT →</a>
+          <a href="#contact" className="shift-cta-link">{ts.cta}</a>
         </motion.div>
       </div>
 
@@ -195,7 +189,7 @@ export default function TheShift() {
           font-size: 10px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #5E574F;
+          color: var(--text-secondary);
           transition:
             transform 500ms cubic-bezier(.16,1,.3,1) var(--tl-delay, 0ms),
             color      350ms ease                    var(--tl-delay, 0ms);
@@ -243,7 +237,7 @@ export default function TheShift() {
         .tl-year {
           font-family: var(--font-mono), monospace;
           font-size: 12px;
-          color: #5E574F;
+          color: var(--text-secondary);
           transition: color 350ms ease var(--tl-delay, 0ms);
         }
 
@@ -263,10 +257,11 @@ export default function TheShift() {
         }
 
         .shift-cta-link {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          color: var(--dust);
-          letter-spacing: 0.08em;
+          font-weight: 500;
+          color: var(--text-muted);
+          letter-spacing: 0.07em;
           text-transform: uppercase;
           transition: color 300ms ease;
         }

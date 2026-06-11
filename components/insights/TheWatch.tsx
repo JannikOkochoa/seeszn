@@ -75,7 +75,7 @@ export default function TheWatch() {
           font-family: var(--font-mono), monospace;
           font-size: 8.5px;
           letter-spacing: 0.16em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .watch-list { list-style: none; padding: 8px 0; }
         .watch-row {
@@ -118,7 +118,7 @@ export default function TheWatch() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .watch-caret {
           width: 6px;

@@ -2,58 +2,14 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-// What the scan reads — the five measures of the SEESZN system.
-const MEASURES = [
-  {
-    name: "CRAWL",
-    question: "Can machines walk your structure?",
-    reads: "INDEX ROUTES · DEPTH · DEAD ENDS · ORPHANS",
-  },
-  {
-    name: "ENTITY",
-    question: "Does the machine know who you are?",
-    reads: "CANONICAL RECORD · NAMING · CORROBORATION",
-  },
-  {
-    name: "CITATION",
-    question: "Do answers quote you?",
-    reads: "FAN-OUT COVERAGE · SOURCE SURFACES · GAPS",
-  },
-  {
-    name: "TRUST",
-    question: "Does the surface read as credible?",
-    reads: "SPEED · CLARITY · EVIDENCE DESIGN",
-  },
-  {
-    name: "CONVERSION",
-    question: "Does retrieval become revenue?",
-    reads: "ANSWER-TO-ACTION PATH · LANDING EVIDENCE",
-  },
-];
-
-const STEPS = [
-  {
-    name: "INTAKE",
-    desc: "You send the surface. One email, one domain — that is enough to begin.",
-  },
-  {
-    name: "SCAN",
-    desc: "We read it across search and AI systems: structure, entities, citations, trust, conversion.",
-  },
-  {
-    name: "READING",
-    desc: "You receive the leak map — where visibility breaks, and why. In plain language.",
-  },
-  {
-    name: "ROADMAP",
-    desc: "The highest-leverage moves, sequenced. Whether we build them together is a separate decision.",
-  },
-];
-
 export default function ScanProtocol() {
+  const t = useTranslations();
+  const p = t.diagnosisPage.protocol;
+
   const readRef = useRef(null);
   const readInView = useInView(readRef, { once: true, amount: 0.15 });
   const stepRef = useRef(null);
@@ -75,12 +31,12 @@ export default function ScanProtocol() {
       >
         <motion.div {...anim(readInView, 0)} className="scp-label-row">
           <span className="scp-label">02</span>
-          <span className="scp-label">WHAT THE SCAN READS</span>
-          <span className="scp-label scp-label--right">FIVE MEASURES — ONE SURFACE</span>
+          <span className="scp-label">{p.measuresLabel}</span>
+          <span className="scp-label scp-label--right">{p.measuresRight}</span>
         </motion.div>
 
         <ul className="scp-measures">
-          {MEASURES.map((m, i) => (
+          {p.measures.map((m, i) => (
             <li key={m.name} className="scp-measure" style={{ "--i": i } as React.CSSProperties}>
               <span className="scp-measure-num">0{i + 1}</span>
               <span className="scp-measure-name">{m.name}</span>
@@ -99,7 +55,7 @@ export default function ScanProtocol() {
       >
         <motion.div {...anim(stepInView, 0)} className="scp-label-row">
           <span className="scp-label">03</span>
-          <span className="scp-label">THE PROTOCOL</span>
+          <span className="scp-label">{p.stepsLabel}</span>
         </motion.div>
 
         <div className="scp-steps-wrap">
@@ -107,7 +63,7 @@ export default function ScanProtocol() {
             <span className="scp-rail-fill" />
           </div>
           <ol className="scp-steps">
-            {STEPS.map((s, i) => (
+            {p.steps.map((s, i) => (
               <li key={s.name} className="scp-step" style={{ "--i": i } as React.CSSProperties}>
                 <span className="scp-step-num">0{i + 1}</span>
                 <div>
@@ -120,7 +76,7 @@ export default function ScanProtocol() {
         </div>
 
         <motion.p {...anim(stepInView, 0.3)} className="scp-note">
-          PREFER MAIL? <a href="mailto:hello@seeszn.com">HELLO@SEESZN.COM</a>
+          {p.mailNote} <a href="mailto:hello@seeszn.com">HELLO@SEESZN.COM</a>
         </motion.p>
       </section>
 
@@ -132,11 +88,12 @@ export default function ScanProtocol() {
         }
         .scp-label-row { display: flex; gap: 16px; margin-bottom: 56px; align-items: baseline; }
         .scp-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
         .scp-label--right { margin-left: auto; font-size: 9px; }
 
@@ -243,10 +200,11 @@ export default function ScanProtocol() {
           margin-bottom: 8px;
         }
         .scp-step-desc {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.7;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           max-width: 460px;
         }
 

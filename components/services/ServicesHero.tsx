@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -22,19 +23,21 @@ const READINGS = [
 ];
 
 export default function ServicesHero() {
+  const t = useTranslations();
+  const h = t.servicesPage.hero;
   return (
     <section className="sh-section">
       {/* LEFT — statement */}
       <div className="sh-left">
         <motion.div {...fadeUp(0)} className="sh-label-row">
           <span className="sh-label">01</span>
-          <span className="sh-label">SERVICES / OPERATING ROOM</span>
+          <span className="sh-label">{h.roomLabel}</span>
         </motion.div>
 
         <motion.h1 {...fadeUp(0.1)} className="sh-headline">
-          <span className="sh-hl-roman">Visibility breaks</span>
-          <span className="sh-hl-roman">before the customer</span>
-          <span className="sh-hl-italic">sees you.</span>
+          <span className="sh-hl-roman">{h.roman1}</span>
+          <span className="sh-hl-roman">{h.roman2}</span>
+          <span className="sh-hl-italic">{h.italic}</span>
         </motion.h1>
 
         <motion.div
@@ -43,28 +46,27 @@ export default function ServicesHero() {
         />
 
         <motion.p {...fadeUp(0.3)} className="sh-sub">
-          WE DIAGNOSE, REBUILD AND STRUCTURE
-          <br />
-          THE SURFACES MACHINES RETRIEVE
-          <br />
-          AND PEOPLE TRUST.
+          {h.sub1.split("\n").map((line, i, arr) => (
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
         </motion.p>
 
         <motion.p {...fadeUp(0.36)} className="sh-sub sh-sub--dim">
-          SEO, AI SEARCH, WEBSITES AND AUDITS —
-          <br />
-          BUILT AS ONE VISIBILITY SYSTEM.
+          {h.sub2.split("\n").map((line, i, arr) => (
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
         </motion.p>
 
         <motion.div {...fadeUp(0.44)} style={{ marginTop: 30 }}>
-          <a href="/diagnosis" className="sh-cta">
-            BOOK A DIAGNOSIS <span style={{ color: "var(--olive)" }}>→</span>
+          <a href={t.locale === "de" ? "/de/diagnosis" : "/diagnosis"} className="sh-cta">
+            {h.cta} <span style={{ color: "var(--olive)" }}>→</span>
           </a>
         </motion.div>
 
         <span aria-hidden="true" className="sh-vertical">
           THE VISIBILITY OPERATING ROOM
         </span>
+
       </div>
 
       {/* RIGHT — diagnosis interface */}
@@ -143,11 +145,12 @@ export default function ServicesHero() {
         }
         .sh-label-row { display: flex; gap: 16px; margin-bottom: 24px; }
         .sh-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
         .sh-headline { color: var(--warm-black); margin: 0; }
         .sh-hl-roman {
@@ -169,27 +172,30 @@ export default function ServicesHero() {
           line-height: 1.08;
         }
         .sh-sub {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.75;
-          letter-spacing: 0.04em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          letter-spacing: 0.01em;
+          color: var(--text-body);
           max-width: 420px;
         }
-        .sh-sub--dim { margin-top: 16px; color: var(--muted); }
+        .sh-sub--dim { margin-top: 16px; color: var(--text-muted); }
         .sh-cta {
           display: inline-block;
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          border: 1px solid var(--warm-black);
-          padding: 14px 26px;
-          color: var(--warm-black);
+          border: 1px solid var(--button-border);
+          padding: 13px 26px;
+          min-height: 44px;
+          color: var(--text-primary);
           background: transparent;
-          transition: background 0.2s, color 0.2s;
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
-        .sh-cta:hover { background: var(--warm-black); color: var(--paper); }
+        .sh-cta:hover { background: var(--warm-black); border-color: var(--warm-black); color: var(--paper); }
         .sh-cta:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
         .sh-vertical {
           position: absolute;
@@ -247,7 +253,7 @@ export default function ServicesHero() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .shp-status {
           padding: 20px 22px 4px;
@@ -282,7 +288,7 @@ export default function ServicesHero() {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
           letter-spacing: 0.14em;
-          color: #5E574F;
+          color: var(--text-secondary);
           width: 92px;
           flex-shrink: 0;
         }
@@ -307,7 +313,7 @@ export default function ServicesHero() {
         .shp-row-value {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
-          color: #5E574F;
+          color: var(--text-secondary);
           width: 34px;
           text-align: right;
           flex-shrink: 0;
@@ -323,7 +329,7 @@ export default function ServicesHero() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .shp-next {
           font-size: 11px;

@@ -1,15 +1,12 @@
-import Link from "next/link";
+"use client";
 
-// The room register — the institution's floor plan, kept in the footer.
-const ROOMS = [
-  { num: "01", name: "OPERATING ROOM", href: "/services" },
-  { num: "02", name: "EVIDENCE ARCHIVE", href: "/work" },
-  { num: "03", name: "INTELLIGENCE ROOM", href: "/insights" },
-  { num: "04", name: "OPERATING MANUAL", href: "/about" },
-  { num: "05", name: "SCAN ROOM", href: "/diagnosis" },
-];
+import Link from "next/link";
+import { useTranslations } from "@/lib/i18n/context";
 
 export default function Footer() {
+  const t = useTranslations();
+  const f = t.footer;
+  const ROOMS = f.rooms;
   return (
     <footer
       style={{
@@ -26,7 +23,7 @@ export default function Footer() {
         }}
         className="ftr-top"
       >
-        <span style={metaStyle}>BERLIN — BANGKOK</span>
+        <span style={metaStyle}>{f.location}</span>
 
         <span
           style={{
@@ -68,11 +65,12 @@ export default function Footer() {
 
       <style>{`
         .ftr-room {
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.16em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--muted);
+          color: var(--text-muted);
           text-decoration: none;
           display: inline-flex;
           gap: 7px;
@@ -80,9 +78,9 @@ export default function Footer() {
           padding: 4px 0;
           transition: color 0.25s;
         }
-        .ftr-room:hover { color: var(--warm-black); }
-        .ftr-room:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 3px; }
-        .ftr-room-num { font-size: 8px; color: var(--dust); }
+        .ftr-room:hover { color: var(--text-primary); }
+        .ftr-room:focus-visible { outline: 1px solid var(--text-primary); outline-offset: 3px; }
+        .ftr-room-num { font-size: 9px; color: var(--text-faint); font-family: var(--font-mono), monospace; }
 
         @media (max-width: 768px) {
           .ftr-top {
@@ -98,9 +96,10 @@ export default function Footer() {
 }
 
 const metaStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
   fontSize: 11,
-  letterSpacing: "0.12em",
+  fontWeight: 500,
+  letterSpacing: "0.1em",
   textTransform: "uppercase",
-  color: "#5E574F",
+  color: "var(--text-body)",
 };

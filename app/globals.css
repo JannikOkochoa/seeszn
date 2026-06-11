@@ -7,30 +7,117 @@
   border-radius: 0 !important;
 }
 
+/* ── Color system — Surface Mode (Day) ───────────────── */
 :root {
-  --paper:      #ECE6DA;
-  --warm-black: #11100E;
-  --ink:        #1E1817;
-  --dust:       #B8AEA0;
-  --clay:       #9A4F32;
-  --olive:      #C7D63A;
+  /* Surfaces */
+  --paper:          #ebe5d8;
+  --paper-soft:     #f2eee5;
+  --surface:        #e2dbcc;
+  --surface-raised: #f5f1e8;
+  --panel:          #e2dbcc;
 
-  /* Nav system tokens */
-  --muted:   #8A8278;           /* secondary text, column labels  */
-  --line:    rgba(17,16,14,.13);/* thin architectural borders      */
-  --signal:  #C7D63A;           /* accent — same hue as --olive    */
-  --panel:   #E5DFD3;           /* mega panel, slightly darker     */
+  /* Ink / text hierarchy */
+  --ink:            #1f1e1a;
+  --ink-strong:     #11110f;
+  --ink-soft:       #3a372f;
+  --warm-black:     #1f1e1a;
+
+  --text-primary:   #1f1e1a;
+  --text-body:      #4a463d;
+  --text-secondary: #5e574f;
+  --text-muted:     #81796a;
+  --text-faint:     #a69d8c;
+
+  /* Backward-compat aliases */
+  --dust:           #a69d8c;
+  --muted:          #81796a;
+  --clay:           #9a4f32;
+
+  /* Lines / borders */
+  --line:           rgba(31, 30, 26, 0.13);
+  --line-soft:      rgba(31, 30, 26, 0.09);
+  --line-strong:    #8d8372;
+
+  /* Border variants for alpha-based references */
+  --border-nav:         rgba(31, 30, 26, 0.16);
+  --border-nav-scrolled: rgba(31, 30, 26, 0.26);
+  --border-btn:         rgba(31, 30, 26, 0.38);
+  --border-btn-hovered: rgba(31, 30, 26, 0.65);
+
+  /* Signal / accent */
+  --olive:          #c4d83f;
+  --signal:         #c4d83f;
+  --signal-soft:    #d7e76a;
+
+  /* Button system */
+  --button-bg:       transparent;
+  --button-text:     #1f1e1a;
+  --button-border:   #8d8372;
+  --button-hover-bg: #e2dbcc;
 }
 
+/* ── Color system — Signal Mode (Night) ──────────────── */
+[data-theme="dark"] {
+  --paper:          #0f100d;
+  --paper-soft:     #13140f;
+  --surface:        #171812;
+  --surface-raised: #1d1d16;
+  --panel:          #1d1d16;
+
+  --ink:            #eee6d6;
+  --ink-strong:     #fff4df;
+  --ink-soft:       #d8cfbd;
+  --warm-black:     #eee6d6;
+
+  --text-primary:   #eee6d6;
+  --text-body:      #d8cfbd;
+  --text-secondary: #c0b8a9;
+  --text-muted:     #8f897b;
+  --text-faint:     #6f695d;
+
+  --dust:           #6f695d;
+  --muted:          #8f897b;
+
+  --line:           rgba(238, 230, 214, 0.1);
+  --line-soft:      rgba(238, 230, 214, 0.07);
+  --line-strong:    #5a5544;
+
+  --border-nav:         rgba(238, 230, 214, 0.12);
+  --border-nav-scrolled: rgba(238, 230, 214, 0.22);
+  --border-btn:         rgba(238, 230, 214, 0.32);
+  --border-btn-hovered: rgba(238, 230, 214, 0.60);
+
+  --olive:          #c8df3f;
+  --signal:         #c8df3f;
+  --signal-soft:    #dff16a;
+
+  --button-bg:       transparent;
+  --button-text:     #eee6d6;
+  --button-border:   #5a5544;
+  --button-hover-bg: #1d1d16;
+}
+
+/* ── Base typography ─────────────────────────────────── */
 html {
   background: var(--paper);
-  color: var(--warm-black);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
 }
 
 body {
   background: var(--paper);
-  font-family: var(--font-mono), 'IBM Plex Mono', monospace;
+  font-family: var(--font-body), "Helvetica Neue", Helvetica, Arial, system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text-body);
+  letter-spacing: 0;
+}
+
+p {
+  line-height: 1.65;
 }
 
 a {
@@ -43,12 +130,12 @@ button {
   font-family: inherit;
 }
 
-/* Only exception to border-radius: 0 */
+/* ── Only exception to border-radius: 0 ────────────── */
 .olive-dot {
   border-radius: 50% !important;
 }
 
 ::selection {
-  background: var(--olive);
-  color: var(--warm-black);
+  background: var(--signal);
+  color: var(--ink-strong);
 }

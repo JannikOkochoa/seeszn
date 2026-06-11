@@ -3,10 +3,11 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { ROOMS } from "@/lib/services";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-// CRAWL = SEO, RETRIEVE = AI Search, TRUST = Websites, DIAGNOSE = Audits
+// CRAWL = SEO, RETRIEVE = AI Search, TRUST = Websites, DIAGNOSE = Audits (fixed English labels)
 const MAPPING: Record<string, string> = {
   crawl: "SEO",
   retrieve: "AI SEARCH / GEO / AIO",
@@ -15,6 +16,8 @@ const MAPPING: Record<string, string> = {
 };
 
 export default function SystemStatement() {
+  const t = useTranslations();
+  const sys = t.servicesPage.system;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.25 });
 
@@ -28,26 +31,19 @@ export default function SystemStatement() {
     <section ref={ref} className="sys-section">
       <motion.div {...anim(0)} className="sys-label-row">
         <span className="sys-label">02</span>
-        <span className="sys-label">THE SYSTEM</span>
+        <span className="sys-label">{sys.sectionLabel}</span>
       </motion.div>
 
       <div className="sys-grid">
         <motion.h2 {...anim(0.08)} className="sys-headline">
-          Visibility is no longer
+          {sys.headline}
           <br />
-          <em>one channel.</em>
+          <em>{sys.headlineItalic}</em>
         </motion.h2>
 
         <motion.div {...anim(0.16)} className="sys-copy-col">
-          <p className="sys-copy">
-            IT IS A SYSTEM OF SEARCH ARCHITECTURE, MACHINE CITATION, DIGITAL
-            SURFACES AND DIAGNOSTIC INTELLIGENCE.
-          </p>
-          <p className="sys-copy sys-copy--dim">
-            SEESZN CONNECTS SEO, AI SEARCH, WEBSITES AND AUDITS INTO ONE
-            OPERATING SYSTEM — BUILT FOR HOW PEOPLE SEARCH NOW, AND HOW MACHINES
-            RETRIEVE INFORMATION NEXT.
-          </p>
+          <p className="sys-copy">{sys.copy1}</p>
+          <p className="sys-copy sys-copy--dim">{sys.copy2}</p>
         </motion.div>
       </div>
 
@@ -74,11 +70,12 @@ export default function SystemStatement() {
         }
         .sys-label-row { display: flex; gap: 16px; margin-bottom: 48px; }
         .sys-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         .sys-grid {
@@ -99,13 +96,13 @@ export default function SystemStatement() {
         .sys-headline em { font-style: italic; }
         .sys-copy-col { display: flex; flex-direction: column; gap: 18px; max-width: 420px; }
         .sys-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.8;
-          letter-spacing: 0.04em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
         }
-        .sys-copy--dim { color: var(--muted); }
+        .sys-copy--dim { color: var(--text-muted); }
 
         /* ── Legend strip — 01 CRAWL … 04 DIAGNOSE ───── */
         .sys-legend {

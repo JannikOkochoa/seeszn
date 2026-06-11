@@ -2,65 +2,9 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
-
-// ── Manual content ────────────────────────────────────────────────────────────
-
-const PHASES = [
-  {
-    name: "DIAGNOSE",
-    desc: "Locate where visibility breaks before any work begins.",
-  },
-  {
-    name: "ARCHITECT",
-    desc: "Structure entities, pages and paths for retrieval.",
-  },
-  {
-    name: "BUILD",
-    desc: "Design and engineer the surface — fast, editorial, legible.",
-  },
-  {
-    name: "OBSERVE",
-    desc: "Watch answers, citations and conversion. Correct the system.",
-  },
-];
-
-const PRINCIPLES = [
-  {
-    name: "STRUCTURE BEFORE SCALE",
-    gloss: "Content volume without architecture is noise the machine skips.",
-  },
-  {
-    name: "RETRIEVAL BEFORE REACH",
-    gloss: "Be quotable before being loud.",
-  },
-  {
-    name: "EVIDENCE OVER OPINION",
-    gloss: "We read systems. We do not guess at them.",
-  },
-  {
-    name: "ONE SYSTEM, NOT SILOS",
-    gloss: "SEO, AI search and the website are the same surface.",
-  },
-  {
-    name: "TASTE IS A PERFORMANCE SYSTEM",
-    gloss: "Restraint, hierarchy and speed are what conversion feels like.",
-  },
-  {
-    name: "SPEED IS PART OF TRUST",
-    gloss: "A slow surface reads as a neglected one.",
-  },
-];
-
-const REFUSALS = [
-  { name: "Work without a diagnosis", gloss: "We do not build before we locate the leak." },
-  { name: "Keyword volume as strategy", gloss: "Volume feeds dashboards, not answers." },
-  { name: "Dashboards instead of decisions", gloss: "A metric is not a move." },
-  { name: "AI theater", gloss: "No glow, no magic, no neon intelligence." },
-  { name: "Brochure websites", gloss: "A surface that cannot be retrieved is decoration." },
-  { name: "Growth language", gloss: "Nothing is boosted, unlocked or taken to the next level." },
-];
 
 // ── Section shells ────────────────────────────────────────────────────────────
 
@@ -77,27 +21,23 @@ function useReveal(amount = 0.25) {
 
 function Premise() {
   const { ref, anim } = useReveal();
+  const t = useTranslations();
+  const manual = t.aboutPage.manual;
   return (
     <section ref={ref} id="premise" className="om-block">
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-01</span>
-        <span className="om-label">THE PREMISE</span>
+        <span className="om-label">{manual.premise.label}</span>
       </motion.div>
       <div className="om-grid">
         <motion.h2 {...anim(0.08)} className="om-headline">
-          Search became retrieval.
+          {manual.premise.headlineRoman}
           <br />
-          <em>Ranking became citation.</em>
+          <em>{manual.premise.headlineItalic}</em>
         </motion.h2>
         <motion.div {...anim(0.16)} className="om-copy-col">
-          <p className="om-copy">
-            ANSWERS ARE ASSEMBLED FROM SURFACES MACHINES TRUST. THE BRANDS THAT
-            REMAIN VISIBLE ARE READABLE, VERIFIABLE AND QUOTABLE — TO PARSERS
-            AND TO PEOPLE.
-          </p>
-          <p className="om-copy om-copy--dim">
-            WE BUILD FOR BOTH READERS. THAT IS THE ENTIRE STUDIO.
-          </p>
+          <p className="om-copy">{manual.premise.copy1}</p>
+          <p className="om-copy om-copy--dim">{manual.premise.copy2}</p>
         </motion.div>
       </div>
     </section>
@@ -106,12 +46,14 @@ function Premise() {
 
 function Model() {
   const { ref, inView, anim } = useReveal();
+  const t = useTranslations();
+  const manual = t.aboutPage.manual;
   return (
     <section ref={ref} id="model" className={`om-block${inView ? " om-block--on" : ""}`}>
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-02</span>
-        <span className="om-label">THE MODEL</span>
-        <span className="om-label om-label--right">ONE LOOP — NOT A FUNNEL</span>
+        <span className="om-label">{manual.model.label}</span>
+        <span className="om-label om-label--right">{manual.model.rightLabel}</span>
       </motion.div>
 
       <div className="om-model">
@@ -119,7 +61,7 @@ function Model() {
           <span className="om-model-line" />
         </div>
         <ol className="om-phases">
-          {PHASES.map((p, i) => (
+          {manual.model.phases.map((p, i) => (
             <li key={p.name} className="om-phase" style={{ "--i": i } as React.CSSProperties}>
               <span className="om-phase-num">0{i + 1}</span>
               <span className="om-phase-name">{p.name}</span>
@@ -134,14 +76,16 @@ function Model() {
 
 function Principles() {
   const { ref, inView, anim } = useReveal(0.12);
+  const t = useTranslations();
+  const manual = t.aboutPage.manual;
   return (
     <section ref={ref} id="principles" className={`om-block${inView ? " om-block--on" : ""}`}>
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-03</span>
-        <span className="om-label">PRINCIPLES</span>
+        <span className="om-label">{manual.principles.label}</span>
       </motion.div>
       <ol className="om-principles">
-        {PRINCIPLES.map((p, i) => (
+        {manual.principles.items.map((p, i) => (
           <li key={p.name} className="om-principle" style={{ "--i": i } as React.CSSProperties}>
             <span className="om-principle-num">0{i + 1}</span>
             <div>
@@ -157,21 +101,23 @@ function Principles() {
 
 function Refusals() {
   const { ref, inView, anim } = useReveal(0.12);
+  const t = useTranslations();
+  const manual = t.aboutPage.manual;
   return (
     <section ref={ref} id="refusals" className={`om-block${inView ? " om-block--on" : ""}`}>
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-04</span>
-        <span className="om-label">REFUSALS</span>
-        <span className="om-label om-label--right">REFUSAL IS A DESIGN TOOL</span>
+        <span className="om-label">{manual.refusals.label}</span>
+        <span className="om-label om-label--right">{manual.refusals.rightLabel}</span>
       </motion.div>
       <div className="om-grid om-grid--top">
         <motion.h2 {...anim(0.08)} className="om-headline om-headline--small">
-          What we decline
+          {manual.refusals.headlineRoman}
           <br />
-          <em>defines the work.</em>
+          <em>{manual.refusals.headlineItalic}</em>
         </motion.h2>
         <ul className="om-refusals">
-          {REFUSALS.map((r, i) => (
+          {manual.refusals.items.map((r, i) => (
             <li key={r.name} className="om-refusal" style={{ "--i": i } as React.CSSProperties}>
               <span className="om-refusal-x" aria-hidden="true">✕</span>
               <div>
@@ -188,28 +134,23 @@ function Refusals() {
 
 function Unit() {
   const { ref, anim } = useReveal();
+  const t = useTranslations();
+  const manual = t.aboutPage.manual;
   return (
     <section ref={ref} id="unit" className="om-block">
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-05</span>
-        <span className="om-label">THE UNIT</span>
+        <span className="om-label">{manual.unit.label}</span>
       </motion.div>
       <div className="om-grid">
         <motion.h2 {...anim(0.08)} className="om-headline">
-          A small unit.
+          {manual.unit.headlineRoman}
           <br />
-          <em>One table.</em>
+          <em>{manual.unit.headlineItalic}</em>
         </motion.h2>
         <motion.div {...anim(0.16)} className="om-copy-col">
-          <p className="om-copy">
-            STRATEGY, SEARCH ARCHITECTURE, EDITORIAL DESIGN AND ENGINEERING —
-            OPERATING BETWEEN BERLIN AND BANGKOK.
-          </p>
-          <p className="om-copy om-copy--dim">
-            SENIOR ONLY. NO HANDOFFS. NO ACCOUNT LAYERS.
-            <br />
-            THE PEOPLE WHO DIAGNOSE YOUR SURFACE BUILD IT.
-          </p>
+          <p className="om-copy">{manual.unit.copy1}</p>
+          <p className="om-copy om-copy--dim">{manual.unit.copy2}</p>
         </motion.div>
       </div>
     </section>
@@ -237,11 +178,12 @@ export default function OperatingManual() {
         .om-wrap > .om-block:first-child { border-top: none; }
         .om-label-row { display: flex; gap: 16px; margin-bottom: 52px; align-items: baseline; }
         .om-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
         .om-label--right { margin-left: auto; font-size: 9px; }
 
@@ -264,13 +206,13 @@ export default function OperatingManual() {
         .om-headline em { font-style: italic; }
         .om-copy-col { display: flex; flex-direction: column; gap: 18px; max-width: 420px; }
         .om-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.8;
-          letter-spacing: 0.04em;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
         }
-        .om-copy--dim { color: var(--muted); }
+        .om-copy--dim { color: var(--text-muted); }
 
         /* ── M-02 — model line ───────────────────────── */
         .om-model { position: relative; }
@@ -334,10 +276,11 @@ export default function OperatingManual() {
           margin-bottom: 10px;
         }
         .om-phase-desc {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          line-height: 1.7;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
+          font-weight: 400;
+          line-height: 1.6;
+          color: var(--text-body);
           max-width: 230px;
         }
 
@@ -373,10 +316,11 @@ export default function OperatingManual() {
           margin-bottom: 6px;
         }
         .om-principle-gloss {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
           line-height: 1.65;
-          color: #5E574F;
+          color: var(--text-body);
           max-width: 520px;
         }
 
@@ -402,17 +346,18 @@ export default function OperatingManual() {
           flex-shrink: 0;
         }
         .om-refusal-name {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          letter-spacing: 0.04em;
-          color: var(--warm-black);
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 500;
+          color: var(--text-primary);
           margin-bottom: 3px;
         }
         .om-refusal-gloss {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
+          font-weight: 400;
           line-height: 1.6;
-          color: var(--muted);
+          color: var(--text-muted);
         }
 
         /* ── Reduced motion ──────────────────────────── */

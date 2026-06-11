@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -40,6 +41,8 @@ const PARTICLES: Array<{
 })();
 
 export default function Hero() {
+  const t = useTranslations();
+  const h = t.hero;
   return (
     <section
       style={{
@@ -67,16 +70,16 @@ export default function Hero() {
 
         {/* Headline */}
         <motion.h1 {...fadeUp(0.1)} className="hero-headline">
-          <span className="hero-hl-roman">You are not</span>
+          <span className="hero-hl-roman">{h.line1}</span>
           <span className="hero-hl-roman">
-            in the{" "}
+            {h.line2}{" "}
             {/*
               .answer-wrap isolates the word:
               overflow:hidden clips the scan-line to the word bounds
-              and keeps particles from visually bleeding into "in the"
+              and keeps particles from visually bleeding into line2
             */}
             <span className="answer-wrap">
-              <em className="hero-hl-italic">answer.</em>
+              <em className="hero-hl-italic">{h.italic}</em>
               {PARTICLES.map((p, i) => (
                 <span
                   key={i}
@@ -111,15 +114,15 @@ export default function Hero() {
 
         {/* Sub */}
         <motion.p {...fadeUp(0.3)} style={subStyle}>
-          VISIBILITY SYSTEMS FOR BRANDS
-          <br />
-          ENTERING MACHINE MEMORY.
+          {h.sub.split("\n").map((line, i, arr) => (
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
         </motion.p>
 
         {/* CTA */}
         <motion.div {...fadeUp(0.4)} style={{ marginTop: 28 }}>
           <a href="#contact" className="hero-cta">
-            START A DIAGNOSIS{" "}
+            {h.cta}{" "}
             <span style={{ color: "var(--olive)" }}>→</span>
           </a>
         </motion.div>
@@ -324,18 +327,21 @@ export default function Hero() {
         /* ── CTA ─────────────────────────────────────── */
         .hero-cta {
           display: inline-block;
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          border: 1px solid var(--warm-black);
-          padding: 12px 24px;
-          color: var(--warm-black);
+          border: 1px solid var(--button-border);
+          padding: 13px 26px;
+          min-height: 44px;
+          color: var(--text-primary);
           background: transparent;
-          transition: background 0.2s, color 0.2s;
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
         .hero-cta:hover {
           background: var(--warm-black);
+          border-color: var(--warm-black);
           color: var(--paper);
         }
 
@@ -350,18 +356,21 @@ export default function Hero() {
 }
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
   fontSize: 11,
-  letterSpacing: "0.12em",
+  fontWeight: 500,
+  letterSpacing: "0.1em",
   textTransform: "uppercase",
-  color: "var(--dust)",
+  color: "var(--text-muted)",
   marginBottom: 20,
 };
 
 const subStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
-  fontSize: 13,
-  lineHeight: 1.7,
-  color: "#5E574F",
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+  fontSize: 14,
+  fontWeight: 400,
+  lineHeight: 1.65,
+  letterSpacing: "0.01em",
+  color: "var(--text-body)",
   maxWidth: 360,
 };

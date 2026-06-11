@@ -53,7 +53,7 @@ export default function ManualContents() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .mtoc-list { list-style: none; }
         .mtoc-row {
@@ -114,7 +114,7 @@ export default function ManualContents() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
 
         @media (prefers-reduced-motion: reduce) {

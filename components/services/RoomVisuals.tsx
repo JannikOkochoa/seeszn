@@ -15,7 +15,7 @@ const tag = {
   fontFamily: MONO,
   fontSize: 8.5,
   letterSpacing: "0.115em",
-  fill: "#5E574F",
+  fill: "var(--text-secondary)",
 } as const;
 
 // ── 01 / CRAWL — architectural crawl map ─────────────────────────────────────
@@ -107,7 +107,7 @@ export function FanOut() {
           <line x1={196} y1={f.y} x2={208} y2={f.y}
             stroke={f.olive ? "var(--olive)" : "var(--ink)"} strokeWidth={1} />
           <text x={214} y={f.y + 3} {...tag}
-            fill={f.olive ? "var(--olive)" : "#5E574F"}>{f.label}</text>
+            fill={f.olive ? "var(--olive)" : "var(--text-secondary)"}>{f.label}</text>
         </g>
       ))}
 

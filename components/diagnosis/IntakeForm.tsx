@@ -1,19 +1,12 @@
 "use client";
 
 import { useState } from "react";
-
-// Scan intake — the conversion instrument. Posts to the existing
-// /api/contact endpoint (Resend); url + suspect ride along as optional fields.
-
-const SUSPECTS = [
-  "SEARCH RANKINGS",
-  "AI ANSWERS",
-  "WEBSITE",
-  "CONVERSION",
-  "UNKNOWN",
-];
+import { useTranslations } from "@/lib/i18n/context";
 
 export default function IntakeForm() {
+  const t = useTranslations();
+  const f = t.diagnosisPage.intakeForm;
+
   const [email, setEmail] = useState("");
   const [url, setUrl] = useState("");
   const [suspect, setSuspect] = useState("");
@@ -38,24 +31,21 @@ export default function IntakeForm() {
   return (
     <div className="itk">
       <div className="itk-head">
-        <span>SCAN INTAKE — NEW SPECIMEN</span>
+        <span>{f.headerLeft}</span>
         <span>SZN-SC-05</span>
       </div>
 
       {status === "success" ? (
         <div className="itk-done" role="status">
           <span className="itk-done-pip" aria-hidden="true" />
-          <p className="itk-done-title">INTAKE RECEIVED.</p>
-          <p className="itk-done-copy">
-            Your surface enters the scan. We reply from hello@seeszn.com — a
-            reading, not a pitch.
-          </p>
+          <p className="itk-done-title">{f.doneTitle}</p>
+          <p className="itk-done-copy">{f.doneCopy}</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="itk-form">
           <div className="itk-field">
             <label htmlFor="itk-email" className="itk-label">
-              FIELD 01 — CONTACT <span className="itk-req">REQUIRED</span>
+              {f.field1Label} <span className="itk-req">{f.field1Required}</span>
             </label>
             <input
               id="itk-email"
@@ -71,7 +61,7 @@ export default function IntakeForm() {
 
           <div className="itk-field">
             <label htmlFor="itk-url" className="itk-label">
-              FIELD 02 — SURFACE <span className="itk-opt">OPTIONAL</span>
+              {f.field2Label} <span className="itk-opt">{f.field2Optional}</span>
             </label>
             <input
               id="itk-url"
@@ -87,10 +77,10 @@ export default function IntakeForm() {
 
           <fieldset className="itk-field itk-fieldset">
             <legend className="itk-label">
-              FIELD 03 — SUSPECTED LEAK <span className="itk-opt">OPTIONAL</span>
+              {f.field3Label} <span className="itk-opt">{f.field3Optional}</span>
             </legend>
             <div className="itk-chips">
-              {SUSPECTS.map((s) => (
+              {f.suspects.map((s) => (
                 <label key={s} className={`itk-chip${suspect === s ? " itk-chip--on" : ""}`}>
                   <input
                     type="radio"
@@ -107,13 +97,13 @@ export default function IntakeForm() {
           </fieldset>
 
           <button type="submit" disabled={status === "loading"} className="itk-submit">
-            {status === "loading" ? "TRANSMITTING…" : "REQUEST THE SCAN"}
+            {status === "loading" ? f.submitLoading : f.submitIdle}
             <span aria-hidden="true" style={{ color: "var(--olive)" }}> →</span>
           </button>
 
           {status === "error" && (
             <p className="itk-error" role="alert">
-              TRANSMISSION FAILED. WRITE TO{" "}
+              {f.errorMessage}{" "}
               <a href="mailto:hello@seeszn.com">HELLO@SEESZN.COM</a>
             </p>
           )}
@@ -121,8 +111,8 @@ export default function IntakeForm() {
       )}
 
       <div className="itk-foot">
-        <span>NO PITCH DECK. NO RETAINER TALK.</span>
-        <span className="itk-foot-note">A READING OF YOUR SURFACE</span>
+        <span>{f.footerLeft}</span>
+        <span className="itk-foot-note">{f.footerRight}</span>
       </div>
 
       <style>{`
@@ -140,7 +130,7 @@ export default function IntakeForm() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .itk-form { padding: 24px 22px 28px; }
         .itk-field { margin-bottom: 22px; }
@@ -150,7 +140,7 @@ export default function IntakeForm() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.16em;
-          color: #5E574F;
+          color: var(--text-secondary);
           margin-bottom: 10px;
         }
         .itk-req { color: var(--olive); margin-left: 8px; font-size: 8px; }
@@ -174,7 +164,7 @@ export default function IntakeForm() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.12em;
-          color: #5E574F;
+          color: var(--text-secondary);
           border: 1px solid rgba(17,16,14,.35);
           padding: 9px 12px;
           cursor: pointer;
@@ -238,10 +228,11 @@ export default function IntakeForm() {
           margin-bottom: 12px;
         }
         .itk-done-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          line-height: 1.75;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.65;
+          color: var(--text-body);
           max-width: 360px;
         }
 
@@ -254,7 +245,7 @@ export default function IntakeForm() {
           font-family: var(--font-mono), monospace;
           font-size: 8px;
           letter-spacing: 0.16em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .itk-foot-note { color: var(--olive); }
 

@@ -221,11 +221,12 @@ export default function EvidenceArchive() {
         }
         .ea-chips { display: flex; gap: 16px; align-items: center; }
         .ea-chip {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         /* ── Artifact blocks ─────────────────────────── */
@@ -270,7 +271,7 @@ export default function EvidenceArchive() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.2em;
-          color: #5E574F;
+          color: var(--text-secondary);
           padding-bottom: 6px;
         }
         .arti-scan {
@@ -327,10 +328,11 @@ export default function EvidenceArchive() {
           padding-top: 2px;
         }
         .arti-pdo-row dd {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
           line-height: 1.65;
-          color: #5E574F;
+          color: var(--text-body);
         }
         .arti-pdo-output { color: var(--warm-black) !important; }
 
@@ -457,7 +459,7 @@ export default function EvidenceArchive() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .apsh-cols {
           display: flex;
@@ -500,7 +502,7 @@ export default function EvidenceArchive() {
         .apsh-mark {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
-          color: #5E574F;
+          color: var(--text-secondary);
           width: 72px;
           text-align: right;
         }
@@ -541,7 +543,7 @@ export default function EvidenceArchive() {
           font-family: var(--font-mono), monospace;
           font-size: 8.5px;
           letter-spacing: 0.22em;
-          color: #5E574F;
+          color: var(--text-secondary);
           border: 1px solid rgba(17,16,14,.4);
           padding: 8px 14px;
           margin-bottom: 36px;
@@ -560,7 +562,7 @@ export default function EvidenceArchive() {
           font-size: 12px;
           line-height: 1.8;
           letter-spacing: 0.05em;
-          color: #5E574F;
+          color: var(--text-secondary);
           margin-bottom: 38px;
         }
         .ea-conf-cta {

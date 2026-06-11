@@ -55,7 +55,7 @@ export default function ArchiveRegister() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .areg-list { list-style: none; }
         .areg-row {
@@ -116,7 +116,7 @@ export default function ArchiveRegister() {
           font-family: var(--font-mono), monospace;
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #5E574F;
+          color: var(--text-secondary);
         }
         .areg-foot-note { color: var(--olive); font-size: 8px; }
 

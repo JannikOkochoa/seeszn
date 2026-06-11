@@ -3,37 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import SignalAperture from "./SignalAperture";
+import LanguageSwitch from "./LanguageSwitch";
+import { useTranslations } from "@/lib/i18n/context";
 
-// ─── Navigation data ──────────────────────────────────────────────────────────
-
-const SERVICES_DATA = [
-  {
-    heading: "SEO",
-    href: "/services#crawl",
-    items: ["Technical SEO", "Content Systems", "Search Architecture", "Analytics"],
-  },
-  {
-    heading: "AI SEARCH",
-    href: "/services#retrieve",
-    items: ["GEO / AIO", "AI Overviews", "Citation Visibility", "Chat Search"],
-  },
-  {
-    heading: "WEBSITES",
-    href: "/services#trust",
-    items: ["Design Systems", "Next.js Development", "Conversion Pages", "Editorial Websites"],
-  },
-  {
-    heading: "AUDITS",
-    href: "/services#diagnose",
-    items: ["Search Diagnosis", "AI Visibility Audit", "Website Review", "Growth Roadmap"],
-  },
-] as const;
-
-const NAV_LINKS = [
-  { label: "WORK", href: "/work" },
-  { label: "INSIGHTS", href: "/insights" },
-  { label: "ABOUT", href: "/about" },
-] as const;
+// ─── Navigation data is now translation-driven (see useTranslations in Nav) ───
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -51,24 +25,27 @@ function CtaButton({
   mobile?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  const t = useTranslations();
+  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
 
   return (
     <Link
-      href="/diagnosis"
+      href={diagHref}
       onClick={onClick}
       aria-label="Book a diagnosis"
       className={className}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        fontFamily: "var(--font-mono), monospace",
-        fontSize: mobile ? 11 : 10,
-        letterSpacing: "0.12em",
+        fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+        fontSize: 12,
+        fontWeight: 600,
+        letterSpacing: "0.09em",
         textTransform: "uppercase",
-        border: `1px solid ${hovered ? "rgba(17,16,14,.65)" : "rgba(17,16,14,.38)"}`,
-        padding: mobile ? "16px 24px" : "10px 18px",
-        color: "var(--warm-black)",
-        background: hovered ? "rgba(17,16,14,.04)" : "transparent",
+        border: `1px solid ${hovered ? "var(--border-btn-hovered)" : "var(--border-btn)"}`,
+        padding: mobile ? "16px 26px" : "10px 20px",
+        color: "var(--text-primary)",
+        background: hovered ? "var(--button-hover-bg)" : "transparent",
         textDecoration: "none",
         whiteSpace: "nowrap",
         display: mobile ? "flex" : "inline-flex",
@@ -79,7 +56,7 @@ function CtaButton({
         transition: "background 0.3s, border-color 0.3s",
       }}
     >
-      BOOK A DIAGNOSIS
+      {t.nav.cta}
       <span
         aria-hidden="true"
         style={{
@@ -99,6 +76,20 @@ function CtaButton({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Nav() {
+  const nt = useTranslations();
+  const n = nt.nav;
+
+  // Build nav link hrefs based on locale
+  const isDE = nt.locale === "de";
+  const base = isDE ? "/de" : "";
+  const NAV_LINKS = [
+    { label: n.work, href: `${base}/work` },
+    { label: n.insights, href: `${base}/insights` },
+    { label: n.about, href: `${base}/about` },
+  ];
+  const SERVICES_DATA = n.servicesDropdown;
+  const servicesHref = `${base}/services`;
+
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
@@ -221,7 +212,7 @@ export default function Nav() {
               whiteSpace: "nowrap",
             }}
           >
-            AI Search visibility for brands that want to be found, cited, chosen
+            {n.utilityBar}
           </p>
         </div>
 
@@ -231,7 +222,7 @@ export default function Nav() {
             height: mainBarH,
             background: "var(--paper)",
             borderBottom: `1px solid ${
-              scrolled ? "rgba(17,16,14,.26)" : "rgba(17,16,14,.16)"
+              scrolled ? "var(--border-nav-scrolled)" : "var(--border-nav)"
             }`,
             transition: reduced
               ? "none"
@@ -301,16 +292,17 @@ export default function Nav() {
                 aria-expanded={servicesOpen}
                 aria-controls="services-panel"
                 onClick={() => setServicesOpen((o) => !o)}
-                onMouseEnter={() => setHoveredNav("SERVICES")}
+                onMouseEnter={() => setHoveredNav(n.services)}
                 onMouseLeave={() => setHoveredNav(null)}
                 style={{
                   background: "none",
                   border: "none",
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
+                  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  letterSpacing: "0.07em",
                   textTransform: "uppercase",
-                  color: "var(--warm-black)",
+                  color: "var(--text-primary)",
                   cursor: "pointer",
                   padding: "8px 0",
                   display: "flex",
@@ -320,11 +312,11 @@ export default function Nav() {
                   justifyContent: "center",
                 }}
               >
-                SERVICES
+                {n.services}
                 <span
                   aria-hidden="true"
                   style={signalLine(
-                    servicesOpen || hoveredNav === "SERVICES",
+                    servicesOpen || hoveredNav === n.services,
                     true
                   )}
                 />
@@ -339,11 +331,12 @@ export default function Nav() {
                   onMouseEnter={() => setHoveredNav(item.label)}
                   onMouseLeave={() => setHoveredNav(null)}
                   style={{
-                    fontFamily: "var(--font-mono), monospace",
-                    fontSize: 10,
-                    letterSpacing: "0.14em",
+                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    letterSpacing: "0.07em",
                     textTransform: "uppercase",
-                    color: "var(--warm-black)",
+                    color: "var(--text-primary)",
                     textDecoration: "none",
                     padding: "8px 0",
                     display: "flex",
@@ -362,12 +355,15 @@ export default function Nav() {
               ))}
             </nav>
 
-            {/* CTA — desktop */}
-            <CtaButton
-              onClick={closeAll}
-              reduced={reduced}
-              className="hidden md:inline-flex"
-            />
+            {/* Language switch + theme toggle + CTA — desktop */}
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 12 }}>
+              <LanguageSwitch />
+              <SignalAperture />
+              <CtaButton
+                onClick={closeAll}
+                reduced={reduced}
+              />
+            </div>
 
             {/* Mobile menu toggle */}
             <button
@@ -379,11 +375,12 @@ export default function Nav() {
               style={{
                 background: "none",
                 border: "none",
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 10,
-                letterSpacing: "0.14em",
+                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "var(--warm-black)",
+                color: "var(--text-primary)",
                 cursor: "pointer",
                 padding: "12px 0",
                 minHeight: 44,
@@ -437,23 +434,24 @@ export default function Nav() {
                     style={{
                       fontFamily: "var(--font-editorial), serif",
                       fontStyle: "italic",
-                      fontSize: 13,
-                      lineHeight: 1.6,
-                      color: "var(--muted)",
+                      fontSize: 14,
+                      lineHeight: 1.65,
+                      color: "var(--text-muted)",
                       maxWidth: 180,
                     }}
                   >
-                    We build the surfaces machines retrieve and people trust.
+                    {n.servicesTagline}
                   </p>
                   <Link
-                    href="/services"
+                    href={servicesHref}
                     onClick={closeAll}
                     style={{
-                      fontFamily: "var(--font-mono), monospace",
-                      fontSize: 9,
-                      letterSpacing: "0.16em",
+                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                      fontSize: 10,
+                      fontWeight: 500,
+                      letterSpacing: "0.1em",
                       textTransform: "uppercase",
-                      color: "var(--warm-black)",
+                      color: "var(--text-primary)",
                       textDecoration: "none",
                       display: "inline-flex",
                       alignItems: "center",
@@ -464,7 +462,7 @@ export default function Nav() {
                       alignSelf: "flex-start",
                     }}
                   >
-                    ENTER THE OPERATING ROOM
+                    {n.enterOperatingRoom}
                     <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
                   </Link>
                 </div>
@@ -476,11 +474,12 @@ export default function Nav() {
                       href={col.href}
                       onClick={closeAll}
                       style={{
-                        fontFamily: "var(--font-mono), monospace",
-                        fontSize: 8,
-                        letterSpacing: "0.24em",
+                        fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                        fontSize: 10,
+                        fontWeight: 500,
+                        letterSpacing: "0.12em",
                         textTransform: "uppercase",
-                        color: "var(--muted)",
+                        color: "var(--text-muted)",
                         marginBottom: 16,
                         paddingBottom: 12,
                         borderBottom: "1px solid var(--line)",
@@ -504,23 +503,21 @@ export default function Nav() {
                             href={col.href}
                             onClick={closeAll}
                             style={{
-                              fontFamily: "var(--font-mono), monospace",
-                              fontSize: 11,
-                              letterSpacing: "0.04em",
-                              color: "var(--ink)",
+                              fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                              fontSize: 13,
+                              fontWeight: 400,
+                              letterSpacing: "0.01em",
+                              color: "var(--text-body)",
                               textDecoration: "none",
                               display: "block",
                               padding: "3px 0",
-                              opacity: 0.78,
-                              transition: "opacity 0.25s, letter-spacing 0.3s",
+                              transition: "color 0.25s",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.opacity = "1";
-                              e.currentTarget.style.letterSpacing = "0.07em";
+                              e.currentTarget.style.color = "var(--text-primary)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.opacity = "0.78";
-                              e.currentTarget.style.letterSpacing = "0.04em";
+                              e.currentTarget.style.color = "var(--text-body)";
                             }}
                           >
                             {item}
@@ -591,10 +588,10 @@ export default function Nav() {
                 style={{
                   background: "none",
                   border: "none",
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  color: "var(--warm-black)",
+                  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 400,
+                  color: "var(--text-primary)",
                   cursor: "pointer",
                   padding: "12px 0",
                   minHeight: 44,
@@ -633,7 +630,7 @@ export default function Nav() {
                     minHeight: 44,
                   }}
                 >
-                  SERVICES
+                  {n.services}
                   <span
                     aria-hidden="true"
                     style={{
@@ -660,14 +657,15 @@ export default function Nav() {
                       style={{ overflow: "hidden" }}
                     >
                       <Link
-                        href="/services"
+                        href={servicesHref}
                         onClick={closeAll}
                         style={{
-                          fontFamily: "var(--font-mono), monospace",
+                          fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
                           fontSize: 11,
-                          letterSpacing: "0.14em",
+                          fontWeight: 500,
+                          letterSpacing: "0.1em",
                           textTransform: "uppercase",
-                          color: "var(--warm-black)",
+                          color: "var(--text-primary)",
                           textDecoration: "none",
                           display: "inline-flex",
                           alignItems: "center",
@@ -677,7 +675,7 @@ export default function Nav() {
                           borderBottom: "1px solid var(--signal)",
                         }}
                       >
-                        ALL SERVICES
+                        {n.allServices}
                         <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
                       </Link>
                       <div
@@ -692,11 +690,12 @@ export default function Nav() {
                           <div key={col.heading}>
                             <p
                               style={{
-                                fontFamily: "var(--font-mono), monospace",
-                                fontSize: 8,
-                                letterSpacing: "0.22em",
+                                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                                fontSize: 10,
+                                fontWeight: 500,
+                                letterSpacing: "0.12em",
                                 textTransform: "uppercase",
-                                color: "var(--muted)",
+                                color: "var(--text-muted)",
                                 marginBottom: 10,
                               }}
                             >
@@ -716,11 +715,11 @@ export default function Nav() {
                                     href={col.href}
                                     onClick={closeAll}
                                     style={{
-                                      fontFamily: "var(--font-mono), monospace",
-                                      fontSize: 11,
-                                      color: "var(--warm-black)",
+                                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                                      fontSize: 14,
+                                      fontWeight: 400,
+                                      color: "var(--text-body)",
                                       textDecoration: "none",
-                                      opacity: 0.68,
                                       display: "block",
                                       padding: "3px 0",
                                     }}
@@ -762,8 +761,11 @@ export default function Nav() {
               ))}
             </nav>
 
-            {/* Drawer CTA */}
+            {/* Drawer CTA + language */}
             <div style={{ padding: "32px", flexShrink: 0 }}>
+              <div style={{ marginBottom: 20 }}>
+                <LanguageSwitch mobile />
+              </div>
               <CtaButton onClick={closeAll} reduced={reduced} mobile />
             </div>
           </motion.div>

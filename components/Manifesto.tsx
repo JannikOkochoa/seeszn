@@ -2,17 +2,13 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const CONTRASTS = [
-  { left: "NOT RANKINGS", right: "RECALL" },
-  { left: "NOT TRAFFIC", right: "PRESENCE" },
-  { left: "NOT CONTENT", right: "CITATIONS" },
-  { left: "NOT REACH", right: "AUTHORITY" },
-];
-
 export default function Manifesto() {
+  const t = useTranslations();
+  const m = t.manifesto;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
 
@@ -43,7 +39,7 @@ export default function Manifesto() {
         <div>
           <motion.div {...anim(0)} style={{ display: "flex", gap: 16, marginBottom: 40 }}>
             <span style={labelStyle}>05</span>
-            <span style={labelStyle}>OUR MANIFESTO</span>
+            <span style={labelStyle}>{m.sectionLabel}</span>
           </motion.div>
 
           <motion.h2
@@ -57,22 +53,21 @@ export default function Manifesto() {
               color: "var(--warm-black)",
             }}
           >
-            IF THE MODEL
+            {m.headlinePart1}
             <br />
-            CANNOT{" "}
-            <span style={{ color: "var(--olive)" }}>CITE</span> YOU,
+            {m.headlinePart2}<span style={{ color: "var(--olive)" }}>{m.headlineCiteWord}</span>{m.headlinePart3}
             <br />
-            YOU DO NOT EXIST.
+            {m.headlinePart4}
           </motion.h2>
         </div>
 
         {/* RIGHT — contrasts */}
         <div style={{ paddingTop: 80 }}>
-          {CONTRASTS.map((row, i) => (
+          {m.contrasts.map((row, i) => (
             <motion.div
               key={row.left}
               {...anim(0.08 + i * 0.06)}
-              className={`mfst-pair${i === CONTRASTS.length - 1 ? " mfst-pair--last" : ""}`}
+              className={`mfst-pair${i === m.contrasts.length - 1 ? " mfst-pair--last" : ""}`}
             >
               <span className="mfst-left">{row.left}</span>
               <span className="mfst-arrow">→</span>
@@ -84,13 +79,14 @@ export default function Manifesto() {
             <a
               href="#contact"
               style={{
-                fontFamily: "var(--font-mono), monospace",
+                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
                 fontSize: 12,
-                color: "var(--olive)",
-                letterSpacing: "0.08em",
+                fontWeight: 500,
+                color: "var(--signal)",
+                letterSpacing: "0.06em",
               }}
             >
-              READ MORE →
+              {m.readMore}
             </a>
           </motion.div>
         </div>
@@ -110,9 +106,10 @@ export default function Manifesto() {
 
         /* ── Left — old metric (struck out) ─────────── */
         .mfst-left {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          color: var(--dust);
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          color: var(--text-faint);
           text-decoration: line-through;
           flex: 1;
           transition:
@@ -126,9 +123,9 @@ export default function Manifesto() {
 
         /* ── Arrow ───────────────────────────────────── */
         .mfst-arrow {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          color: var(--dust);
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
+          color: var(--text-faint);
           transition: color 350ms ease 80ms;
         }
         .mfst-pair:hover .mfst-arrow {
@@ -137,10 +134,10 @@ export default function Manifesto() {
 
         /* ── Right — new metric (confirmed) ─────────── */
         .mfst-right {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14px;
           font-weight: 500;
-          color: var(--warm-black);
+          color: var(--text-primary);
           flex: 1;
           text-align: right;
           position: relative;
@@ -178,9 +175,10 @@ export default function Manifesto() {
 }
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
+  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
   fontSize: 11,
-  letterSpacing: "0.12em",
+  fontWeight: 500,
+  letterSpacing: "0.1em",
   textTransform: "uppercase",
-  color: "var(--dust)",
+  color: "var(--text-muted)",
 };

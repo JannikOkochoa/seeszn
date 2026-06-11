@@ -2,45 +2,20 @@
 
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const ROWS = [
-  {
-    num: "01",
-    name: "PRESENCE",
-    sub: "Appear where intent begins.",
-    detail:
-      "We structure your brand's content, entity data, and authority signals so it surfaces at the moment a user or AI begins forming a question — before they've finished asking it.",
-    img: "/seeszn-home-main-01.png",
-  },
-  {
-    num: "02",
-    name: "SOURCES",
-    sub: "Become the material machines pull from.",
-    detail:
-      "AI systems cite sources. We engineer your brand to be among them — through structured data, authoritative content architecture, and cross-platform signal consistency.",
-    img: "/seeszn-home-main-02.png",
-  },
-  {
-    num: "03",
-    name: "CITATIONS",
-    sub: "Turn mentions into memory.",
-    detail:
-      "Being mentioned is not enough. We convert brand mentions into durable citations that AI models treat as confirmed knowledge — moving you from noise to record.",
-    img: "/seeszn-home-main-03.png",
-  },
-  {
-    num: "04",
-    name: "TIMING",
-    sub: "Enter before the category hardens.",
-    detail:
-      "The brands that dominate AI answers are the ones that entered the machine's memory early. We identify your window and execute before your competitors close it.",
-    img: "/seeszn-home-main-04.png",
-  },
+const IMGS = [
+  "/seeszn-home-main-01.png",
+  "/seeszn-home-main-02.png",
+  "/seeszn-home-main-03.png",
+  "/seeszn-home-main-04.png",
 ];
 
 export default function Services() {
+  const t = useTranslations();
+  const ROWS = t.homepageServices.rows;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.1 });
   const [open, setOpen] = useState<number | null>(null);
@@ -56,13 +31,13 @@ export default function Services() {
         className="svc-label-row"
       >
         <span className="svc-label">02</span>
-        <span className="svc-label">WHAT WE BUILD</span>
+        <span className="svc-label">{t.homepageServices.sectionLabel}</span>
       </motion.div>
 
       {/* Accordion rows */}
       {ROWS.map((row, i) => (
         <motion.div
-          key={row.num}
+          key={i}
           initial={{ opacity: 0, y: 12 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, ease: EASE, delay: i * 0.07 }}
@@ -91,7 +66,7 @@ export default function Services() {
 
             {/* Right: image */}
             <div className="svc-img-wrap">
-              <img src={row.img} alt={row.name} className="svc-img" />
+              <img src={IMGS[i]} alt={row.name} className="svc-img" />
               <div className="svc-img-overlay" />
             </div>
           </div>
@@ -131,11 +106,12 @@ export default function Services() {
           margin-bottom: 32px;
         }
         .svc-label {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         /* ── Row wrapper ─────────────────────────────── */
@@ -242,14 +218,15 @@ export default function Services() {
           margin-bottom: 5px;
         }
         .svc-sub {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          color: #5E574F;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          color: var(--text-body);
           line-height: 1.6;
           transition: color 400ms ease;
         }
         .svc-row-grid:hover .svc-sub {
-          color: #3A3530;
+          color: var(--text-primary);
         }
 
         /* ── Image column ────────────────────────────── */
@@ -302,10 +279,11 @@ export default function Services() {
 
         /* ── Expanded detail ─────────────────────────── */
         .svc-detail {
-          font-family: var(--font-mono), monospace;
-          font-size: 13px;
-          color: #5E574F;
-          line-height: 1.7;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          font-weight: 400;
+          color: var(--text-body);
+          line-height: 1.65;
           max-width: 640px;
           padding: 0 64px 28px;
         }

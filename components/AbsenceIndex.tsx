@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -58,6 +59,8 @@ const DOTS: Dot[] = (() => {
 })();
 
 export default function AbsenceIndex() {
+  const t = useTranslations();
+  const ai = t.absenceIndex;
   const sectionRef = useRef<HTMLElement>(null);
   const svgRef     = useRef<SVGSVGElement>(null);
   const nearRef    = useRef<SVGGElement>(null);  // dots 0–129, full repulsion
@@ -109,7 +112,7 @@ export default function AbsenceIndex() {
       {/* ── Label ── */}
       <motion.div {...anim(0)} className="abs-header">
         <span className="abs-chip">03</span>
-        <span className="abs-chip">THE ABSENCE INDEX</span>
+        <span className="abs-chip">{ai.chip}</span>
       </motion.div>
 
       {/* ── Two-column grid ── */}
@@ -118,25 +121,23 @@ export default function AbsenceIndex() {
         {/* LEFT — text */}
         <div className="abs-left">
           <motion.h2 {...anim(0.08)} className="abs-headline">
-            Absence
+            {ai.headlineRoman}
             <br />
-            is measurable.
+            <em>{ai.headlineItalic}</em>
           </motion.h2>
 
           <motion.div {...anim(0.15)}>
-            <span className="abs-stat">83%</span>
+            <span className="abs-stat">{ai.stat}</span>
           </motion.div>
 
           <motion.p {...anim(0.22)} className="abs-copy">
-            OF DEFINED PROMPTS IN A CATEGORY
-            <br />
-            CAN FORM ANSWERS WITHOUT THE
-            <br />
-            BRANDS THAT BELIEVE THEY OWN IT.
+            {ai.copy.split("\n").map((line, i, arr) => (
+              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+            ))}
           </motion.p>
 
           <motion.div {...anim(0.28)} style={{ marginTop: 32 }}>
-            <a href="#contact" className="abs-cta">SEE THE DATA →</a>
+            <a href="#contact" className="abs-cta">{ai.cta}</a>
           </motion.div>
         </div>
 
@@ -216,7 +217,7 @@ export default function AbsenceIndex() {
                   fontFamily="var(--font-mono), monospace"
                   fontSize={8.5}
                   letterSpacing="0.115em"
-                  fill={c.olive ? "var(--olive)" : "#5E574F"}
+                  fill={c.olive ? "var(--olive)" : "var(--text-secondary)"}
                   className={`abs-label${c.olive ? " abs-label--citation" : ""}`}
                   style={{ "--li": c.li } as React.CSSProperties}
                 >
@@ -268,11 +269,12 @@ export default function AbsenceIndex() {
           margin-bottom: 52px;
         }
         .abs-chip {
-          font-family: var(--font-mono), monospace;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--dust);
+          color: var(--text-muted);
         }
 
         /* ── Two-column grid ─────────────────────────── */
@@ -306,19 +308,21 @@ export default function AbsenceIndex() {
           margin-bottom: 22px;
         }
         .abs-copy {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          color: #5E574F;
-          line-height: 1.75;
-          letter-spacing: 0.04em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-body);
+          line-height: 1.65;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
         }
         .abs-cta {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: var(--olive);
+          color: var(--signal);
           transition: opacity 200ms ease;
         }
         .abs-cta:hover { opacity: 0.72; }

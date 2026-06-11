@@ -2,34 +2,16 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const CARDS = [
-  {
-    index: "01",
-    sector: "EDUCATION",
-    headline: "Searchable.\nNot cited.",
-    trace: "SOURCE SURFACE",
-    img: "/seeszn-home-main-02.png",
-  },
-  {
-    index: "02",
-    sector: "TRAVEL",
-    headline: "Visible.\nNot remembered.",
-    trace: "CATEGORY TRACE",
-    img: "/seeszn-home-main-03.png",
-  },
-  {
-    index: "03",
-    sector: "B2B SAAS",
-    headline: "Mentioned.\nNot trusted.",
-    trace: "TRUST SIGNAL",
-    img: "/seeszn-home-main-04.png",
-  },
-];
+const CARD_IMGS = ["/seeszn-home-main-02.png", "/seeszn-home-main-03.png", "/seeszn-home-main-04.png"];
 
 export default function Cases() {
+  const t = useTranslations();
+  const cs = t.cases;
+  const CARDS = cs.cards;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
 
@@ -45,10 +27,10 @@ export default function Cases() {
       >
         <div className="cases-labels">
           <span className="cases-chip">04</span>
-          <span className="cases-chip">SELECTED PROOFS</span>
+          <span className="cases-chip">{cs.chip}</span>
         </div>
         <a href="/work" className="cases-viewall">
-          VIEW ALL CASES
+          {cs.viewAll}
           <span className="cases-viewall-arrow">→</span>
         </a>
       </motion.div>
@@ -65,7 +47,7 @@ export default function Cases() {
           >
             {/* Full-bleed image */}
             <img
-              src={card.img}
+              src={CARD_IMGS[i]}
               alt={`Case ${card.index} — ${card.sector}`}
               className="cases-img"
             />
