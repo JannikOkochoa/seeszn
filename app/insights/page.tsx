@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import RoomHero from "@/components/rooms/RoomHero";
 import TheWatch from "@/components/insights/TheWatch";
+import Observatory from "@/components/insights/Observatory";
 import FieldNotes from "@/components/insights/FieldNotes";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
@@ -41,9 +42,10 @@ export default function InsightsPage() {
           cta={{ label: "BOOK A DIAGNOSIS", href: "/diagnosis" }}
           panel={<TheWatch />}
         />
+        <Observatory />
         <FieldNotes />
         <ScanCTA
-          index="03"
+          index="04"
           roman="Reading is not"
           italic="visibility."
           sub={[

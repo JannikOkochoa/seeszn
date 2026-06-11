@@ -1,6 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
+import { useRef } from "react";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -47,10 +53,35 @@ export default function RoomHero({
   cta,
   panel,
 }: RoomHeroProps) {
+  const reduced = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Ghost word — the italic line stripped to its bare letters
+  const ghostWord = italic.replace(/[^\p{L}\s]/gu, "").trim().toUpperCase();
+
+  // Scroll parallax — statement lifts away, ghost counter-drifts, panel lags
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const yContent = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "-16%"]);
+  const yGhost = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "-55%"]);
+  const yPanel = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "10%"]);
+  const heroFade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
   return (
-    <section className="rh-section">
+    <section ref={sectionRef} className="rh-section">
+      {/* Ghost word — counter-parallax backdrop */}
+      <motion.span className="rh-ghost" style={{ y: yGhost }} aria-hidden="true">
+        {ghostWord}
+      </motion.span>
+
+      {/* Scan grid + sweep */}
+      <div className="rh-grid-bg" aria-hidden="true" />
+      <span className="rh-sweep" aria-hidden="true" />
+
       {/* LEFT — statement */}
-      <div className="rh-left">
+      <motion.div className="rh-left" style={{ y: yContent, opacity: heroFade }}>
         <motion.div {...fadeUp(0)} className="rh-label-row">
           <span className="rh-label">{index}</span>
           <span className="rh-label">{room}</span>
@@ -104,10 +135,10 @@ export default function RoomHero({
             {meta}
           </span>
         )}
-      </div>
+      </motion.div>
 
-      {/* RIGHT — room instrument */}
-      <div className="rh-right">
+      {/* RIGHT — room instrument, lagging parallax */}
+      <motion.div className="rh-right" style={{ y: yPanel }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -116,7 +147,7 @@ export default function RoomHero({
         >
           {panel}
         </motion.div>
-      </div>
+      </motion.div>
 
       <style>{`
         .rh-section {
@@ -126,6 +157,58 @@ export default function RoomHero({
           border-bottom: 1px solid var(--warm-black);
           padding-top: 106px;
           background: var(--paper);
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* ── Ghost word ──────────────────────────────── */
+        .rh-ghost {
+          position: absolute;
+          left: -2vw;
+          bottom: -4vw;
+          z-index: 0;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(110px, 17vw, 300px);
+          letter-spacing: -0.05em;
+          line-height: 0.8;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 16%, transparent);
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+          will-change: transform;
+        }
+
+        /* ── Scan grid + sweep ───────────────────────── */
+        .rh-grid-bg {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background-image:
+            linear-gradient(color-mix(in srgb, var(--warm-black) 4%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, var(--warm-black) 4%, transparent) 1px, transparent 1px);
+          background-size: 120px 120px;
+          mask-image: radial-gradient(ellipse 85% 85% at 65% 45%, black 0%, transparent 75%);
+        }
+        .rh-sweep {
+          position: absolute;
+          top: 0; bottom: 0;
+          width: 1px;
+          background: var(--olive);
+          z-index: 1;
+          opacity: 0;
+          animation: rh-sweep 9s cubic-bezier(.16,1,.3,1) 2.2s infinite;
+          pointer-events: none;
+        }
+        @keyframes rh-sweep {
+          0%   { left: 0%; opacity: 0; }
+          4%   { opacity: 0.45; }
+          32%  { opacity: 0.1; }
+          40%  { left: 100%; opacity: 0; }
+          100% { left: 100%; opacity: 0; }
         }
         .rh-left {
           padding: 64px 56px 64px 64px;
@@ -133,6 +216,8 @@ export default function RoomHero({
           flex-direction: column;
           justify-content: flex-start;
           position: relative;
+          z-index: 2;
+          will-change: transform;
         }
         .rh-label-row { display: flex; gap: 16px; margin-bottom: 24px; align-items: baseline; }
         .rh-label {
@@ -207,8 +292,15 @@ export default function RoomHero({
           align-items: center;
           justify-content: center;
           padding: 64px 64px 64px 56px;
+          position: relative;
+          z-index: 2;
+          will-change: transform;
         }
         .rh-panel-slot { width: 100%; display: flex; justify-content: center; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .rh-sweep { animation: none; }
+        }
 
         @media (max-width: 900px) {
           .rh-section {
@@ -222,6 +314,7 @@ export default function RoomHero({
             border-top: 1px solid var(--warm-black);
             padding: 44px 24px 56px;
           }
+          .rh-ghost { font-size: 30vw; bottom: -6vw; }
         }
       `}</style>
     </section>

@@ -1,8 +1,15 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -28,8 +35,21 @@ export default function ScanCTA({
   sub,
   closing,
 }: ScanCTAProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
+  const reduced = useReducedMotion();
+  const t = useTranslations();
+  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
+
+  // Final inhale — headline grows in, ghost word counter-drifts behind
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end end"],
+  });
+  const scale = useTransform(scrollYProgress, [0, 1], reduced ? [1, 1] : [0.93, 1]);
+  const ghostY = useTransform(scrollYProgress, [0, 1], reduced ? ["0%", "0%"] : ["35%", "-15%"]);
+
+  const ghostWord = italic.replace(/[^\p{L}\s]/gu, "").trim().toUpperCase();
 
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: 16 },
@@ -39,13 +59,18 @@ export default function ScanCTA({
 
   return (
     <section ref={ref} className="scta-section">
+      {/* Counter-parallax ghost word */}
+      <motion.span className="scta-ghost" style={{ y: ghostY, x: "-50%" }} aria-hidden="true">
+        {ghostWord}
+      </motion.span>
+
       <motion.div {...anim(0)} className="scta-label-row">
         <span className="scta-label">{index}</span>
         <span className="scta-label">{label}</span>
       </motion.div>
 
       <div className="scta-center">
-        <motion.h2 {...anim(0.08)} className="scta-headline">
+        <motion.h2 {...anim(0.08)} className="scta-headline" style={{ scale }}>
           {roman}
           <br />
           <em>{italic}</em>
@@ -61,8 +86,8 @@ export default function ScanCTA({
         </motion.p>
 
         <motion.div {...anim(0.24)}>
-          <Link href="/diagnosis" className="scta-cta">
-            BOOK A DIAGNOSIS <span style={{ color: "var(--olive)" }}>→</span>
+          <Link href={diagHref} className="scta-cta">
+            {t.nav.cta} <span style={{ color: "var(--olive)" }}>→</span>
           </Link>
         </motion.div>
 
@@ -79,7 +104,27 @@ export default function ScanCTA({
           background: var(--paper);
           border-top: 1px solid var(--warm-black);
           padding: 72px 64px 110px;
+          position: relative;
+          overflow: hidden;
         }
+        .scta-ghost {
+          position: absolute;
+          left: 50%;
+          top: 34%;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(100px, 16vw, 280px);
+          letter-spacing: -0.04em;
+          line-height: 1;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 8%, transparent);
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+          z-index: 0;
+        }
+        .scta-label-row, .scta-center { position: relative; z-index: 1; }
         .scta-label-row { display: flex; gap: 16px; margin-bottom: 72px; }
         .scta-label {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;

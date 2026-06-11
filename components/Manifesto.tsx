@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
 import { useRef } from "react";
 import { useTranslations } from "@/lib/i18n/context";
 
@@ -9,8 +15,17 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 export default function Manifesto() {
   const t = useTranslations();
   const m = t.manifesto;
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
+  const reduced = useReducedMotion();
+
+  // The manifesto inhales as it arrives; the ghost word counter-drifts
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const scale = useTransform(scrollYProgress, [0, 0.45], reduced ? [1, 1] : [0.94, 1]);
+  const ghostY = useTransform(scrollYProgress, [0, 1], reduced ? ["0%", "0%"] : ["40%", "-40%"]);
 
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: 16 },
@@ -25,14 +40,43 @@ export default function Manifesto() {
         padding: "96px 64px",
         background: "var(--paper)",
         borderTop: "1px solid var(--warm-black)",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <div
+      {/* Counter-parallax ghost word */}
+      <motion.span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: "-3vw",
+          top: "8%",
+          y: ghostY,
+          fontFamily: "var(--font-display), sans-serif",
+          fontWeight: 800,
+          fontSize: "clamp(140px, 22vw, 360px)",
+          letterSpacing: "-0.05em",
+          lineHeight: 1,
+          textTransform: "uppercase",
+          color: "transparent",
+          WebkitTextStroke: "1px color-mix(in srgb, var(--olive) 36%, transparent)",
+          pointerEvents: "none",
+          userSelect: "none",
+          whiteSpace: "nowrap",
+          zIndex: 0,
+        }}
+      >
+        {m.headlineCiteWord}
+      </motion.span>
+      <motion.div
         style={{
           display: "grid",
           gridTemplateColumns: "55fr 45fr",
           gap: 80,
           alignItems: "start",
+          scale,
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* LEFT — headline */}
@@ -90,7 +134,7 @@ export default function Manifesto() {
             </a>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
       <style>{`
         /* ── Contrast pair row ───────────────────────── */
         .mfst-pair {

@@ -1,12 +1,14 @@
 import Nav from "@/components/Nav";
 import RoomHero from "@/components/rooms/RoomHero";
 import ArchiveRegister from "@/components/work/ArchiveRegister";
-import EvidenceArchive from "@/components/work/EvidenceArchive";
+import CaseFiles from "@/components/work/CaseFiles";
+import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
 import { de } from "@/lib/i18n/de";
 
 export default function DeWorkPage() {
   const h = de.workPage.hero;
+  const c = de.workPage.closer;
   return (
     <>
       <Nav />
@@ -23,7 +25,15 @@ export default function DeWorkPage() {
           cta={h.cta}
           panel={<ArchiveRegister />}
         />
-        <EvidenceArchive />
+        <CaseFiles />
+        <ScanCTA
+          index={c.index}
+          label={c.label}
+          roman={c.roman}
+          italic={c.italic}
+          sub={[...c.sub]}
+          closing={c.closing}
+        />
       </main>
       <Footer />
     </>

@@ -19,7 +19,7 @@ export default function TheShift() {
   });
 
   return (
-    <section ref={ref} className="shift-section">
+    <section ref={ref} className={`shift-section${inView ? " shift--on" : ""}`}>
 
       {/* LEFT — headline */}
       <div className="shift-left">
@@ -133,8 +133,9 @@ export default function TheShift() {
           z-index: 2;
         }
 
-        .shift-section:hover .shift-scanner {
-          animation: seesznScan 900ms cubic-bezier(.16,1,.3,1) 120ms forwards;
+        .shift-section:hover .shift-scanner,
+        .shift--on .shift-scanner {
+          animation: seesznScan 900ms cubic-bezier(.16,1,.3,1) 320ms forwards;
         }
 
         @keyframes seesznScan {
@@ -169,7 +170,8 @@ export default function TheShift() {
           transition: transform 1100ms cubic-bezier(.16,1,.3,1) 60ms;
         }
 
-        .shift-section:hover .tl-line-active {
+        .shift-section:hover .tl-line-active,
+        .shift--on .tl-line-active {
           transform: translateY(-50%) scaleX(1);
         }
 

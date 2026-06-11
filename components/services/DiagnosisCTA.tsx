@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
 import { useRef } from "react";
 import { useTranslations } from "@/lib/i18n/context";
 
@@ -9,8 +15,17 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 export default function DiagnosisCTA() {
   const t = useTranslations();
   const dc = t.servicesPage.diagnosisCta;
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
+  const reduced = useReducedMotion();
+
+  // The headline grows slightly as the section arrives — a final inhale
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end end"],
+  });
+  const scale = useTransform(scrollYProgress, [0, 1], reduced ? [1, 1] : [0.92, 1]);
+  const ghostY = useTransform(scrollYProgress, [0, 1], reduced ? ["0%", "0%"] : ["30%", "-10%"]);
 
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: 16 },
@@ -20,13 +35,18 @@ export default function DiagnosisCTA() {
 
   return (
     <section ref={ref} className="dcta-section">
+      {/* Counter-parallax ghost word */}
+      <motion.span className="dcta-ghost" style={{ y: ghostY, x: "-50%" }} aria-hidden="true">
+        {dc.cta.split(" ").pop()}
+      </motion.span>
+
       <motion.div {...anim(0)} className="dcta-label-row">
-        <span className="dcta-label">04</span>
+        <span className="dcta-label">06</span>
         <span className="dcta-label">{dc.sectionLabel}</span>
       </motion.div>
 
       <div className="dcta-center">
-        <motion.h2 {...anim(0.08)} className="dcta-headline">
+        <motion.h2 {...anim(0.08)} className="dcta-headline" style={{ scale }}>
           {dc.headlineRoman}
           <br />
           <em>{dc.headlineItalic}</em>
@@ -54,10 +74,30 @@ export default function DiagnosisCTA() {
 
       <style>{`
         .dcta-section {
+          position: relative;
           background: var(--paper);
           border-top: 1px solid var(--warm-black);
           padding: 72px 64px 110px;
+          overflow: hidden;
         }
+        .dcta-ghost {
+          position: absolute;
+          left: 50%;
+          top: 38%;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(120px, 20vw, 340px);
+          letter-spacing: -0.04em;
+          line-height: 1;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 8%, transparent);
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+          z-index: 0;
+        }
+        .dcta-label-row, .dcta-center { position: relative; z-index: 1; }
         .dcta-label-row { display: flex; gap: 16px; margin-bottom: 72px; }
         .dcta-label {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;

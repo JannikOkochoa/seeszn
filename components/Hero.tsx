@@ -1,6 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useMotionValue,
+  useReducedMotion,
+} from "framer-motion";
+import { useRef } from "react";
+import Image from "next/image";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -43,24 +52,65 @@ const PARTICLES: Array<{
 export default function Hero() {
   const t = useTranslations();
   const h = t.hero;
+  const reduced = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Ghost word — the italic headline word, stripped to its bare form
+  const ghostWord = h.italic.replace(/[^\p{L}]/gu, "").toUpperCase();
+
+  // ── Scroll parallax — image sinks and swells, ghost counter-drifts ──
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const yImage = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "22%"]);
+  const scaleImage = useTransform(scrollYProgress, [0, 1], [1, reduced ? 1 : 1.16]);
+  const yGhost = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "-55%"]);
+  const yContent = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "-14%"]);
+  const heroFade = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+
+  // ── Mouse parallax — the carved form leans toward the cursor ──
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const smx = useSpring(mx, { stiffness: 40, damping: 18 });
+  const smy = useSpring(my, { stiffness: 40, damping: 18 });
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (reduced) return;
+    const { innerWidth, innerHeight } = window;
+    mx.set((e.clientX / innerWidth - 0.5) * -18);
+    my.set((e.clientY / innerHeight - 0.5) * -12);
+  };
+
   return (
     <section
+      ref={sectionRef}
+      onMouseMove={onMouseMove}
       style={{
         minHeight: "100vh",
         display: "grid",
         gridTemplateColumns: "55% 45%",
         borderBottom: "1px solid var(--warm-black)",
         paddingTop: 106,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Giant ghost word — counter-scrolls behind everything */}
+      <motion.span className="hero-ghost" style={{ y: yGhost }} aria-hidden="true">
+        {ghostWord}
+      </motion.span>
       {/* LEFT COLUMN */}
-      <div
+      <motion.div
         style={{
           padding: "56px 56px 56px 64px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
           position: "relative",
+          y: yContent,
+          opacity: heroFade,
+          zIndex: 1,
         }}
       >
         {/* Section label */}
@@ -147,28 +197,34 @@ export default function Hero() {
         >
           PARIS — BREMEN — BANGKOK
         </span>
-      </div>
+      </motion.div>
 
-      {/* RIGHT COLUMN — image */}
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <img
-          src="/seeszn-home-main-picture.png"
-          alt="Carved concrete form"
+      {/* RIGHT COLUMN — parallax image */}
+      <div className="hero-img-col" style={{ position: "relative", overflow: "hidden" }}>
+        <motion.div
           style={{
             position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center 20%",
-            display: "block",
+            inset: "-8% -4%",
+            y: yImage,
+            scale: scaleImage,
+            willChange: "transform",
           }}
-        />
+        >
+          <motion.div style={{ position: "absolute", inset: 0, x: smx, y: smy }}>
+            <Image
+              src="/seeszn-home-main-picture.png"
+              alt="Carved concrete form"
+              fill
+              priority
+              style={{ objectFit: "cover", objectPosition: "center 20%" }}
+              sizes="(max-width: 768px) 0px, 45vw"
+            />
+          </motion.div>
+        </motion.div>
+
+        {/* Scan sweep over the carved form */}
+        <span className="hero-img-sweep" aria-hidden="true" />
+
         <span
           style={{
             position: "absolute",
@@ -186,7 +242,83 @@ export default function Hero() {
         </span>
       </div>
 
+      {/* Scroll indicator — falling signal line */}
+      <motion.div
+        className="hero-scroll-hint"
+        style={{ opacity: heroFade }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.8, duration: 1 }}
+        aria-hidden="true"
+      >
+        <span className="hero-scroll-line" />
+      </motion.div>
+
       <style>{`
+        /* ── Ghost word — counter-parallax backdrop ──── */
+        .hero-ghost {
+          position: absolute;
+          left: -2vw;
+          bottom: -5vw;
+          z-index: 0;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(140px, 23vw, 380px);
+          letter-spacing: -0.05em;
+          line-height: 0.8;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 16%, transparent);
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+          will-change: transform;
+        }
+
+        /* ── Image scan sweep ────────────────────────── */
+        .hero-img-sweep {
+          position: absolute;
+          top: 0; bottom: 0;
+          width: 1px;
+          background: var(--olive);
+          z-index: 2;
+          opacity: 0;
+          animation: hero-sweep 8s cubic-bezier(.16,1,.3,1) 2.4s infinite;
+          pointer-events: none;
+        }
+        @keyframes hero-sweep {
+          0%   { left: 0%; opacity: 0; }
+          4%   { opacity: 0.5; }
+          34%  { opacity: 0.12; }
+          42%  { left: 100%; opacity: 0; }
+          100% { left: 100%; opacity: 0; }
+        }
+
+        /* ── Scroll indicator ────────────────────────── */
+        .hero-scroll-hint {
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          height: 56px;
+          width: 1px;
+          overflow: hidden;
+          z-index: 2;
+        }
+        .hero-scroll-line {
+          position: absolute;
+          left: 0; top: -100%;
+          width: 1px;
+          height: 100%;
+          background: var(--warm-black);
+          animation: hero-drop 2.2s cubic-bezier(.16,1,.3,1) infinite;
+        }
+        @keyframes hero-drop {
+          0%   { top: -100%; }
+          55%  { top: 0%; }
+          100% { top: 100%; }
+        }
+
         /* ── Headline ────────────────────────────────── */
         .hero-headline {
           color: var(--warm-black);
@@ -316,6 +448,8 @@ export default function Hero() {
           .hero-hl-italic      { animation: none; }
           .sig-node            { display: none !important; }
           .answer-wrap::after  { display: none !important; }
+          .hero-img-sweep      { animation: none; }
+          .hero-scroll-line    { animation: none; }
         }
 
         /* ── Mobile — strip heavy effects ────────────── */
@@ -348,7 +482,9 @@ export default function Hero() {
         /* ── Mobile layout ───────────────────────────── */
         @media (max-width: 768px) {
           section { grid-template-columns: 1fr !important; }
-          section > div:last-child { display: none; }
+          .hero-img-col { display: none; }
+          .hero-scroll-hint { display: none; }
+          .hero-ghost { font-size: 36vw; bottom: -8vw; }
         }
       `}</style>
     </section>

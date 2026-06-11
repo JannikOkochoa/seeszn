@@ -1,274 +1,364 @@
 "use client";
 
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useInView,
+  useReducedMotion,
+} from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+// Intelligence Room accent — matches the Observatory
+const INS = "#66aabf";
+
+// The dossier line — vertical scroll drives a horizontal ride through
+// the field notes. On mobile and reduced motion it falls back to a
+// native swipeable rail with scroll-snap.
 export default function FieldNotes() {
   const t = useTranslations();
   const fn = t.insightsPage.fieldNotes;
   const NOTES = fn.notes;
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.08 });
-  const [open, setOpen] = useState<number | null>(null);
+  const reduced = useReducedMotion();
+
+  const outerRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef(null);
+  const introIn = useInView(introRef, { once: true, amount: 0.4 });
+
+  const [endX, setEndX] = useState(0);
+  const pinned = endX < 0;
+
+  useEffect(() => {
+    const measure = () => {
+      if (reduced || window.innerWidth < 900 || !trackRef.current) {
+        setEndX(0);
+        return;
+      }
+      const total = trackRef.current.scrollWidth;
+      setEndX(Math.min(0, window.innerWidth - total));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [reduced]);
+
+  const { scrollYProgress } = useScroll({
+    target: outerRef,
+    offset: ["start start", "end end"],
+  });
+  const x = useTransform(scrollYProgress, [0, 1], [0, endX]);
+
+  const anim = (delay: number) => ({
+    initial: { opacity: 0, y: 16 },
+    animate: introIn ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+    transition: { duration: 0.65, ease: EASE, delay },
+  });
 
   return (
-    <section ref={ref} className="fn-section" aria-label="Field notes — the intelligence index">
-      <div className="fn-header">
-        <div className="fn-chips">
-          <span className="fn-chip">02</span>
-          <span className="fn-chip">{fn.chip}</span>
-        </div>
-        <span className="fn-chip fn-chip--right">{fn.dateLabel}</span>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-        transition={{ duration: 0.6, ease: EASE }}
-        className="fn-intro"
+    <>
+      {/* Intro */}
+      <section
+        ref={introRef}
+        className="dl-intro"
+        style={{ "--ins": INS } as React.CSSProperties}
       >
-        <h2 className="fn-intro-headline">
+        <motion.div {...anim(0)} className="dl-chips">
+          <span className="dl-chip">03</span>
+          <span className="dl-chip">{fn.chip}</span>
+          <span className="dl-chip dl-chip--right">{fn.dateLabel}</span>
+        </motion.div>
+        <motion.h2 {...anim(0.08)} className="dl-headline">
           {fn.introHeadlineRoman} <em>{fn.introHeadlineItalic}</em>
-        </h2>
-        <p className="fn-intro-copy">
+        </motion.h2>
+        <motion.p {...anim(0.16)} className="dl-copy">
           {fn.introCopy.split("\n").map((line, i, arr) => (
-              <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
-            ))}
-        </p>
-      </motion.div>
+            <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+          ))}
+        </motion.p>
+      </section>
 
-      <div className="fn-list">
-        {NOTES.map((note, i) => (
-          <motion.article
-            key={note.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-            transition={{ duration: 0.5, ease: EASE, delay: 0.1 + i * 0.06 }}
-            className="fn-row"
+      {/* The dossier line */}
+      <section
+        ref={outerRef}
+        className={`dl-outer${pinned ? " dl-outer--pinned" : ""}`}
+        style={{ "--ins": INS, "--n": NOTES.length } as React.CSSProperties}
+        aria-label={fn.chip}
+      >
+        <div className="dl-sticky">
+          <motion.div
+            ref={trackRef}
+            className="dl-track"
+            style={{ x: pinned ? x : 0 }}
           >
-            <button
-              className="fn-trigger"
-              onClick={() => setOpen(open === i ? null : i)}
-              aria-expanded={open === i}
-              aria-controls={`note-${note.id}`}
-            >
-              <span className="fn-meta">
-                <span className="fn-id">{note.id}</span>
-                <span className="fn-cls">{note.cls}</span>
-              </span>
-              <span className="fn-title-block">
-                <span className="fn-title">{note.title}</span>
-                <span className="fn-abstract">{note.abstract}</span>
-              </span>
-              <span className={`fn-toggle${open === i ? " fn-toggle--open" : ""}`} aria-hidden="true" />
-            </button>
+            {NOTES.map((note, i) => (
+              <article key={note.id} className="dl-card">
+                {/* Ghost number */}
+                <span className="dl-ghost" aria-hidden="true">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
 
-            <AnimatePresence initial={false}>
-              {open === i && (
-                <motion.div
-                  key="body"
-                  id={`note-${note.id}`}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: EASE }}
-                  style={{ overflow: "hidden" }}
-                >
-                  <div className="fn-body">
-                    <p className="fn-observation">{note.observation}</p>
-                    <p className="fn-move">
-                      <span className="fn-move-label">OPERATIVE MOVE</span>
-                      {note.move}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.article>
-        ))}
-      </div>
+                {/* Classification stamp */}
+                <span className="dl-stamp" aria-hidden="true">{note.cls}</span>
+
+                <div className="dl-card-head">
+                  <span className="dl-card-id">{note.id}</span>
+                  <span className="dl-card-cls">{note.cls}</span>
+                </div>
+
+                <div className="dl-card-body">
+                  <h3 className="dl-card-title">{note.title}</h3>
+                  <p className="dl-card-abstract">{note.abstract}</p>
+                  <p className="dl-card-observation">{note.observation}</p>
+                </div>
+
+                <div className="dl-card-move">
+                  <span className="dl-move-label">OPERATIVE MOVE</span>
+                  <p className="dl-move-text">{note.move}</p>
+                </div>
+              </article>
+            ))}
+          </motion.div>
+
+          {/* Progress rail — only meaningful while pinned */}
+          {pinned && (
+            <div className="dl-rail" aria-hidden="true">
+              <motion.span className="dl-rail-fill" style={{ scaleX: scrollYProgress }} />
+            </div>
+          )}
+        </div>
+      </section>
 
       <style>{`
-        .fn-section {
+        /* ── Intro ─────────────────────────────────────── */
+        .dl-intro {
           background: var(--paper);
-          padding-bottom: 96px;
+          padding: 88px 64px 48px;
         }
-        .fn-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 44px 64px 0;
-        }
-        .fn-chips { display: flex; gap: 16px; align-items: center; }
-        .fn-chip {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.1em;
+        .dl-chips { display: flex; gap: 16px; margin-bottom: 26px; align-items: baseline; }
+        .dl-chip {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.22em;
           text-transform: uppercase;
           color: var(--text-muted);
         }
-
-        .fn-intro {
-          padding: 48px 64px 56px;
-          display: grid;
-          grid-template-columns: minmax(0, 60fr) minmax(0, 40fr);
-          gap: 0 64px;
-          align-items: end;
-        }
-        .fn-intro-headline {
+        .dl-chip--right { margin-left: auto; color: var(--dust); }
+        .dl-headline {
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-size: clamp(32px, 4vw, 52px);
-          line-height: 1.1;
+          font-size: clamp(32px, 4.2vw, 56px);
+          line-height: 1.08;
           color: var(--warm-black);
-          margin: 0;
+          margin: 0 0 18px;
+          max-width: 760px;
         }
-        .fn-intro-headline em { font-style: italic; }
-        .fn-intro-copy {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 14px;
-          font-weight: 400;
-          line-height: 1.65;
-          color: var(--text-muted);
-        }
-
-        /* ── Dossier rows ────────────────────────────── */
-        .fn-row { border-top: 1px solid var(--warm-black); }
-        .fn-row:last-child { border-bottom: 1px solid var(--warm-black); }
-        .fn-trigger {
-          width: 100%;
-          display: grid;
-          grid-template-columns: 150px 1fr 32px;
-          gap: 24px;
-          align-items: start;
-          text-align: left;
-          background: none;
-          border: none;
-          padding: 28px 64px;
-          cursor: pointer;
-          transition: background 350ms ease;
-        }
-        .fn-trigger:hover { background: rgba(17,16,14,.02); }
-        .fn-trigger:focus-visible { outline: 1px solid var(--warm-black); outline-offset: -1px; }
-        .fn-meta { display: flex; flex-direction: column; gap: 7px; padding-top: 6px; }
-        .fn-id {
+        .dl-headline em { font-style: italic; }
+        .dl-copy {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.14em;
+          line-height: 2;
           color: var(--dust);
+          margin: 0;
         }
-        .fn-cls {
+
+        /* ── Outer / sticky ────────────────────────────── */
+        .dl-outer {
+          background: var(--paper);
+          border-bottom: 1px solid var(--warm-black);
+        }
+        .dl-outer--pinned {
+          height: calc(var(--n) * 42vh + 100vh);
+        }
+        .dl-sticky { position: relative; }
+        .dl-outer--pinned .dl-sticky {
+          position: sticky;
+          top: 0;
+          height: 100svh;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+        }
+
+        /* ── Track ─────────────────────────────────────── */
+        .dl-track {
+          display: flex;
+          gap: 28px;
+          padding: 96px 64px 64px;
+          will-change: transform;
+        }
+        /* fallback rail — swipe natively when not pinned */
+        .dl-outer:not(.dl-outer--pinned) .dl-track {
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          padding: 48px 24px 56px;
+        }
+
+        /* ── Card ──────────────────────────────────────── */
+        .dl-card {
+          position: relative;
+          flex-shrink: 0;
+          width: min(520px, 84vw);
+          min-height: min(62vh, 620px);
+          border: 1px solid var(--warm-black);
+          background:
+            linear-gradient(
+              150deg,
+              color-mix(in srgb, var(--ins) 6%, var(--paper)) 0%,
+              var(--paper) 55%
+            );
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          scroll-snap-align: start;
+          transition: border-color 0.3s;
+        }
+        .dl-card:hover { border-color: color-mix(in srgb, var(--ins) 60%, var(--warm-black)); }
+
+        .dl-ghost {
+          position: absolute;
+          right: -12px;
+          bottom: -34px;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: 200px;
+          line-height: 0.8;
+          letter-spacing: -0.05em;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--ins) 26%, transparent);
+          pointer-events: none;
+          user-select: none;
+          z-index: 0;
+        }
+
+        .dl-stamp {
+          position: absolute;
+          top: 52px;
+          right: 20px;
+          transform: rotate(-7deg);
+          font-family: var(--font-mono), monospace;
+          font-size: 9px;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: var(--ins);
+          border: 1px solid color-mix(in srgb, var(--ins) 60%, transparent);
+          padding: 6px 10px 6px 13px;
+          z-index: 1;
+          opacity: 0.85;
+        }
+
+        .dl-card-head {
+          display: flex;
+          justify-content: space-between;
+          padding: 14px 24px;
+          border-bottom: 1px solid var(--warm-black);
+          position: relative;
+          z-index: 1;
+          flex-shrink: 0;
+        }
+        .dl-card-id {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.16em;
+          color: var(--text-secondary);
+        }
+        .dl-card-cls {
           font-family: var(--font-mono), monospace;
           font-size: 8px;
-          letter-spacing: 0.22em;
-          color: var(--olive);
+          letter-spacing: 0.24em;
+          color: var(--ins);
+          align-self: center;
         }
-        .fn-title-block { display: flex; flex-direction: column; gap: 8px; }
-        .fn-title {
+
+        .dl-card-body {
+          flex: 1;
+          padding: 28px 24px 20px;
+          position: relative;
+          z-index: 1;
+        }
+        .dl-card-title {
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-size: clamp(20px, 2.3vw, 29px);
-          line-height: 1.18;
+          font-size: clamp(22px, 2.2vw, 30px);
+          line-height: 1.16;
           color: var(--warm-black);
+          margin: 0 0 14px;
+          max-width: 380px;
         }
-        .fn-abstract {
+        .dl-card-abstract {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 14px;
-          font-weight: 400;
+          font-size: 13px;
+          font-weight: 500;
           line-height: 1.6;
-          color: var(--text-body);
-          max-width: 560px;
-        }
-
-        /* toggle — plus that collapses to minus */
-        .fn-toggle {
-          display: block;
-          width: 14px;
-          height: 14px;
-          position: relative;
-          margin-top: 12px;
-          justify-self: end;
-        }
-        .fn-toggle::before,
-        .fn-toggle::after {
-          content: '';
-          position: absolute;
-          background: var(--warm-black);
-          transition: transform 600ms cubic-bezier(.16,1,.3,1), opacity 400ms ease;
-        }
-        .fn-toggle::before {
-          width: 100%; height: 1px;
-          top: 50%; left: 0;
-          transform: translateY(-50%);
-        }
-        .fn-toggle::after {
-          width: 1px; height: 100%;
-          top: 0; left: 50%;
-          transform: translateX(-50%);
-        }
-        .fn-toggle--open::after {
-          transform: translateX(-50%) scaleY(0);
-          opacity: 0;
-        }
-
-        .fn-body {
-          padding: 0 64px 36px;
-          margin-left: 174px;
-          max-width: 620px;
-        }
-        .fn-observation {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 15px;
-          font-weight: 400;
-          line-height: 1.65;
-          color: var(--text-body);
-          margin-bottom: 20px;
-        }
-        .fn-move {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 14px;
-          font-weight: 400;
-          line-height: 1.65;
           color: var(--text-primary);
-          border-top: 1px solid var(--line);
-          padding-top: 14px;
+          margin: 0 0 18px;
+          max-width: 380px;
         }
-        .fn-move-label {
-          display: block;
-          font-size: 8px;
-          letter-spacing: 0.22em;
-          color: var(--olive);
-          margin-bottom: 6px;
+        .dl-card-observation {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
+          line-height: 1.7;
+          color: var(--text-muted);
+          margin: 0;
+          max-width: 400px;
         }
 
-        @media (max-width: 820px) {
-          .fn-header { padding: 36px 24px 0; }
-          .fn-chip--right { display: none; }
-          .fn-intro {
-            grid-template-columns: 1fr;
-            gap: 20px;
-            padding: 36px 24px 44px;
-          }
-          .fn-trigger {
-            grid-template-columns: 1fr 32px;
-            gap: 12px 16px;
-            padding: 24px;
-          }
-          .fn-meta {
-            grid-column: 1 / -1;
-            flex-direction: row;
-            gap: 14px;
-            align-items: baseline;
-            padding-top: 0;
-          }
-          .fn-toggle { margin-top: 6px; }
-          .fn-body { margin-left: 0; padding: 0 24px 32px; }
+        .dl-card-move {
+          border-top: 1px solid var(--warm-black);
+          padding: 16px 24px 20px;
+          position: relative;
+          z-index: 1;
+          flex-shrink: 0;
+          background: color-mix(in srgb, var(--ins) 8%, var(--paper));
+        }
+        .dl-move-label {
+          display: block;
+          font-family: var(--font-mono), monospace;
+          font-size: 8px;
+          letter-spacing: 0.26em;
+          color: var(--ins);
+          margin-bottom: 7px;
+        }
+        .dl-move-text {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13.5px;
+          font-weight: 500;
+          line-height: 1.55;
+          color: var(--text-primary);
+          margin: 0;
+        }
+
+        /* ── Progress rail ─────────────────────────────── */
+        .dl-rail {
+          position: absolute;
+          left: 64px;
+          right: 64px;
+          bottom: 30px;
+          height: 2px;
+          background: var(--line);
+          overflow: hidden;
+        }
+        .dl-rail-fill {
+          position: absolute;
+          inset: 0;
+          background: var(--ins);
+          transform-origin: left;
+          display: block;
+        }
+
+        /* ── Mobile ────────────────────────────────────── */
+        @media (max-width: 900px) {
+          .dl-intro { padding: 60px 24px 36px; }
+          .dl-chip--right { display: none; }
+          .dl-card { min-height: 480px; }
+          .dl-ghost { font-size: 150px; }
         }
       `}</style>
-    </section>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import Nav from "@/components/Nav";
 import RoomHero from "@/components/rooms/RoomHero";
 import TheWatch from "@/components/insights/TheWatch";
+import Observatory from "@/components/insights/Observatory";
 import FieldNotes from "@/components/insights/FieldNotes";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
@@ -25,9 +26,10 @@ export default function DeInsightsPage() {
           cta={h.cta}
           panel={<TheWatch />}
         />
+        <Observatory />
         <FieldNotes />
         <ScanCTA
-          index="03"
+          index="04"
           roman={sc.roman}
           italic={sc.italic}
           sub={[...sc.sub]}

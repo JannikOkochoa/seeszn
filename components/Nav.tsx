@@ -1,27 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import SignalAperture from "./SignalAperture";
 import LanguageSwitch from "./LanguageSwitch";
+import ScrollProgress from "./ScrollProgress";
 import { useTranslations } from "@/lib/i18n/context";
-
-// ─── Navigation data is now translation-driven (see useTranslations in Nav) ───
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-// ─── CTA (isolated to avoid re-render affecting signal lines) ─────────────────
+// ─── CTA button ───────────────────────────────────────────────────────────────
 
 function CtaButton({
   onClick,
   reduced,
-  className,
   mobile,
 }: {
   onClick: () => void;
   reduced: boolean | null;
-  className?: string;
   mobile?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -33,7 +30,6 @@ function CtaButton({
       href={diagHref}
       onClick={onClick}
       aria-label="Book a diagnosis"
-      className={className}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -62,8 +58,7 @@ function CtaButton({
         style={{
           color: "var(--signal)",
           display: "inline-block",
-          transform:
-            hovered && !reduced ? "translateX(4px)" : "translateX(0px)",
+          transform: hovered && !reduced ? "translateX(4px)" : "translateX(0px)",
           transition: reduced ? "none" : "transform 300ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
@@ -79,26 +74,21 @@ export default function Nav() {
   const nt = useTranslations();
   const n = nt.nav;
 
-  // Build nav link hrefs based on locale
   const isDE = nt.locale === "de";
   const base = isDE ? "/de" : "";
+
+  // All four nav links as direct links — no dropdown, no mega panel
   const NAV_LINKS = [
-    { label: n.work, href: `${base}/work` },
+    { label: n.services, href: `${base}/services` },
+    { label: n.work,     href: `${base}/work`     },
     { label: n.insights, href: `${base}/insights` },
-    { label: n.about, href: `${base}/about` },
+    { label: n.about,    href: `${base}/about`    },
   ];
-  const SERVICES_DATA = n.servicesDropdown;
-  const servicesHref = `${base}/services`;
 
-  const [servicesOpen, setServicesOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [scrolled,   setScrolled]     = useState(false);
+  const [hoveredNav, setHoveredNav]   = useState<string | null>(null);
   const reduced = useReducedMotion();
-
-  const panelRef = useRef<HTMLDivElement>(null);
-  const servicesBtnRef = useRef<HTMLButtonElement>(null);
 
   // Scroll detection
   useEffect(() => {
@@ -110,53 +100,19 @@ export default function Nav() {
   // Body scroll lock while mobile drawer is open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  // Escape key handler
+  // Escape key closes mobile drawer
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (mobileOpen) {
-        setMobileOpen(false);
-        return;
-      }
-      if (servicesOpen) {
-        setServicesOpen(false);
-        servicesBtnRef.current?.focus();
-      }
+      if (e.key === "Escape" && mobileOpen) setMobileOpen(false);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [servicesOpen, mobileOpen]);
+  }, [mobileOpen]);
 
-  // Click-outside closes services panel
-  const handleClickOutside = useCallback(
-    (e: MouseEvent) => {
-      const target = e.target as Node;
-      const outsidePanel =
-        !panelRef.current || !panelRef.current.contains(target);
-      const outsideBtn =
-        !servicesBtnRef.current ||
-        !servicesBtnRef.current.contains(target);
-      if (outsidePanel && outsideBtn) setServicesOpen(false);
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (servicesOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [servicesOpen, handleClickOutside]);
-
-  const closeAll = () => {
-    setServicesOpen(false);
-    setMobileOpen(false);
-  };
+  const closeAll = () => setMobileOpen(false);
 
   const mainBarH = scrolled ? 64 : 80;
 
@@ -175,6 +131,9 @@ export default function Nav() {
 
   return (
     <>
+      {/* ── Site-wide scroll HUD ─────────────────────────────────────────── */}
+      <ScrollProgress />
+
       {/* ── Sticky nav shell ─────────────────────────────────────────────── */}
       <div
         style={{
@@ -185,7 +144,7 @@ export default function Nav() {
           zIndex: 100,
         }}
       >
-        {/* Utility line */}
+        {/* Utility bar */}
         <div
           aria-hidden="true"
           style={{
@@ -242,7 +201,7 @@ export default function Nav() {
           >
             {/* Wordmark */}
             <Link
-              href="/"
+              href={isDE ? "/de" : "/"}
               aria-label="SEESZN — Return to home"
               onClick={closeAll}
               style={{
@@ -264,7 +223,6 @@ export default function Nav() {
               >
                 SEESZN
               </span>
-              {/* Signal line — draws in on mount */}
               <motion.div
                 aria-hidden="true"
                 style={{
@@ -280,49 +238,12 @@ export default function Nav() {
               />
             </Link>
 
-            {/* Center nav — desktop */}
+            {/* Desktop nav — four direct links, no dropdown */}
             <nav
               aria-label="Primary navigation"
               className="hidden md:flex"
               style={{ gap: 36, alignItems: "center" }}
             >
-              {/* SERVICES — mega panel trigger */}
-              <button
-                ref={servicesBtnRef}
-                aria-expanded={servicesOpen}
-                aria-controls="services-panel"
-                onClick={() => setServicesOpen((o) => !o)}
-                onMouseEnter={() => setHoveredNav(n.services)}
-                onMouseLeave={() => setHoveredNav(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  letterSpacing: "0.07em",
-                  textTransform: "uppercase",
-                  color: "var(--text-primary)",
-                  cursor: "pointer",
-                  padding: "8px 0",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  minHeight: 44,
-                  justifyContent: "center",
-                }}
-              >
-                {n.services}
-                <span
-                  aria-hidden="true"
-                  style={signalLine(
-                    servicesOpen || hoveredNav === n.services,
-                    true
-                  )}
-                />
-              </button>
-
-              {/* Standard links */}
               {NAV_LINKS.map((item) => (
                 <Link
                   key={item.label}
@@ -355,14 +276,11 @@ export default function Nav() {
               ))}
             </nav>
 
-            {/* Language switch + theme toggle + CTA — desktop */}
+            {/* Language switch + theme toggle + CTA */}
             <div className="hidden md:flex" style={{ alignItems: "center", gap: 12 }}>
               <LanguageSwitch />
               <SignalAperture />
-              <CtaButton
-                onClick={closeAll}
-                reduced={reduced}
-              />
+              <CtaButton onClick={closeAll} reduced={reduced} />
             </div>
 
             {/* Mobile menu toggle */}
@@ -390,147 +308,7 @@ export default function Nav() {
             </button>
           </div>
         </header>
-
-        {/* ── Services mega panel ─────────────────────────────────────────── */}
-        <AnimatePresence>
-          {servicesOpen && (
-            <motion.div
-              id="services-panel"
-              ref={panelRef}
-              role="region"
-              aria-label="Services"
-              initial={reduced ? undefined : { opacity: 0, y: -8 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0 }}
-              exit={reduced ? undefined : { opacity: 0, y: -6 }}
-              transition={{ duration: 0.48, ease: EASE }}
-              style={{
-                background: "var(--panel)",
-                borderTop: "1px solid var(--line)",
-                borderBottom: "1px solid var(--line)",
-                padding: "44px 0 52px",
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: 1280,
-                  margin: "0 auto",
-                  padding: "0 64px",
-                  display: "grid",
-                  gridTemplateColumns: "220px repeat(4, 1fr)",
-                  gap: "0 48px",
-                  alignItems: "start",
-                }}
-              >
-                {/* Editorial tagline */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
-                    paddingTop: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: "var(--font-editorial), serif",
-                      fontStyle: "italic",
-                      fontSize: 14,
-                      lineHeight: 1.65,
-                      color: "var(--text-muted)",
-                      maxWidth: 180,
-                    }}
-                  >
-                    {n.servicesTagline}
-                  </p>
-                  <Link
-                    href={servicesHref}
-                    onClick={closeAll}
-                    style={{
-                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                      fontSize: 10,
-                      fontWeight: 500,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: "var(--text-primary)",
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginTop: 18,
-                      paddingBottom: 4,
-                      borderBottom: "1px solid var(--signal)",
-                      alignSelf: "flex-start",
-                    }}
-                  >
-                    {n.enterOperatingRoom}
-                    <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
-                  </Link>
-                </div>
-
-                {/* Service columns */}
-                {SERVICES_DATA.map((col) => (
-                  <div key={col.heading}>
-                    <Link
-                      href={col.href}
-                      onClick={closeAll}
-                      style={{
-                        fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                        fontSize: 10,
-                        fontWeight: 500,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        color: "var(--text-muted)",
-                        marginBottom: 16,
-                        paddingBottom: 12,
-                        borderBottom: "1px solid var(--line)",
-                        display: "block",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {col.heading}
-                    </Link>
-                    <ul
-                      style={{
-                        listStyle: "none",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10,
-                      }}
-                    >
-                      {col.items.map((item) => (
-                        <li key={item}>
-                          <Link
-                            href={col.href}
-                            onClick={closeAll}
-                            style={{
-                              fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                              fontSize: 13,
-                              fontWeight: 400,
-                              letterSpacing: "0.01em",
-                              color: "var(--text-body)",
-                              textDecoration: "none",
-                              display: "block",
-                              padding: "3px 0",
-                              transition: "color 0.25s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--text-primary)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "var(--text-body)";
-                            }}
-                          >
-                            {item}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── No mega panel — DISCOVER is a direct link ─────────────────── */}
       </div>
 
       {/* ── Mobile drawer ────────────────────────────────────────────────── */}
@@ -567,7 +345,7 @@ export default function Nav() {
               }}
             >
               <Link
-                href="/"
+                href={isDE ? "/de" : "/"}
                 onClick={closeAll}
                 aria-label="SEESZN — Home"
                 style={{
@@ -601,142 +379,11 @@ export default function Nav() {
               </button>
             </div>
 
-            {/* Drawer links */}
+            {/* Drawer links — all direct, no accordion */}
             <nav
               aria-label="Mobile navigation"
               style={{ flex: 1, padding: "32px 32px 0" }}
             >
-              {/* Services accordion */}
-              <div style={{ borderBottom: "1px solid var(--line)" }}>
-                <button
-                  onClick={() => setMobileServicesOpen((o) => !o)}
-                  aria-expanded={mobileServicesOpen}
-                  style={{
-                    width: "100%",
-                    background: "none",
-                    border: "none",
-                    fontFamily: "var(--font-display), sans-serif",
-                    fontWeight: 700,
-                    fontSize: "clamp(28px, 8vw, 40px)",
-                    letterSpacing: "-0.04em",
-                    textTransform: "uppercase",
-                    color: "var(--warm-black)",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    padding: "16px 0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    minHeight: 44,
-                  }}
-                >
-                  {n.services}
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      fontFamily: "var(--font-mono), monospace",
-                      fontSize: 16,
-                      color: "var(--muted)",
-                      display: "inline-block",
-                      transform: mobileServicesOpen ? "rotate(45deg)" : "rotate(0deg)",
-                      transition: reduced ? "none" : "transform 320ms",
-                      lineHeight: 1,
-                    }}
-                  >
-                    +
-                  </span>
-                </button>
-
-                <AnimatePresence>
-                  {mobileServicesOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.42, ease: EASE }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <Link
-                        href={servicesHref}
-                        onClick={closeAll}
-                        style={{
-                          fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          color: "var(--text-primary)",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          margin: "12px 0 4px",
-                          paddingBottom: 4,
-                          borderBottom: "1px solid var(--signal)",
-                        }}
-                      >
-                        {n.allServices}
-                        <span aria-hidden="true" style={{ color: "var(--signal)" }}>→</span>
-                      </Link>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: "24px 24px",
-                          padding: "16px 0 28px",
-                        }}
-                      >
-                        {SERVICES_DATA.map((col) => (
-                          <div key={col.heading}>
-                            <p
-                              style={{
-                                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                                fontSize: 10,
-                                fontWeight: 500,
-                                letterSpacing: "0.12em",
-                                textTransform: "uppercase",
-                                color: "var(--text-muted)",
-                                marginBottom: 10,
-                              }}
-                            >
-                              {col.heading}
-                            </p>
-                            <ul
-                              style={{
-                                listStyle: "none",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 8,
-                              }}
-                            >
-                              {col.items.map((item) => (
-                                <li key={item}>
-                                  <Link
-                                    href={col.href}
-                                    onClick={closeAll}
-                                    style={{
-                                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                                      fontSize: 14,
-                                      fontWeight: 400,
-                                      color: "var(--text-body)",
-                                      textDecoration: "none",
-                                      display: "block",
-                                      padding: "3px 0",
-                                    }}
-                                  >
-                                    {item}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               {NAV_LINKS.map((item) => (
                 <Link
                   key={item.label}

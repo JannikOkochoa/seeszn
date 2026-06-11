@@ -1,640 +1,334 @@
 "use client";
 
-import { motion, useScroll, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { ROOMS as ROOMS_EN, type RoomVisualKind } from "@/lib/services";
-import { CrawlMap, FanOut, SurfaceLayers, DiagnosisReport } from "./RoomVisuals";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useInView,
+  useReducedMotion,
+} from "framer-motion";
+import { useRef } from "react";
+import Image from "next/image";
 import { useTranslations } from "@/lib/i18n/context";
 
-const VISUALS: Record<RoomVisualKind, React.ComponentType> = {
-  crawl: CrawlMap,
-  fanout: FanOut,
-  layers: SurfaceLayers,
-  report: DiagnosisReport,
-};
+// Deep-parallax editorial spread — images drift inside their frames while
+// museum labels and giant ghost indices counter-move.
+// TODO: replace with final art-directed photography when available.
+const IMAGES = [
+  "/seeszn-home-main-01.png",
+  "/seeszn-home-main-02.png",
+  "/seeszn-home-main-03.png",
+];
+
+function ParallaxImage({ src, strength = 10 }: { src: string; strength?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(
+    scrollYProgress,
+    [0, 1],
+    reduced ? ["0%", "0%"] : [`-${strength}%`, `${strength}%`]
+  );
+
+  return (
+    <div ref={ref} className="iw-pimg">
+      <motion.div className="iw-pimg-inner" style={{ y }}>
+        <Image
+          src={src}
+          alt=""
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="(max-width: 820px) 100vw, 60vw"
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+function MuseumLabel({
+  num,
+  caption,
+  body,
+  on,
+}: {
+  num: string;
+  caption: string;
+  body: string;
+  on: boolean;
+}) {
+  return (
+    <div className={`iw-label${on ? " iw-label--on" : ""}`}>
+      <span className="iw-label-num">{num}</span>
+      <span className="iw-label-rule" aria-hidden="true" />
+      <span className="iw-label-caption">{caption}</span>
+      <p className="iw-label-body">{body}</p>
+    </div>
+  );
+}
 
 export default function OperatingRooms() {
   const t = useTranslations();
-  const sys = t.servicesPage.system;
-  // Merge translated room text with original visual kind (visual doesn't change per language)
-  const ROOMS = t.servicesPage.rooms.map((r, i) => ({
-    ...r,
-    visual: ROOMS_EN[i].visual as RoomVisualKind,
-    statement: [r.statementRoman, r.statementItalic] as [string, string],
-  }));
-  const sectionRef = useRef<HTMLElement>(null);
-  const roomRefs = useRef<(HTMLElement | null)[]>([]);
-  const [active, setActive] = useState(0);
-  const [seen, setSeen] = useState<boolean[]>(() => ROOMS.map(() => false));
+  const iw = t.servicesPage.imageWorld;
+  const panels = iw.panels;
   const reduced = useReducedMotion();
 
-  // The Operating Line — scroll-linked signal that travels the four stations
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start 0.6", "end 0.85"],
+  const leadRef = useRef<HTMLDivElement>(null);
+  const pairARef = useRef(null);
+  const pairBRef = useRef(null);
+  const leadOn = useInView(leadRef, { once: true, amount: 0.25 });
+  const pairAOn = useInView(pairARef, { once: true, amount: 0.3 });
+  const pairBOn = useInView(pairBRef, { once: true, amount: 0.3 });
+
+  // Lead image zooms out slightly as it crosses the viewport
+  const { scrollYProgress: leadProgress } = useScroll({
+    target: leadRef,
+    offset: ["start end", "end start"],
   });
-
-  useEffect(() => {
-    const els = roomRefs.current.filter(Boolean) as HTMLElement[];
-    if (!els.length) return;
-
-    // once-only activation — a room stays "examined" after its first reveal
-    const seenObs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((en) => {
-          if (!en.isIntersecting) return;
-          const idx = els.indexOf(en.target as HTMLElement);
-          setSeen((s) => (s[idx] ? s : s.map((v, i) => (i === idx ? true : v))));
-          seenObs.unobserve(en.target);
-        });
-      },
-      { threshold: 0.18 }
-    );
-
-    // live station — whichever room crosses the center band of the viewport
-    const liveObs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((en) => {
-          if (!en.isIntersecting) return;
-          setActive(els.indexOf(en.target as HTMLElement));
-        });
-      },
-      { rootMargin: "-42% 0px -42% 0px", threshold: 0 }
-    );
-
-    els.forEach((el) => {
-      seenObs.observe(el);
-      liveObs.observe(el);
-    });
-    return () => {
-      seenObs.disconnect();
-      liveObs.disconnect();
-    };
-  }, []);
+  const leadScale = useTransform(leadProgress, [0, 1], reduced ? [1, 1] : [1.16, 1]);
 
   return (
-    <section ref={sectionRef} className="or-section" aria-label="The four rooms — services">
-      {/* Section header */}
-      <div className="or-header">
-        <div className="or-chips">
-          <span className="or-chip">03</span>
-          <span className="or-chip">{sys.roomsHeader}</span>
-        </div>
-        <span className="or-chip or-chip--right">{sys.roomsSubheader}</span>
+    <section className="iw-section" aria-label="The surface world">
+      {/* Section chip */}
+      <div className="iw-head">
+        <span className="iw-chip">03</span>
+        <span className="iw-chip">{iw.sectionLabel}</span>
       </div>
 
-      <div className="or-body">
-        {/* ── The Operating Line — sticky station rail ── */}
-        <nav className="or-rail" aria-label="Operating line — room index">
-          <span className="or-rail-label">{t.common.railLabel}</span>
-          <div className="or-rail-inner">
-            <span className="or-rail-track" aria-hidden="true">
-              <motion.span
-                className="or-rail-fill"
-                style={{ scaleY: reduced ? 1 : scrollYProgress }}
-              />
-            </span>
-            <ul className="or-stations">
-              {ROOMS.map((room, i) => (
-                <li key={room.id}>
-                  <a
-                    href={`#${room.id}`}
-                    className={`or-station${active === i ? " or-station--live" : ""}${
-                      seen[i] ? " or-station--seen" : ""
-                    }`}
-                    aria-current={active === i ? "true" : undefined}
-                  >
-                    <span className="or-station-tick" aria-hidden="true" />
-                    <span className="or-station-num">{room.index}</span>
-                    <span className="or-station-name">{room.station}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
+      {/* Panoramic lead — scale-out parallax + overlaid label */}
+      <div ref={leadRef} className="iw-lead">
+        <motion.div className="iw-lead-img" style={{ scale: leadScale }}>
+          <Image
+            src={IMAGES[0]}
+            alt=""
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="100vw"
+          />
+        </motion.div>
+        <span className="iw-lead-scan" aria-hidden="true" />
+        <div className="iw-lead-label">
+          <MuseumLabel {...panels[0]} on={leadOn} />
+        </div>
+      </div>
 
-        {/* ── Rooms ── */}
-        <div className="or-rooms">
-          {ROOMS.map((room, i) => {
-            const Visual = VISUALS[room.visual];
-            return (
-              <article
-                key={room.id}
-                id={room.id}
-                ref={(el) => {
-                  roomRefs.current[i] = el;
-                }}
-                className={`vroom${room.flip ? " vroom--flip" : ""}${
-                  seen[i] ? " vroom--on" : ""
-                }${active === i ? " vroom--live" : ""}`}
-              >
-                <div className="vroom-grid">
-                  <div className="vroom-text">
-                    <header className="vr-reveal" style={{ "--d": "0ms" } as React.CSSProperties}>
-                      <div className="vroom-top">
-                        <span className="vroom-index">{room.index}</span>
-                        <span className="vroom-chip">
-                          {room.station}
-                          <span className="vroom-scan" aria-hidden="true" />
-                        </span>
-                      </div>
-                      <h3 className="vroom-name">{room.name}</h3>
-                      <p className="vroom-disc">{room.discipline}</p>
-                    </header>
+      {/* Pair A — image left, ghost index + label right */}
+      <div ref={pairARef} className="iw-pair">
+        <div className="iw-pair-img">
+          <ParallaxImage src={IMAGES[1]} />
+        </div>
+        <div className="iw-pair-text">
+          <span className="iw-ghost-num" aria-hidden="true">{panels[1].num}</span>
+          <MuseumLabel {...panels[1]} on={pairAOn} />
+        </div>
+      </div>
 
-                    <p className="vroom-statement vr-reveal" style={{ "--d": "90ms" } as React.CSSProperties}>
-                      {room.statement[0]} <em>{room.statement[1]}</em>
-                    </p>
-
-                    <p className="vroom-body vr-reveal" style={{ "--d": "180ms" } as React.CSSProperties}>
-                      {room.body}
-                    </p>
-
-                    <div className="vr-reveal" style={{ "--d": "260ms" } as React.CSSProperties}>
-                      <p className="vroom-deliv-label">DELIVERABLES</p>
-                      <ul className="vroom-deliv">
-                        {room.deliverables.map((d) => (
-                          <li key={d}>{d}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="vroom-visual">
-                    <Visual />
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+      {/* Pair B — flipped */}
+      <div ref={pairBRef} className="iw-pair iw-pair--flip">
+        <div className="iw-pair-text">
+          <span className="iw-ghost-num" aria-hidden="true">{panels[2].num}</span>
+          <MuseumLabel {...panels[2]} on={pairBOn} />
+        </div>
+        <div className="iw-pair-img">
+          <ParallaxImage src={IMAGES[2]} strength={14} />
         </div>
       </div>
 
       <style>{`
-        /* ── Section shell ───────────────────────────── */
-        .or-section {
+        .iw-section {
           background: var(--paper);
-          border-top: 1px solid var(--warm-black);
+          border-bottom: 1px solid var(--warm-black);
         }
-        .or-header {
+        .iw-head {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
+          gap: 16px;
           padding: 44px 64px 36px;
         }
-        .or-chips { display: flex; gap: 16px; align-items: center; }
-        .or-chip {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.1em;
+        .iw-chip {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.22em;
           text-transform: uppercase;
           color: var(--text-muted);
         }
 
-        /* ── Body grid — rail + rooms ────────────────── */
-        .or-body {
-          display: grid;
-          grid-template-columns: 184px 1fr;
-        }
-
-        /* ── The Operating Line rail ─────────────────── */
-        .or-rail {
-          position: sticky;
-          top: 132px;
-          align-self: start;
-          padding: 8px 0 8px 64px;
-          margin-bottom: 64px;
-        }
-        .or-rail-label {
-          display: block;
-          font-family: var(--font-mono), monospace;
-          font-size: 8px;
-          letter-spacing: 0.24em;
-          color: var(--dust);
-          margin-bottom: 22px;
-        }
-        .or-rail-inner { position: relative; padding-left: 20px; }
-        .or-rail-track {
-          position: absolute;
-          left: 0; top: 4px; bottom: 4px;
-          width: 1px;
-          background: var(--line);
-        }
-        .or-rail-fill {
+        /* ── Parallax image frame ──────────────────────── */
+        .iw-pimg {
           position: absolute;
           inset: 0;
-          background: var(--signal);
-          transform-origin: top;
+          overflow: hidden;
+        }
+        .iw-pimg-inner {
+          position: absolute;
+          inset: -14% 0;
           will-change: transform;
         }
-        .or-stations {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 34px;
-        }
-        .or-station {
-          display: flex;
-          align-items: baseline;
-          gap: 10px;
-          text-decoration: none;
-          padding: 4px 0;
-        }
-        .or-station-tick {
-          width: 8px;
-          height: 1px;
-          background: var(--dust);
-          align-self: center;
-          flex-shrink: 0;
-          transition: width 500ms cubic-bezier(.16,1,.3,1), background 400ms ease;
-        }
-        .or-station-num {
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.1em;
-          color: var(--dust);
-          transition: color 400ms ease;
-        }
-        .or-station-name {
-          font-family: var(--font-mono), monospace;
-          font-size: 11px;
-          letter-spacing: 0.16em;
-          color: var(--dust);
-          transition: color 400ms ease, letter-spacing 500ms cubic-bezier(.16,1,.3,1);
-        }
-        .or-station--seen .or-station-name { color: var(--text-secondary); }
-        .or-station--live .or-station-tick { width: 18px; background: var(--signal); }
-        .or-station--live .or-station-num,
-        .or-station--live .or-station-name { color: var(--warm-black); }
-        .or-station--live .or-station-name { letter-spacing: 0.2em; }
-        .or-station:hover .or-station-name { color: var(--warm-black); }
-        .or-station:focus-visible {
-          outline: 1px solid var(--warm-black);
-          outline-offset: 4px;
-        }
 
-        /* ── Room blocks ─────────────────────────────── */
-        .vroom {
-          border-top: 1px solid var(--warm-black);
-          scroll-margin-top: 124px;
-        }
-        .vroom-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-          gap: 0;
-        }
-        .vroom-text {
-          padding: 64px 56px 72px 48px;
-        }
-        .vroom-visual {
-          border-left: 1px solid var(--line);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 56px 48px 56px 40px;
-        }
-        .vroom--flip .vroom-text { order: 2; padding: 64px 64px 72px 56px; }
-        .vroom--flip .vroom-visual {
-          order: 1;
-          border-left: none;
-          border-right: 1px solid var(--line);
-          padding: 56px 40px 56px 24px;
-        }
-
-        /* ── Room header ─────────────────────────────── */
-        .vroom-top {
-          display: flex;
-          align-items: flex-end;
-          gap: 20px;
-          margin-bottom: 18px;
-        }
-        .vroom-index {
-          font-family: var(--font-display), sans-serif;
-          font-weight: 700;
-          font-size: clamp(40px, 4.5vw, 60px);
-          line-height: 0.85;
-          color: var(--warm-black);
-        }
-        .vroom-chip {
+        /* ── Panoramic lead ────────────────────────────── */
+        .iw-lead {
           position: relative;
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.18em;
-          color: var(--text-secondary);
-          padding-bottom: 7px;
-          transition: color 400ms ease;
+          height: 64vw;
+          min-height: 420px;
+          max-height: 760px;
+          overflow: hidden;
+          border-top: 1px solid var(--warm-black);
         }
-        .vroom--live .vroom-chip { color: var(--warm-black); }
-        .vroom-scan {
+        .iw-lead-img {
           position: absolute;
-          left: 0; bottom: 0;
-          width: 100%;
+          inset: 0;
+          will-change: transform;
+        }
+        .iw-lead-scan {
+          position: absolute;
+          left: 0; right: 0;
           height: 1px;
-          background: var(--signal);
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 800ms cubic-bezier(.16,1,.3,1) 240ms;
-        }
-        .vroom--on .vroom-scan { transform: scaleX(1); }
-
-        .vroom-name {
-          font-family: var(--font-display), sans-serif;
-          font-weight: 700;
-          font-size: clamp(22px, 2.2vw, 30px);
-          letter-spacing: 0.01em;
-          text-transform: uppercase;
-          color: var(--warm-black);
-          margin-bottom: 6px;
-        }
-        .vroom-disc {
-          font-family: var(--font-mono), monospace;
-          font-size: 10px;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: var(--dust);
-        }
-
-        /* ── Room copy ───────────────────────────────── */
-        .vroom-statement {
-          font-family: var(--font-editorial), serif;
-          font-weight: 400;
-          font-size: clamp(24px, 2.6vw, 36px);
-          line-height: 1.18;
-          color: var(--warm-black);
-          max-width: 520px;
-          margin: 36px 0 24px;
-        }
-        .vroom-statement em {
-          font-style: italic;
-          color: var(--ink);
-        }
-        .vroom-body {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 15px;
-          font-weight: 400;
-          line-height: 1.65;
-          color: var(--text-body);
-          max-width: 460px;
-          margin-bottom: 40px;
-        }
-
-        /* ── Deliverables index ──────────────────────── */
-        .vroom-deliv-label {
-          font-family: var(--font-mono), monospace;
-          font-size: 8px;
-          letter-spacing: 0.24em;
-          color: var(--dust);
-          margin-bottom: 4px;
-        }
-        .vroom-deliv {
-          list-style: none;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0 36px;
-          max-width: 480px;
-        }
-        .vroom-deliv li {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          color: var(--text-body);
-          padding: 10px 0;
-          border-top: 1px solid var(--line);
-        }
-
-        /* ── Reveal system — once per room ───────────── */
-        .vr-reveal {
+          background: var(--olive);
           opacity: 0;
-          transform: translateY(12px);
-          transition:
-            opacity 700ms cubic-bezier(.16,1,.3,1) var(--d, 0ms),
-            transform 700ms cubic-bezier(.16,1,.3,1) var(--d, 0ms);
+          z-index: 2;
+          animation: iw-scan 9s cubic-bezier(.16,1,.3,1) 1s infinite;
+          pointer-events: none;
         }
-        .vroom--on .vr-reveal {
-          opacity: 1;
-          transform: none;
+        @keyframes iw-scan {
+          0%   { top: 0%; opacity: 0; }
+          5%   { opacity: 0.45; }
+          40%  { opacity: 0.1; }
+          50%  { top: 100%; opacity: 0; }
+          100% { top: 100%; opacity: 0; }
         }
-
-        /* ═══ Instrument animations ═══════════════════ */
-        .rv-svg {
-          display: block;
-          width: 100%;
-          max-width: 560px;
-          height: auto;
-          overflow: visible;
-        }
-
-        /* — 01 crawl map — */
-        .cm-wall {
-          opacity: 0;
-          transition: opacity 600ms ease calc(120ms + var(--i, 0) * 0ms);
-        }
-        .vroom--on .cm-wall { opacity: 1; }
-        .cm-route {
-          stroke-dasharray: 620;
-          stroke-dashoffset: 620;
-          transition: stroke-dashoffset 1400ms cubic-bezier(.16,1,.3,1) 320ms;
-        }
-        .vroom--on .cm-route { stroke-dashoffset: 0; }
-        .cm-node {
-          opacity: 0;
-          transition: opacity 400ms ease calc(480ms + var(--i, 0) * 170ms);
-        }
-        .vroom--on .cm-node { opacity: 1; }
-        .cm-dead {
-          opacity: 0;
-          transition: opacity 700ms ease 1250ms;
-        }
-        .vroom--on .cm-dead { opacity: 1; }
-        .cm-label {
-          opacity: 0;
-          transition: opacity 600ms ease 1400ms;
-        }
-        .vroom--on .cm-label { opacity: 1; }
-
-        /* — 02 fan-out — */
-        .fo-q {
-          opacity: 0;
-          transition: opacity 500ms ease 150ms;
-        }
-        .vroom--on .fo-q { opacity: 1; }
-        .fo-fan {
-          stroke-dasharray: 230;
-          stroke-dashoffset: 230;
-          transition: stroke-dashoffset 900ms cubic-bezier(.16,1,.3,1) calc(260ms + var(--i, 0) * 90ms);
-        }
-        .vroom--on .fo-fan { stroke-dashoffset: 0; }
-        .fo-frag {
-          opacity: 0;
-          transition: opacity 500ms ease calc(700ms + var(--i, 0) * 90ms);
-        }
-        .vroom--on .fo-frag { opacity: 1; }
-        .fo-conv {
-          stroke-dasharray: 130;
-          stroke-dashoffset: 130;
-          transition: stroke-dashoffset 800ms cubic-bezier(.16,1,.3,1) calc(1050ms + var(--i, 0) * 70ms);
-        }
-        .vroom--on .fo-conv { stroke-dashoffset: 0; }
-        .fo-box {
-          stroke-dasharray: 360;
-          stroke-dashoffset: 360;
-          transition: stroke-dashoffset 1000ms cubic-bezier(.16,1,.3,1) 1350ms;
-        }
-        .vroom--on .fo-box { stroke-dashoffset: 0; }
-        .fo-cites, .fo-caption {
-          opacity: 0;
-          transition: opacity 700ms ease 1900ms;
-        }
-        .vroom--on .fo-cites, .vroom--on .fo-caption { opacity: 1; }
-
-        /* — 03 layered surface — */
-        .sl-axis {
-          stroke-dasharray: 310;
-          stroke-dashoffset: 310;
-          transition: stroke-dashoffset 1100ms cubic-bezier(.16,1,.3,1) 200ms;
-        }
-        .vroom--on .sl-axis { stroke-dashoffset: 0; }
-        .sl-layer {
-          opacity: 0;
-          transform: translateY(var(--sy, 0px));
-          transition:
-            opacity 700ms ease calc(420ms + var(--i, 0) * 120ms),
-            transform 950ms cubic-bezier(.16,1,.3,1) calc(420ms + var(--i, 0) * 120ms);
-        }
-        .vroom--on .sl-layer { opacity: 1; transform: translateY(0); }
-        .sl-caption {
-          opacity: 0;
-          transition: opacity 700ms ease 1500ms;
-        }
-        .vroom--on .sl-caption { opacity: 1; }
-
-        /* — 04 diagnosis report — */
-        .dxr {
-          width: 100%;
-          max-width: 440px;
-          border: 1px solid var(--warm-black);
+        .iw-lead-label {
+          position: absolute;
+          left: 64px;
+          bottom: 48px;
+          z-index: 3;
           background: var(--paper);
+          border: 1px solid var(--warm-black);
+          padding: 22px 28px;
+          max-width: 320px;
         }
-        .dxr-head {
-          display: flex;
-          justify-content: space-between;
-          padding: 14px 20px;
-          border-bottom: 1px solid var(--warm-black);
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.18em;
-          color: var(--text-secondary);
+
+        /* ── Asymmetric pairs ──────────────────────────── */
+        .iw-pair {
+          display: grid;
+          grid-template-columns: 60% 40%;
+          border-top: 1px solid var(--warm-black);
+          min-height: 480px;
         }
-        .dxr-status {
+        .iw-pair--flip { grid-template-columns: 40% 60%; }
+        .iw-pair-img {
+          position: relative;
+          overflow: hidden;
+          min-height: 480px;
+        }
+        .iw-pair .iw-pair-img { border-right: 1px solid var(--warm-black); }
+        .iw-pair--flip .iw-pair-img { border-right: none; border-left: 1px solid var(--warm-black); }
+        .iw-pair-text {
+          position: relative;
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 18px 20px;
+          padding: 64px;
+          overflow: hidden;
+        }
+        .iw-ghost-num {
+          position: absolute;
+          right: -8px;
+          top: -28px;
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(160px, 16vw, 280px);
+          line-height: 1;
+          letter-spacing: -0.04em;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 14%, transparent);
+          pointer-events: none;
+          user-select: none;
+        }
+        .iw-pair--flip .iw-ghost-num { right: auto; left: -8px; }
+
+        /* ── Museum label ──────────────────────────────── */
+        .iw-label {
+          position: relative;
+          opacity: 0;
+          transform: translateY(14px);
+          transition:
+            opacity 800ms ease 500ms,
+            transform 800ms cubic-bezier(.16,1,.3,1) 500ms;
+        }
+        .iw-label--on { opacity: 1; transform: none; }
+        .iw-label-num {
+          display: block;
+          font-family: var(--font-mono), monospace;
+          font-size: 9px;
+          letter-spacing: 0.18em;
+          color: var(--dust);
+          margin-bottom: 12px;
+        }
+        .iw-label-rule {
+          display: block;
+          width: 24px;
+          height: 1px;
+          background: var(--olive);
+          margin-bottom: 14px;
+        }
+        .iw-label-caption {
+          display: block;
           font-family: var(--font-mono), monospace;
           font-size: 11px;
-          letter-spacing: 0.14em;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
           color: var(--warm-black);
+          margin-bottom: 10px;
         }
-        .dxr-flag {
-          width: 6px;
-          height: 6px;
-          background: var(--olive);
-          flex-shrink: 0;
+        .iw-label-body {
+          font-family: var(--font-editorial), serif;
+          font-style: italic;
+          font-size: 17px;
+          line-height: 1.55;
+          color: var(--text-muted);
+          margin: 0;
+          max-width: 260px;
         }
-        .dxr-list { list-style: none; }
-        .dxr-row {
-          display: flex;
-          align-items: baseline;
-          gap: 14px;
-          padding: 12px 20px;
-          border-top: 1px solid var(--line);
-          opacity: 0;
-          transform: translateY(8px);
-          transition:
-            opacity 600ms ease calc(350ms + var(--i, 0) * 130ms),
-            transform 600ms cubic-bezier(.16,1,.3,1) calc(350ms + var(--i, 0) * 130ms);
-        }
-        .vroom--on .dxr-row { opacity: 1; transform: none; }
-        .dxr-num {
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          color: var(--dust);
-          flex-shrink: 0;
-        }
-        .dxr-leak {
-          font-family: var(--font-mono), monospace;
-          font-size: 12px;
-          color: var(--ink);
-          flex: 1;
-        }
-        .dxr-locus {
-          font-family: var(--font-mono), monospace;
-          font-size: 8px;
-          letter-spacing: 0.16em;
-          color: var(--dust);
-        }
-        .dxr-foot {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          border-top: 1px solid var(--warm-black);
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.18em;
-          color: var(--text-secondary);
-          opacity: 0;
-          transition: opacity 700ms ease 1100ms;
-        }
-        .vroom--on .dxr-foot { opacity: 1; }
-        .dxr-next { font-size: 11px; color: var(--olive); }
 
-        /* ── Reduced motion ──────────────────────────── */
+        /* ── Reduced motion ────────────────────────────── */
         @media (prefers-reduced-motion: reduce) {
-          .vr-reveal, .dxr-row, .dxr-foot,
-          .cm-wall, .cm-node, .cm-dead, .cm-label,
-          .fo-q, .fo-frag, .fo-cites, .fo-caption,
-          .sl-layer, .sl-caption {
-            opacity: 1 !important;
-            transform: none !important;
-            transition: none !important;
-          }
-          .cm-route, .fo-fan, .fo-conv, .fo-box, .sl-axis {
-            stroke-dashoffset: 0 !important;
-            transition: none !important;
-          }
-          .vroom-scan { transform: scaleX(1) !important; transition: none !important; }
-          .or-station-tick, .or-station-name { transition: none !important; }
+          .iw-lead-scan { animation: none; }
+          .iw-label { opacity: 1; transform: none; transition: none; }
         }
 
-        /* ── Tablet / mobile ─────────────────────────── */
-        @media (max-width: 1023px) {
-          .or-rail { display: none; }
-          .or-body { grid-template-columns: 1fr; }
-        }
+        /* ── Mobile ────────────────────────────────────── */
         @media (max-width: 820px) {
-          .or-header { padding: 36px 24px 28px; }
-          .or-chip--right { display: none; }
-          .vroom-grid { grid-template-columns: 1fr; }
-          .vroom-text,
-          .vroom--flip .vroom-text {
+          .iw-head { padding: 36px 24px 28px; }
+          .iw-lead {
+            height: 80vw;
+            min-height: 300px;
+            max-height: 480px;
+          }
+          .iw-lead-label {
+            left: 24px;
+            right: 24px;
+            bottom: 24px;
+            max-width: none;
+            padding: 18px 20px;
+          }
+          .iw-pair,
+          .iw-pair--flip {
+            grid-template-columns: 1fr;
+            min-height: auto;
+          }
+          .iw-pair .iw-pair-img,
+          .iw-pair--flip .iw-pair-img {
             order: 1;
-            padding: 44px 24px 8px;
-          }
-          .vroom-visual,
-          .vroom--flip .vroom-visual {
-            order: 2;
-            border-left: none;
             border-right: none;
-            padding: 24px 24px 52px;
+            border-left: none;
+            min-height: 68vw;
           }
-          .vroom-statement { margin-top: 28px; }
-          .vroom-body { margin-bottom: 32px; }
-          .vroom-deliv { grid-template-columns: 1fr; }
+          .iw-pair-text {
+            order: 2;
+            padding: 44px 24px 52px;
+            border-top: 1px solid var(--line);
+          }
+          .iw-ghost-num { font-size: 40vw; top: -12px; }
         }
       `}</style>
     </section>

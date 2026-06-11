@@ -1,180 +1,216 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import { ROOMS } from "@/lib/services";
+import {
+  motion,
+  useScroll,
+  useSpring,
+  useMotionValueEvent,
+  useReducedMotion,
+} from "framer-motion";
+import { useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n/context";
 
-const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
-
-// CRAWL = SEO, RETRIEVE = AI Search, TRUST = Websites, DIAGNOSE = Audits (fixed English labels)
-const MAPPING: Record<string, string> = {
-  crawl: "SEO",
-  retrieve: "AI SEARCH / GEO / AIO",
-  trust: "WEBSITES",
-  diagnose: "AUDITS",
-};
-
+// Pinned scroll scene — the four system words ignite as the user scrolls
+// through 280vh while the viewport stays locked on the scene.
 export default function SystemStatement() {
   const t = useTranslations();
   const sys = t.servicesPage.system;
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.25 });
+  const reduced = useReducedMotion();
 
-  const anim = (delay: number) => ({
-    initial: { opacity: 0, y: 16 },
-    animate: inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
-    transition: { duration: 0.6, ease: EASE, delay },
+  const outerRef = useRef<HTMLElement>(null);
+  const [stage, setStage] = useState(0);
+
+  const { scrollYProgress } = useScroll({
+    target: outerRef,
+    offset: ["start start", "end end"],
+  });
+  const lineProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 26 });
+
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    // 5 stages: 0 = nothing lit, 1..4 = words lit cumulatively
+    setStage(Math.min(4, Math.max(0, Math.floor(v * 6.2))));
   });
 
+  const allOn = reduced === true;
+
   return (
-    <section ref={ref} className="sys-section">
-      <motion.div {...anim(0)} className="sys-label-row">
-        <span className="sys-label">02</span>
-        <span className="sys-label">{sys.sectionLabel}</span>
-      </motion.div>
+    <section
+      ref={outerRef}
+      id="system"
+      className={`sys-outer${allOn ? " sys-outer--static" : ""}`}
+      aria-label="The visibility system"
+    >
+      <div className="sys-sticky">
+        <div className="sys-top">
+          <div className="sys-chips">
+            <span className="sys-chip">02</span>
+            <span className="sys-chip">{sys.sectionLabel}</span>
+          </div>
+          <h2 className="sys-headline">
+            {sys.headline} <em>{sys.headlineItalic}</em>
+          </h2>
+        </div>
 
-      <div className="sys-grid">
-        <motion.h2 {...anim(0.08)} className="sys-headline">
-          {sys.headline}
-          <br />
-          <em>{sys.headlineItalic}</em>
-        </motion.h2>
+        {/* The four words — outline until their stage arrives */}
+        <div className="sys-words">
+          {sys.ticks.map((word, i) => {
+            const on = allOn || stage > i;
+            return (
+              <div key={word} className={`sys-word-row${on ? " sys-word-row--on" : ""}`}>
+                <span className="sys-word-idx">0{i + 1}</span>
+                <span className="sys-word">{word}</span>
+                <span className="sys-word-mark" aria-hidden="true" />
+              </div>
+            );
+          })}
+        </div>
 
-        <motion.div {...anim(0.16)} className="sys-copy-col">
+        {/* Signal line — driven by scroll */}
+        <div className="sys-line-wrap" aria-hidden="true">
+          <motion.span
+            className="sys-line"
+            style={{ scaleX: allOn ? 1 : lineProgress }}
+          />
+        </div>
+
+        <div className="sys-copy-row">
           <p className="sys-copy">{sys.copy1}</p>
           <p className="sys-copy sys-copy--dim">{sys.copy2}</p>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Room legend — instrument index */}
-      <motion.ul {...anim(0.26)} className="sys-legend">
-        {ROOMS.map((room) => (
-          <li key={room.id}>
-            <a href={`#${room.id}`} className="sys-cell">
-              <span className="sys-cell-num">{room.index}</span>
-              <span className="sys-cell-station">
-                {room.station}
-                <span className="sys-cell-scan" aria-hidden="true" />
-              </span>
-              <span className="sys-cell-map">{MAPPING[room.id]}</span>
-            </a>
-          </li>
-        ))}
-      </motion.ul>
-
       <style>{`
-        .sys-section {
+        /* ── Pinned scene ──────────────────────────────── */
+        .sys-outer {
+          position: relative;
+          height: 280vh;
           background: var(--paper);
-          padding: 88px 64px 0;
+          border-bottom: 1px solid var(--warm-black);
+          scroll-margin-top: 0;
         }
-        .sys-label-row { display: flex; gap: 16px; margin-bottom: 48px; }
-        .sys-label {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.1em;
+        .sys-outer--static { height: auto; }
+        .sys-sticky {
+          position: sticky;
+          top: 0;
+          height: 100svh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 120px 64px 56px;
+          overflow: hidden;
+        }
+        .sys-outer--static .sys-sticky {
+          position: static;
+          height: auto;
+          padding: 96px 64px 88px;
+        }
+
+        .sys-top { margin-bottom: 40px; }
+        .sys-chips { display: flex; gap: 16px; margin-bottom: 22px; }
+        .sys-chip {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.22em;
           text-transform: uppercase;
           color: var(--text-muted);
-        }
-
-        .sys-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
-          gap: 0 64px;
-          align-items: end;
-          margin-bottom: 72px;
         }
         .sys-headline {
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-size: clamp(38px, 5vw, 68px);
-          line-height: 1.06;
+          font-size: clamp(24px, 2.6vw, 38px);
+          line-height: 1.15;
           color: var(--warm-black);
           margin: 0;
+          max-width: 640px;
         }
         .sys-headline em { font-style: italic; }
-        .sys-copy-col { display: flex; flex-direction: column; gap: 18px; max-width: 420px; }
+
+        /* ── The words ─────────────────────────────────── */
+        .sys-words { display: flex; flex-direction: column; }
+        .sys-word-row {
+          display: flex;
+          align-items: baseline;
+          gap: 28px;
+          border-top: 1px solid var(--line);
+          padding: 6px 0;
+        }
+        .sys-word-idx {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          letter-spacing: 0.18em;
+          color: var(--dust);
+          width: 28px;
+          flex-shrink: 0;
+          transition: color 500ms ease;
+        }
+        .sys-word {
+          font-family: var(--font-display), sans-serif;
+          font-weight: 800;
+          font-size: clamp(40px, 7.2vw, 104px);
+          letter-spacing: -0.02em;
+          line-height: 0.98;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1px color-mix(in srgb, var(--warm-black) 32%, transparent);
+          transition: color 700ms cubic-bezier(.16,1,.3,1);
+        }
+        .sys-word-mark {
+          width: 10px;
+          height: 10px;
+          background: var(--olive);
+          align-self: center;
+          margin-left: auto;
+          flex-shrink: 0;
+          transform: scale(0);
+          transition: transform 500ms cubic-bezier(.16,1,.3,1);
+        }
+        .sys-word-row--on .sys-word {
+          color: var(--warm-black);
+          -webkit-text-stroke: 1px transparent;
+        }
+        .sys-word-row--on .sys-word-idx { color: var(--olive); }
+        .sys-word-row--on .sys-word-mark { transform: scale(1); }
+
+        /* ── Scroll-driven line ────────────────────────── */
+        .sys-line-wrap {
+          height: 2px;
+          background: var(--line);
+          margin: 36px 0 28px;
+          position: relative;
+          overflow: hidden;
+        }
+        .sys-line {
+          position: absolute;
+          inset: 0;
+          background: var(--signal);
+          transform-origin: left;
+          display: block;
+        }
+
+        .sys-copy-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0 64px;
+          max-width: 920px;
+        }
         .sys-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 15px;
-          font-weight: 400;
-          line-height: 1.65;
+          font-size: 14px;
+          line-height: 1.7;
           color: var(--text-body);
+          margin: 0;
         }
         .sys-copy--dim { color: var(--text-muted); }
 
-        /* ── Legend strip — 01 CRAWL … 04 DIAGNOSE ───── */
-        .sys-legend {
-          list-style: none;
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 0 40px;
-          padding-bottom: 64px;
-        }
-        .sys-cell {
-          display: block;
-          border-top: 1px solid var(--warm-black);
-          padding: 16px 0 8px;
-          text-decoration: none;
-        }
-        .sys-cell-num {
-          display: block;
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.14em;
-          color: var(--dust);
-          margin-bottom: 10px;
-        }
-        .sys-cell-station {
-          position: relative;
-          display: inline-block;
-          font-family: var(--font-display), sans-serif;
-          font-weight: 700;
-          font-size: 19px;
-          letter-spacing: 0.02em;
-          color: var(--warm-black);
-          padding-bottom: 6px;
-          margin-bottom: 8px;
-        }
-        .sys-cell-scan {
-          position: absolute;
-          left: 0; bottom: 0;
-          width: 100%;
-          height: 1px;
-          background: var(--signal);
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 600ms cubic-bezier(.16,1,.3,1);
-        }
-        .sys-cell:hover .sys-cell-scan,
-        .sys-cell:focus-visible .sys-cell-scan { transform: scaleX(1); }
-        .sys-cell:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
-        .sys-cell-map {
-          display: block;
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.12em;
-          color: var(--muted);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .sys-cell-scan { transition: none; }
-        }
-
+        /* ── Mobile ────────────────────────────────────── */
         @media (max-width: 900px) {
-          .sys-section { padding: 60px 24px 0; }
-          .sys-label-row { margin-bottom: 32px; }
-          .sys-grid {
-            grid-template-columns: 1fr;
-            gap: 28px 0;
-            margin-bottom: 48px;
-          }
-          .sys-legend {
-            grid-template-columns: 1fr 1fr;
-            gap: 28px 24px;
-            padding-bottom: 52px;
-          }
+          .sys-outer { height: 240vh; }
+          .sys-outer--static { height: auto; }
+          .sys-sticky { padding: 110px 24px 40px; }
+          .sys-outer--static .sys-sticky { padding: 64px 24px 60px; }
+          .sys-word-row { gap: 16px; }
+          .sys-copy-row { grid-template-columns: 1fr; gap: 14px 0; }
+          .sys-copy { font-size: 13px; }
         }
       `}</style>
     </section>
