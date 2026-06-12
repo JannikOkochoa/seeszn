@@ -10,7 +10,7 @@ export const en = {
     work: "WORK",
     insights: "INSIGHTS",
     about: "STUDIO",
-    cta: "BOOK A DIAGNOSIS",
+    cta: "CHECK BRAND VISIBILITY",
     servicesTagline: "We build the surfaces machines retrieve and people trust.",
     enterOperatingRoom: "ENTER THE SYSTEM",
     allServices: "DISCOVER",
@@ -40,11 +40,11 @@ export const en = {
 
   // ── Hero ────────────────────────────────────────────────────────────────────
   hero: {
-    line1: "You are not",
-    line2: "in the",
-    italic: "answer.",
-    sub: "VISIBILITY SYSTEMS FOR BRANDS\nENTERING MACHINE MEMORY.",
-    cta: "START A DIAGNOSIS",
+    line1: "The AI doesn't",
+    line2: "know your",
+    italic: "brand.",
+    sub: "WE BRING YOUR BRAND\nINTO THE MODELS.",
+    cta: "CHECK BRAND VISIBILITY",
   },
 
   // ── TheShift ────────────────────────────────────────────────────────────────
@@ -109,9 +109,9 @@ export const en = {
     chip: "SELECTED PROOFS",
     viewAll: "VIEW ALL CASES",
     cards: [
-      { index: "01", sector: "EDUCATION", headline: "Searchable.\nNot cited.", trace: "SOURCE SURFACE" },
-      { index: "02", sector: "TRAVEL", headline: "Visible.\nNot remembered.", trace: "CATEGORY TRACE" },
-      { index: "03", sector: "B2B SAAS", headline: "Mentioned.\nNot trusted.", trace: "TRUST SIGNAL" },
+      { index: "01", sector: "METAL & STEEL", headline: "Built by hand.\nMissed by models.", trace: "RISCHO GMBH" },
+      { index: "02", sector: "REAL ESTATE", headline: "Developing cities.\nNot AI answers.", trace: "SIVIUS GROUP" },
+      { index: "03", sector: "CONTENT MARKETING", headline: "Producing content.\nNot citations.", trace: "CONTENTKUECHE" },
     ],
   },
 
@@ -137,23 +137,30 @@ export const en = {
     headlineRoman: "This is not a pitch.",
     headlineItalic: "It is a diagnosis.",
     sub: "We map your visibility across Google\nand all major AI platforms before we\ndiscuss working together.",
-    successMessage: "Diagnosis requested. We’ll be in touch.",
+    successMessage: "Request received. We’ll be in touch.",
     placeholder: "your@email.com",
-    buttonIdle: "START A DIAGNOSIS",
+    buttonIdle: "CHECK BRAND VISIBILITY",
     buttonLoading: "...",
     errorMessage: "Something went wrong. Write to hello@seeszn.com directly.",
   },
 
   // ── Footer ──────────────────────────────────────────────────────────────────
   footer: {
-    location: "BERLIN — BANGKOK",
-    rooms: [
-      { num: "01", name: "OPERATING ROOM", href: "/services" },
-      { num: "02", name: "EVIDENCE ARCHIVE", href: "/work" },
-      { num: "03", name: "INTELLIGENCE ROOM", href: "/insights" },
-      { num: "04", name: "OPERATING MANUAL", href: "/about" },
-      { num: "05", name: "SCAN ROOM", href: "/diagnosis" },
+    tagline: "We build the surfaces machines retrieve and people trust.",
+    email: "HELLO@SEESZN.COM",
+    cta: "CHECK BRAND VISIBILITY",
+    nav: [
+      { name: "DISCOVER", href: "/services" },
+      { name: "WORK",     href: "/work" },
+      { name: "INSIGHTS", href: "/insights" },
+      { name: "STUDIO",   href: "/about" },
     ],
+    legal: [
+      { name: "Legal Notice",   href: "/legal" },
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Contact",        href: "/diagnosis" },
+    ],
+    copy: "© 2026 Okri Holdings LLC",
   },
 
   // ── Services page ────────────────────────────────────────────────────────────
@@ -165,7 +172,7 @@ export const en = {
       italic: "machine memory.",
       sub1: "SEESZN BUILDS THE SURFACES MACHINES RETRIEVE AND PEOPLE TRUST.",
       sub2: "SEARCH, AI VISIBILITY, WEBSITES AND DIAGNOSIS — CONNECTED INTO ONE OPERATING SYSTEM.",
-      cta: "BOOK A DIAGNOSIS",
+      cta: "CHECK BRAND VISIBILITY",
       secondary: "SEE THE SYSTEM",
       imageCaption: "VISIBILITY OPERATING SYSTEM",
     },
@@ -214,7 +221,7 @@ export const en = {
       headlineRoman: "Not sure where",
       headlineItalic: "visibility breaks?",
       copy: "WE MAP YOUR CURRENT SEARCH VISIBILITY,\nAI CITATION POTENTIAL, WEBSITE STRUCTURE\nAND HIGHEST-LEVERAGE NEXT MOVES.",
-      cta: "BOOK A DIAGNOSIS",
+      cta: "CHECK BRAND VISIBILITY",
       closing: "We build the surfaces machines retrieve and people trust.",
     },
     rooms: [
@@ -279,7 +286,7 @@ export const en = {
       sub: ["THREE LIVE SYSTEMS — BUILT, MEASURED", "AND HELD IN CONTINUOUS CARE.", "FILED AS CASE RECORDS."],
       note: ["CLIENT READINGS REMAIN CONFIDENTIAL.", "THE SURFACES ARE LIVE."],
       meta: "THE EVIDENCE ARCHIVE",
-      cta: { label: "BOOK A DIAGNOSIS", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
     },
     archive: {
       chip1: "EVIDENCE ARCHIVE",
@@ -360,7 +367,67 @@ export const en = {
       sub: ["FIELD NOTES FROM THE RETRIEVAL LAYER —", "WHAT AI SEARCH READS, CITES AND IGNORES,", "RECORDED IN OPERATION."],
       note: ["NO TREND ESSAYS. NO PREDICTION THEATER.", "ONLY WHAT WE VERIFY."],
       meta: "THE INTELLIGENCE ROOM",
-      cta: { label: "BOOK A DIAGNOSIS", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
+    },
+    cinema: {
+      decode: "SIGNAL ACQUIRED — RECORDING",
+      statusLeft: "INTELLIGENCE ROOM — LIVE READING",
+      statusRight: "SCROLL TO ENTER THE FAN",
+      fragments: [
+        "QUERY 14 / 30 — UNSEEN",
+        "CITATION SURFACE: LISTICLE",
+        "CHUNK EMBEDDED — NOISE",
+        "ENTITY: UNRESOLVED",
+        "FAN-OUT PATH 07 — OPEN",
+        "PASSAGE SELECTED — 40 WORDS",
+        "CRAWL BUDGET: SPENT",
+        "SOURCE CITED: NOT YOU",
+        "RETRIEVAL DEPTH: CHUNK",
+      ],
+      ghost: "UNSEEN",
+    },
+    fanout: {
+      chip: "QUERY FAN-OUT",
+      label: "LIVE DECOMPOSITION",
+      queryKey: "THE QUESTION YOU SEE",
+      query: "best agency for ai search visibility",
+      counterKey: "HIDDEN SEARCH PATHS",
+      headline: "One question becomes",
+      headlineItalic: "thirty searches.",
+      copy: "The system decomposes the prompt into a fan of sub-queries — answered separately, from surfaces you never optimized, and reassembled into one answer.",
+      endRoman: "You optimized for one.",
+      endItalic: "The answer used thirty.",
+      endNote: "PRESENCE MEANS BEING A FRAGMENT THE ASSEMBLY CANNOT SKIP.",
+      subqueries: [
+        "best ai search agencies 2026",
+        "seeszn reviews",
+        "geo vs seo difference",
+        "ai overview optimization cost",
+        "seeszn alternatives",
+        "how do llms choose citations",
+        "answer engine optimization agency",
+        "schema for ai search",
+        "seeszn pricing",
+        "top geo agencies europe",
+        "is seo dead 2026",
+        "chatgpt search ranking factors",
+        "perplexity citation sources",
+        "brand entity optimization",
+        "ai visibility audit",
+        "query fan-out explained",
+        "best agency for ai citations",
+        "llm seo case studies",
+        "gemini grounding sources",
+        "how to get cited by chatgpt",
+        "rag for marketing teams",
+        "category page optimization ai",
+        "copilot search sources",
+        "trusted sources ai answers",
+      ],
+    },
+    marquee: {
+      ariaLabel: "What happens to your surfaces in the retrieval layer",
+      words: ["READ", "RETRIEVED", "CITED", "ASSEMBLED", "IGNORED", "VERIFIED"],
     },
     observatory: {
       sectionLabel: "THE OBSERVATORY",
@@ -462,7 +529,7 @@ export const en = {
       sub: ["SEESZN IS A VISIBILITY STUDIO —", "STRATEGY, SEARCH, DESIGN AND ENGINEERING", "OPERATING AS ONE SYSTEM."],
       note: ["THIS PAGE IS THE MANUAL.", "THE READING OF YOUR SURFACE IS PRIVATE."],
       meta: "THE OPERATING MANUAL",
-      cta: { label: "BOOK A DIAGNOSIS", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
     },
     scanCta: {
       roman: "The manual is public.",
@@ -574,9 +641,105 @@ export const en = {
 
   // ── Common ──────────────────────────────────────────────────────────────────
   common: {
-    bookDiagnosis: "BOOK A DIAGNOSIS",
+    bookDiagnosis: "CHECK BRAND VISIBILITY",
     nextMove: "NEXT MOVE",
     railLabel: "OPERATING LINE",
+  },
+
+  // ── Legal pages ─────────────────────────────────────────────────────────────
+  legalNav: {
+    legal: "Legal Notice",
+    privacy: "Privacy Policy",
+    contact: "Contact",
+  },
+
+  legalPage: {
+    meta: "LEGAL NOTICE",
+    accession: "SZN-LG-01",
+    title: "Legal Notice",
+    subtitle: "Disclosure and operator information.",
+    sections: [
+      {
+        num: "01",
+        heading: "Operator",
+        body: "Okri Holdings LLC\n1912 Capitol Avenue, Ste. 500\nCheyenne, Wyoming\nUnited States",
+      },
+      {
+        num: "02",
+        heading: "Contact",
+        body: "Email: contact@okriholdings.com\nPhone: +1 914 855 1480",
+      },
+      {
+        num: "03",
+        heading: "Service",
+        body: "SEESZN is a brand of Okri Holdings LLC. The website seeszn.com provides information about AI search visibility, SEO, and digital presence services.",
+      },
+      {
+        num: "04",
+        heading: "Liability for Content",
+        body: "The contents of this website have been created with the greatest possible care. We cannot, however, guarantee that the information provided is accurate, complete or up-to-date. As a service provider, we are responsible for our own content on these pages in accordance with applicable law. We are not obligated to monitor transmitted or stored third-party information.",
+      },
+      {
+        num: "05",
+        heading: "Liability for Links",
+        body: "Our website contains links to external third-party websites over whose content we have no control. Therefore, we cannot accept any liability for this external content. The relevant provider or operator of the pages is always responsible for the content of the linked pages. Linked pages were checked for possible legal violations at the time of linking. Illegal content was not recognisable at the time of linking.",
+      },
+      {
+        num: "06",
+        heading: "Copyright",
+        body: "The content and works created by the site operators on these pages are subject to applicable copyright law. Duplication, processing, distribution, or any form of commercialisation of such material beyond the scope of copyright law requires the prior written consent of its respective author or creator.",
+      },
+    ],
+  },
+
+  privacyPage: {
+    meta: "PRIVACY POLICY",
+    accession: "SZN-PP-01",
+    title: "Privacy Policy",
+    subtitle: "How we handle your data — plainly stated.",
+    sections: [
+      {
+        num: "01",
+        heading: "Controller",
+        body: "Okri Holdings LLC\n1912 Capitol Avenue, Ste. 500\nCheyenne, Wyoming\nUnited States\n\nEmail: contact@okriholdings.com\nPhone: +1 914 855 1480",
+      },
+      {
+        num: "02",
+        heading: "Data We Collect",
+        body: "When you visit seeszn.com, our web servers automatically record standard access data: your IP address, browser type, operating system, referring URL, and the pages you visit. This data is used solely for operating the website securely and improving its performance. It is not linked to your identity.",
+      },
+      {
+        num: "03",
+        heading: "Contact Inquiries",
+        body: "If you submit an inquiry through our contact form or by email, we process your name, email address, and the content of your message solely to respond to your inquiry. This data is not shared with third parties and is deleted once your request has been fully handled.",
+      },
+      {
+        num: "04",
+        heading: "Cookies and Tracking",
+        body: "This website does not use tracking cookies, advertising pixels, or third-party analytics platforms that identify you individually. We may use technically necessary session data to ensure the website functions correctly. No profiling takes place.",
+      },
+      {
+        num: "05",
+        heading: "Third-Party Services",
+        body: "We use Resend to process and deliver email submissions from our contact form. Resend acts as a data processor under our instruction. Their privacy policy is available at resend.com/privacy. No other third-party data processors are used on this website.",
+      },
+      {
+        num: "06",
+        heading: "Your Rights",
+        body: "You have the right to request access to, correction of, or deletion of personal data we hold about you. You may also object to or restrict certain processing. To exercise any of these rights, contact us at contact@okriholdings.com. We will respond within 30 days.",
+      },
+      {
+        num: "07",
+        heading: "Retention",
+        body: "We retain contact inquiry data only as long as necessary to handle your request, and no longer than 12 months unless a longer period is required by law. Access log data is deleted after 30 days.",
+      },
+      {
+        num: "08",
+        heading: "Changes to This Policy",
+        body: "We may update this policy from time to time. The version date at the top of this page indicates when it was last revised. Continued use of the website after any changes constitutes acceptance of the updated policy.",
+      },
+    ],
+    updated: "Last updated: June 2026",
   },
 };
 

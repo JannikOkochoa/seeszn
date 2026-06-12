@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
-import RoomHero from "@/components/rooms/RoomHero";
-import TheWatch from "@/components/insights/TheWatch";
+import IntelHero from "@/components/insights/IntelHero";
+import FanOut from "@/components/insights/FanOut";
 import Observatory from "@/components/insights/Observatory";
+import SignalMarquee from "@/components/insights/SignalMarquee";
 import FieldNotes from "@/components/insights/FieldNotes";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
@@ -23,29 +24,13 @@ export default function InsightsPage() {
     <>
       <Nav />
       <main>
-        <RoomHero
-          index="01"
-          room="INSIGHTS / INTELLIGENCE ROOM"
-          accession="SZN-IN-03"
-          roman={["MOST SEARCH NOW", "HAPPENS WHERE"]}
-          italic="you cannot see it."
-          sub={[
-            "FIELD NOTES FROM THE RETRIEVAL LAYER —",
-            "WHAT AI SEARCH READS, CITES AND IGNORES,",
-            "RECORDED IN OPERATION.",
-          ]}
-          note={[
-            "NO TREND ESSAYS. NO PREDICTION THEATER.",
-            "ONLY WHAT WE VERIFY.",
-          ]}
-          meta="THE INTELLIGENCE ROOM"
-          cta={{ label: "BOOK A DIAGNOSIS", href: "/diagnosis" }}
-          panel={<TheWatch />}
-        />
+        <IntelHero />
+        <FanOut />
         <Observatory />
+        <SignalMarquee />
         <FieldNotes />
         <ScanCTA
-          index="04"
+          index="05"
           roman="Reading is not"
           italic="visibility."
           sub={[

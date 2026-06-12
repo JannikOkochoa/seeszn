@@ -6,7 +6,15 @@ import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const CARD_IMGS = ["/seeszn-home-main-02.png", "/seeszn-home-main-03.png", "/seeszn-home-main-04.png"];
+const CARD_IMGS = [
+  "/rischo-design-01.png",
+  "/sivius-design-02.png",
+  "/contentkueche-design-03.png",
+];
+
+const CARD_NAMES = ["RISCHO", "SIVIUS", "CONTENTKUECHE"];
+
+const CARD_HREFS = ["/work", "/work", "/work"];
 
 export default function Cases() {
   const t = useTranslations();
@@ -38,8 +46,9 @@ export default function Cases() {
       {/* ── Cards grid ── */}
       <div className="cases-grid">
         {CARDS.map((card, i) => (
-          <motion.div
+          <motion.a
             key={i}
+            href={CARD_HREFS[i]}
             className="cases-card"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -48,7 +57,7 @@ export default function Cases() {
             {/* Full-bleed image */}
             <img
               src={CARD_IMGS[i]}
-              alt={`Case ${card.index} — ${card.sector}`}
+              alt={`${CARD_NAMES[i]} — Case ${card.index}`}
               className="cases-img"
             />
 
@@ -74,14 +83,15 @@ export default function Cases() {
 
             {/* Bottom content */}
             <div className="cases-body">
+              <p className="cases-client">{CARD_NAMES[i]}</p>
               <p className="cases-headline">{card.headline}</p>
-              <a href="/work" className="cases-cta">
+              <span className="cases-cta">
                 VIEW CASE
                 <span className="cases-cta-dot" aria-hidden="true" />
                 <span className="cases-cta-arrow">→</span>
-              </a>
+              </span>
             </div>
-          </motion.div>
+          </motion.a>
         ))}
       </div>
 
@@ -155,6 +165,8 @@ export default function Cases() {
           overflow: hidden;
           border: 1px solid var(--warm-black);
           cursor: pointer;
+          display: block;
+          text-decoration: none;
         }
         .cases-card + .cases-card { margin-left: -1px; }
 
@@ -299,9 +311,22 @@ export default function Cases() {
           padding: 0 28px 30px;
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 10px;
           pointer-events: none;
         }
+
+        /* Client name */
+        .cases-client {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--olive);
+          margin: 0;
+          transition: transform 760ms cubic-bezier(.16,1,.3,1);
+        }
+        .cases-card:hover .cases-client { transform: translateY(-3px); }
 
         /* Proof statement — cold, diagnostic */
         .cases-headline {

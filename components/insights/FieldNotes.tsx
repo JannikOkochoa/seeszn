@@ -67,7 +67,7 @@ export default function FieldNotes() {
         style={{ "--ins": INS } as React.CSSProperties}
       >
         <motion.div {...anim(0)} className="dl-chips">
-          <span className="dl-chip">03</span>
+          <span className="dl-chip">04</span>
           <span className="dl-chip">{fn.chip}</span>
           <span className="dl-chip dl-chip--right">{fn.dateLabel}</span>
         </motion.div>

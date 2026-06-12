@@ -13,11 +13,10 @@ import { useTranslations } from "@/lib/i18n/context";
 
 // Deep-parallax editorial spread — images drift inside their frames while
 // museum labels and giant ghost indices counter-move.
-// TODO: replace with final art-directed photography when available.
 const IMAGES = [
-  "/seeszn-home-main-01.png",
-  "/seeszn-home-main-02.png",
-  "/seeszn-home-main-03.png",
+  "/seeszn-visible-surface-01.png",
+  "/seeszn-mashine-memory-02.png",
+  "/seeszn-source-signal-03.png",
 ];
 
 function ParallaxImage({ src, strength = 10 }: { src: string; strength?: number }) {

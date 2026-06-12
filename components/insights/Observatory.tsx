@@ -66,7 +66,7 @@ export default function Observatory() {
         {/* LEFT — statement + readout */}
         <div className="ob-left">
           <div className="ob-chips">
-            <span className="ob-chip">02</span>
+            <span className="ob-chip">03</span>
             <span className="ob-chip">{ob.sectionLabel}</span>
           </div>
 
@@ -122,10 +122,12 @@ export default function Observatory() {
               {/* Degree ticks every 30° */}
               {Array.from({ length: 12 }).map((_, i) => {
                 const a = (i * 30 * Math.PI) / 180;
-                const x1 = 300 + 280 * Math.sin(a);
-                const y1 = 300 - 280 * Math.cos(a);
-                const x2 = 300 + 288 * Math.sin(a);
-                const y2 = 300 - 288 * Math.cos(a);
+                // rounded so server- and client-rendered attributes stringify identically
+                const r2 = (v: number) => Math.round(v * 100) / 100;
+                const x1 = r2(300 + 280 * Math.sin(a));
+                const y1 = r2(300 - 280 * Math.cos(a));
+                const x2 = r2(300 + 288 * Math.sin(a));
+                const y2 = r2(300 - 288 * Math.cos(a));
                 return (
                   <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1" opacity="0.5" />
                 );
