@@ -159,6 +159,7 @@ export const en = {
       { name: "Legal Notice",   href: "/legal" },
       { name: "Privacy Policy", href: "/privacy" },
       { name: "Contact",        href: "/diagnosis" },
+      { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
     ],
     copy: "© 2026 Okri Holdings LLC",
   },

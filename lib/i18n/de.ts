@@ -163,6 +163,7 @@ export const de: Translations = {
       { name: "Rechtliches", href: "/de/legal" },
       { name: "Datenschutz", href: "/de/privacy" },
       { name: "Kontakt",     href: "/de/diagnosis" },
+      { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
     ],
     copy: "© 2026 Okri Holdings LLC",
   },
