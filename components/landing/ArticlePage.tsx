@@ -165,44 +165,63 @@ export default function ArticlePage({ article }: { article: Article }) {
 }
 
 const ARTICLE_CSS = `
-  .lp-table-wrap { overflow-x: auto; max-width: 100%; }
+  .lp-table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--line); }
   .lp-table {
     border-collapse: collapse;
     width: 100%;
-    max-width: 900px;
     font-size: 15px;
   }
   .lp-table th, .lp-table td {
     text-align: left;
-    padding: 14px 18px;
-    border: 1px solid var(--line);
+    padding: 16px 20px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     vertical-align: top;
     line-height: 1.55;
   }
+  .lp-table th:last-child, .lp-table td:last-child { border-right: none; }
+  .lp-table tbody tr:last-child th, .lp-table tbody tr:last-child td { border-bottom: none; }
   .lp-table thead th {
     font-family: var(--font-mono), monospace;
     font-size: 11px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--ink-strong);
-    background: var(--paper-soft);
+    color: var(--lp-bone);
+    background: var(--lp-ink-panel);
+    border-right-color: var(--lp-panel-line);
+    border-bottom-color: var(--lp-panel-line);
   }
+  .lp-table thead th:first-child { color: var(--lp-acid); }
   .lp-table tbody th[scope="row"] {
     font-family: var(--font-display), sans-serif;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
     color: var(--ink-strong);
-    background: var(--paper-soft);
     white-space: nowrap;
   }
+  .lp-table tbody tr { transition: background 0.25s; }
+  .lp-table tbody tr:hover { background: var(--paper-soft); }
   .lp-table td { color: var(--text-body); }
+
   .lp-disclaimer {
+    position: relative;
     font-family: var(--font-mono), monospace;
     font-size: 12.5px;
-    line-height: 1.7;
-    letter-spacing: 0.02em;
-    color: var(--text-muted);
-    border: 1px solid var(--line);
-    padding: 20px 24px;
-    max-width: 70ch;
+    line-height: 1.75;
+    letter-spacing: 0.015em;
+    color: var(--lp-bone-soft);
+    background: var(--lp-ink-panel);
+    border: 1px solid var(--lp-panel-line);
+    padding: 24px 26px 24px 30px;
+    max-width: 74ch;
+  }
+  .lp-disclaimer::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--lp-acid);
   }
 `;

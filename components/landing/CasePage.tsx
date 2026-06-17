@@ -121,24 +121,35 @@ export default function CasePage({ study }: { study: CaseStudy }) {
       <style>{`
         .cs-meta {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 1px;
-          margin-top: 8px;
-          border: 1px solid var(--line);
-          background: var(--line);
-          max-width: 760px;
+          margin-top: 12px;
+          border: 1px solid var(--lp-panel-line);
+          background: var(--lp-panel-line);
+          max-width: 820px;
         }
-        .cs-meta > div { background: var(--paper); padding: 18px 20px; }
+        .cs-meta > div {
+          background: var(--lp-ink-panel);
+          padding: 22px 22px 24px;
+          transition: background 0.3s;
+        }
+        .cs-meta > div:hover { background: var(--lp-ink-panel-2); }
         .cs-meta dt {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
-          letter-spacing: 0.16em;
+          letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: var(--text-muted);
-          margin-bottom: 8px;
+          color: var(--lp-bone-faint);
+          margin-bottom: 12px;
         }
-        .cs-meta dd { font-size: 14px; color: var(--ink-strong); line-height: 1.4; }
-        .cs-meta a:hover { color: var(--text-primary); text-decoration: underline; }
+        .cs-meta dd {
+          font-family: var(--font-mono), monospace;
+          font-size: 13.5px;
+          color: var(--lp-bone);
+          line-height: 1.45;
+        }
+        .cs-meta a { color: var(--lp-acid); transition: opacity 0.25s; }
+        .cs-meta a:hover { opacity: 0.7; }
       `}</style>
     </>
   );
