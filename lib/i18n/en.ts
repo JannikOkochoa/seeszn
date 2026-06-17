@@ -17,22 +17,22 @@ export const en = {
     servicesDropdown: [
       {
         heading: "SEO",
-        href: "/services#crawl",
+        href: "/en/services#crawl",
         items: ["Technical SEO", "Content Systems", "Search Architecture", "Analytics"],
       },
       {
         heading: "AI SEARCH",
-        href: "/services#retrieve",
+        href: "/en/services#retrieve",
         items: ["GEO / AIO", "AI Overviews", "Citation Visibility", "Chat Search"],
       },
       {
         heading: "WEBSITES",
-        href: "/services#trust",
+        href: "/en/services#trust",
         items: ["Design Systems", "Next.js Development", "Conversion Pages", "Editorial Websites"],
       },
       {
         heading: "AUDITS",
-        href: "/services#diagnose",
+        href: "/en/services#diagnose",
         items: ["Search Diagnosis", "AI Visibility Audit", "Website Review", "Growth Roadmap"],
       },
     ],
@@ -150,15 +150,15 @@ export const en = {
     email: "HELLO@SEESZN.COM",
     cta: "CHECK BRAND VISIBILITY",
     nav: [
-      { name: "DISCOVER", href: "/services" },
-      { name: "WORK",     href: "/work" },
-      { name: "INSIGHTS", href: "/insights" },
-      { name: "STUDIO",   href: "/about" },
+      { name: "DISCOVER", href: "/en/services" },
+      { name: "WORK",     href: "/en/work" },
+      { name: "INSIGHTS", href: "/en/insights" },
+      { name: "STUDIO",   href: "/en/about" },
     ],
     legal: [
-      { name: "Legal Notice",   href: "/legal" },
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Contact",        href: "/diagnosis" },
+      { name: "Legal Notice",   href: "/en/legal" },
+      { name: "Privacy Policy", href: "/en/privacy" },
+      { name: "Contact",        href: "/en/diagnosis" },
       { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
     ],
     copy: "© 2026 Okri Holdings LLC",
@@ -287,7 +287,7 @@ export const en = {
       sub: ["THREE LIVE SYSTEMS — BUILT, MEASURED", "AND HELD IN CONTINUOUS CARE.", "FILED AS CASE RECORDS."],
       note: ["CLIENT READINGS REMAIN CONFIDENTIAL.", "THE SURFACES ARE LIVE."],
       meta: "THE EVIDENCE ARCHIVE",
-      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/en/diagnosis" },
     },
     archive: {
       chip1: "EVIDENCE ARCHIVE",
@@ -368,7 +368,7 @@ export const en = {
       sub: ["FIELD NOTES FROM THE RETRIEVAL LAYER —", "WHAT AI SEARCH READS, CITES AND IGNORES,", "RECORDED IN OPERATION."],
       note: ["NO TREND ESSAYS. NO PREDICTION THEATER.", "ONLY WHAT WE VERIFY."],
       meta: "THE INTELLIGENCE ROOM",
-      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/en/diagnosis" },
     },
     cinema: {
       decode: "SIGNAL ACQUIRED — RECORDING",
@@ -530,7 +530,7 @@ export const en = {
       sub: ["SEESZN IS A VISIBILITY STUDIO —", "STRATEGY, SEARCH, DESIGN AND ENGINEERING", "OPERATING AS ONE SYSTEM."],
       note: ["THIS PAGE IS THE MANUAL.", "THE READING OF YOUR SURFACE IS PRIVATE."],
       meta: "THE OPERATING MANUAL",
-      cta: { label: "CHECK BRAND VISIBILITY", href: "/diagnosis" },
+      cta: { label: "CHECK BRAND VISIBILITY", href: "/en/diagnosis" },
     },
     scanCta: {
       roman: "The manual is public.",

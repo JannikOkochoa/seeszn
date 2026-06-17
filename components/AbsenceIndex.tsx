@@ -137,7 +137,12 @@ export default function AbsenceIndex() {
           </motion.p>
 
           <motion.div {...anim(0.28)} style={{ marginTop: 32 }}>
-            <a href="#contact" className="abs-cta">{ai.cta}</a>
+            <a
+              href={t.locale === "de" ? "/research/absence-index" : "#contact"}
+              className="abs-cta"
+            >
+              {t.locale === "de" ? "METHODIK ANSEHEN →" : ai.cta}
+            </a>
           </motion.div>
         </div>
 

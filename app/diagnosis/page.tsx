@@ -1,38 +1,35 @@
-import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import RoomHero from "@/components/rooms/RoomHero";
 import IntakeForm from "@/components/diagnosis/IntakeForm";
 import ScanProtocol from "@/components/diagnosis/ScanProtocol";
 import Footer from "@/components/Footer";
+import { de } from "@/lib/i18n/de";
+import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Diagnosis — The Scan Room | SEESZN",
+export const metadata: Metadata = buildMetadata({
+  title: "Diagnose anfragen — KI-Sichtbarkeits-Scan | SEESZN",
   description:
-    "Before we build, we locate the leak. The scan reads your surface across search and AI systems: crawl, entity, citation, trust, conversion. A reading, not a pitch.",
-  openGraph: {
-    title: "SEESZN — The Scan Room",
-    description: "Before we build, we locate the leak. Request the scan.",
-    siteName: "SEESZN",
-  },
-};
+    "Fordere eine SEESZN-Diagnose an: Wir kartieren, wo deine Sichtbarkeit in Google und KI-Systemen bricht — eine Diagnose, kein Pitch. Eine Domain genügt zum Start.",
+  path: "/diagnosis",
+  locale: "de",
+  altPath: "/en/diagnosis",
+});
 
-export default function DiagnosisPage() {
+export default function DeDiagnosisPage() {
+  const h = de.diagnosisPage.hero;
   return (
     <>
       <Nav />
       <main>
         <RoomHero
           index="01"
-          room="DIAGNOSIS / SCAN ROOM"
-          accession="SZN-SC-05"
-          roman={["BEFORE WE BUILD,", "WE LOCATE"]}
-          italic="the leak."
-          sub={[
-            "A DIAGNOSIS, NOT A PITCH.",
-            "WE MAP WHERE YOUR VISIBILITY BREAKS",
-            "BEFORE WE DISCUSS WORKING TOGETHER.",
-          ]}
-          meta="THE SCAN ROOM"
+          room={h.room}
+          accession={h.accession}
+          roman={[...h.roman]}
+          italic={h.italic}
+          sub={[...h.sub]}
+          meta={h.meta}
           panel={<IntakeForm />}
         />
         <ScanProtocol />

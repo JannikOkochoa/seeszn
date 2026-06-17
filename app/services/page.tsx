@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import ServicesHero from "@/components/services/ServicesHero";
 import DiscoverMarquee from "@/components/services/DiscoverMarquee";
@@ -8,20 +7,19 @@ import MachineMemory from "@/components/services/MachineMemory";
 import ScanSection from "@/components/services/ScanSection";
 import DiagnosisCTA from "@/components/services/DiagnosisCTA";
 import Footer from "@/components/Footer";
+import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Discover — The SEESZN Visibility System",
+export const metadata: Metadata = buildMetadata({
+  title: "Leistungen — Das SEESZN Sichtbarkeitssystem | SEESZN",
   description:
-    "Visibility systems for brands entering machine memory. SEESZN connects search architecture, AI retrieval, digital surfaces and diagnosis into one operating system.",
-  openGraph: {
-    title: "SEESZN — Discover the Visibility System",
-    description:
-      "We build the surfaces machines retrieve and people trust. Search, AI visibility, websites and diagnosis — one operating system.",
-    siteName: "SEESZN",
-  },
-};
+    "SEESZN verbindet SEO-Architektur, AI-Retrieval (GEO/AIO), Website-Entwicklung und Diagnose zu einem Sichtbarkeitssystem für B2B-Marken im DACH-Raum.",
+  path: "/services",
+  locale: "de",
+  altPath: "/en/services",
+});
 
-export default function ServicesPage() {
+export default function DeServicesPage() {
   return (
     <>
       <Nav />

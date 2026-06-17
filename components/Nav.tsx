@@ -23,7 +23,7 @@ function CtaButton({
 }) {
   const [hovered, setHovered] = useState(false);
   const t = useTranslations();
-  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
 
   return (
     <Link
@@ -75,7 +75,8 @@ export default function Nav() {
   const n = nt.nav;
 
   const isDE = nt.locale === "de";
-  const base = isDE ? "/de" : "";
+  // German is the root surface; English lives under /en.
+  const base = isDE ? "" : "/en";
 
   // All four nav links as direct links — no dropdown, no mega panel
   const NAV_LINKS = [
@@ -201,7 +202,7 @@ export default function Nav() {
           >
             {/* Wordmark */}
             <Link
-              href={isDE ? "/de" : "/"}
+              href={isDE ? "/" : "/en"}
               aria-label="SEESZN — Return to home"
               onClick={closeAll}
               style={{
@@ -345,7 +346,7 @@ export default function Nav() {
               }}
             >
               <Link
-                href={isDE ? "/de" : "/"}
+                href={isDE ? "/" : "/en"}
                 onClick={closeAll}
                 aria-label="SEESZN — Home"
                 style={{

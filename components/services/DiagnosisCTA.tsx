@@ -59,7 +59,7 @@ export default function DiagnosisCTA() {
         </motion.p>
 
         <motion.div {...anim(0.24)}>
-          <a href={t.locale === "de" ? "/de/diagnosis" : "/diagnosis"} className="dcta-cta">
+          <a href={t.locale === "de" ? "/diagnosis" : "/en/diagnosis"} className="dcta-cta">
             {dc.cta} <span style={{ color: "var(--olive)" }}>→</span>
           </a>
         </motion.div>

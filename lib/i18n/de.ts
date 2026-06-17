@@ -21,22 +21,22 @@ export const de: Translations = {
     servicesDropdown: [
       {
         heading: "SEO",
-        href: "/de/services#crawl",
+        href: "/services#crawl",
         items: ["Technical SEO", "Content Systems", "Search Architecture", "Analytics"],
       },
       {
         heading: "AI SEARCH",
-        href: "/de/services#retrieve",
+        href: "/services#retrieve",
         items: ["GEO / AIO", "AI Overviews", "Citation Visibility", "Chat Search"],
       },
       {
         heading: "WEBSITES",
-        href: "/de/services#trust",
+        href: "/services#trust",
         items: ["Design Systems", "Next.js Development", "Conversion Pages", "Editorial Websites"],
       },
       {
         heading: "AUDITS",
-        href: "/de/services#diagnose",
+        href: "/services#diagnose",
         items: ["Search Diagnose", "AI Visibility Audit", "Website Review", "Growth Roadmap"],
       },
     ],
@@ -138,9 +138,9 @@ export const de: Translations = {
 
   // ── Contact ─────────────────────────────────────────────────────────────────
   contact: {
-    headlineRoman: "Du wirst nicht gefunden?",
-    headlineItalic: "Wir prüfen das für dich.",
-    sub: "Wir kartieren deine Sichtbarkeit auf Google\nund allen wichtigen KI-Plattformen, bevor\nwir über eine Zusammenarbeit sprechen.",
+    headlineRoman: "Wir lesen die Lücke,",
+    headlineItalic: "bevor wir bauen.",
+    sub: "Eine Domain und eine E-Mail genügen.\nWir kartieren, wo Sichtbarkeit bricht —\neine Diagnose, kein Pitch.",
     successMessage: "Diagnose angefordert. Wir melden uns.",
     placeholder: "deine@email.de",
     buttonIdle: "SICHTBARKEIT PRÜFEN",
@@ -154,15 +154,15 @@ export const de: Translations = {
     email: "HELLO@SEESZN.COM",
     cta: "SICHTBARKEIT PRÜFEN",
     nav: [
-      { name: "ENTDECKEN", href: "/de/services" },
-      { name: "ARBEIT",    href: "/de/work" },
-      { name: "INSIGHTS",  href: "/de/insights" },
-      { name: "STUDIO",    href: "/de/about" },
+      { name: "ENTDECKEN", href: "/services" },
+      { name: "ARBEIT",    href: "/work" },
+      { name: "INSIGHTS",  href: "/insights" },
+      { name: "STUDIO",    href: "/about" },
     ],
     legal: [
-      { name: "Rechtliches", href: "/de/legal" },
-      { name: "Datenschutz", href: "/de/privacy" },
-      { name: "Kontakt",     href: "/de/diagnosis" },
+      { name: "Rechtliches", href: "/legal" },
+      { name: "Datenschutz", href: "/privacy" },
+      { name: "Kontakt",     href: "/diagnosis" },
       { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
     ],
     copy: "© 2026 Okri Holdings LLC",
@@ -291,7 +291,7 @@ export const de: Translations = {
       sub: ["DREI LIVE-SYSTEME — GEBAUT, GEMESSEN", "UND IN LAUFENDER BETREUUNG.", "ABGELEGT ALS CASE FILES."],
       note: ["CLIENT READINGS BLEIBEN VERTRAULICH.", "DIE OBERFLÄCHEN SIND LIVE."],
       meta: "THE EVIDENCE ARCHIVE",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/de/diagnosis" },
+      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
     },
     archive: {
       chip1: "EVIDENCE ARCHIVE",
@@ -372,7 +372,7 @@ export const de: Translations = {
       sub: ["FIELD NOTES AUS DER RETRIEVAL-SCHICHT —", "WAS AI SEARCH LIEST, ZITIERT UND IGNORIERT,", "AUFGEZEICHNET IM BETRIEB."],
       note: ["KEINE TREND-ESSAYS. KEIN VORHERSAGE-THEATER.", "NUR WAS WIR VERIFIZIEREN."],
       meta: "THE INTELLIGENCE ROOM",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/de/diagnosis" },
+      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
     },
     cinema: {
       decode: "SIGNAL ERFASST — AUFZEICHNUNG LÄUFT",
@@ -534,7 +534,7 @@ export const de: Translations = {
       sub: ["SEESZN IST EIN SICHTBARKEITSSTUDIO —", "STRATEGIE, SEARCH, DESIGN UND ENGINEERING", "ALS EIN SYSTEM."],
       note: ["DIESES DOKUMENT IST DAS HANDBUCH.", "DEINE OBERFLÄCHEN-LESUNG BLEIBT PRIVAT."],
       meta: "THE OPERATING MANUAL",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/de/diagnosis" },
+      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
     },
     scanCta: {
       roman: "Das Handbuch ist öffentlich.",

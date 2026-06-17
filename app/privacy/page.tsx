@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import LegalLayout from "@/components/legal/LegalLayout";
 import Footer from "@/components/Footer";
-import { en } from "@/lib/i18n/en";
+import { de } from "@/lib/i18n/de";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — SEESZN",
-  description: "Privacy policy for SEESZN — how we handle your data, plainly stated.",
+  title: "Datenschutzerklärung — SEESZN",
+  description: "Datenschutzerklärung für SEESZN — wie wir mit deinen Daten umgehen.",
   robots: { index: false },
 };
 
-export default function PrivacyPage() {
-  const p = en.privacyPage;
+export default function DePrivacyPage() {
+  const p = de.privacyPage;
   return (
     <>
       <Nav />

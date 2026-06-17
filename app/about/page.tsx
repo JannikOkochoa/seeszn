@@ -1,56 +1,48 @@
-import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import RoomHero from "@/components/rooms/RoomHero";
 import ManualContents from "@/components/about/ManualContents";
 import OperatingManual from "@/components/about/OperatingManual";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
+import { de } from "@/lib/i18n/de";
+import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About — The Operating Manual | SEESZN",
+export const metadata: Metadata = buildMetadata({
+  title: "Studio — Über SEESZN | SEESZN",
   description:
-    "How SEESZN thinks: premise, operating model, principles and refusals. A visibility studio — strategy, search architecture, editorial design and engineering as one system.",
-  openGraph: {
-    title: "SEESZN — The Operating Manual",
-    description: "We operate where machines decide what people see.",
-    siteName: "SEESZN",
-  },
-};
+    "SEESZN ist ein Sichtbarkeitsstudio: Strategie, Search, Design und Engineering als ein System. Wir bauen Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
+  path: "/about",
+  locale: "de",
+  altPath: "/en/about",
+});
 
-export default function AboutPage() {
+export default function DeAboutPage() {
+  const h = de.aboutPage.hero;
+  const sc = de.aboutPage.scanCta;
   return (
     <>
       <Nav />
       <main>
         <RoomHero
           index="01"
-          room="ABOUT / OPERATING MANUAL"
-          accession="SZN-OM-04"
-          roman={["WE OPERATE WHERE", "MACHINES DECIDE"]}
-          italic="what people see."
-          sub={[
-            "SEESZN IS A VISIBILITY STUDIO —",
-            "STRATEGY, SEARCH, DESIGN AND ENGINEERING",
-            "OPERATING AS ONE SYSTEM.",
-          ]}
-          note={[
-            "THIS PAGE IS THE MANUAL.",
-            "THE READING OF YOUR SURFACE IS PRIVATE.",
-          ]}
-          meta="THE OPERATING MANUAL"
-          cta={{ label: "BOOK A DIAGNOSIS", href: "/diagnosis" }}
+          room={h.room}
+          accession={h.accession}
+          roman={[...h.roman]}
+          italic={h.italic}
+          sub={[...h.sub]}
+          note={h.note ? [...h.note] : undefined}
+          meta={h.meta}
+          cta={h.cta}
           panel={<ManualContents />}
         />
         <OperatingManual />
         <ScanCTA
           index="02"
-          roman="The manual is public."
-          italic="The reading is private."
-          sub={[
-            "WE MAP YOUR SURFACE BEFORE",
-            "WE DISCUSS WORKING TOGETHER.",
-          ]}
-          closing="We build the surfaces machines retrieve and people trust."
+          roman={sc.roman}
+          italic={sc.italic}
+          sub={[...sc.sub]}
+          closing={sc.closing}
         />
       </main>
       <Footer />

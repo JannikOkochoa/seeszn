@@ -3,14 +3,15 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-// Path map: strip or prepend /de, preserve current page slug
+// German is the root surface; English lives under /en.
+// Path map: strip or prepend /en, preserve current page slug.
 function swapLocale(pathname: string, targetLang: "en" | "de"): string {
-  const isDe = pathname.startsWith("/de");
-  if (targetLang === "de") {
-    return isDe ? pathname : "/de" + (pathname === "/" ? "" : pathname);
+  const isEn = pathname === "/en" || pathname.startsWith("/en/");
+  if (targetLang === "en") {
+    return isEn ? pathname : "/en" + (pathname === "/" ? "" : pathname);
   }
-  // targetLang === "en"
-  const stripped = isDe ? pathname.replace(/^\/de/, "") : pathname;
+  // targetLang === "de" (root)
+  const stripped = isEn ? pathname.replace(/^\/en/, "") : pathname;
   return stripped || "/";
 }
 
@@ -19,7 +20,8 @@ export default function LanguageSwitch({ mobile }: { mobile?: boolean }) {
   const router = useRouter();
   const [hoveredLang, setHoveredLang] = useState<"en" | "de" | null>(null);
 
-  const currentLang: "en" | "de" = pathname.startsWith("/de") ? "de" : "en";
+  const currentLang: "en" | "de" =
+    pathname === "/en" || pathname.startsWith("/en/") ? "en" : "de";
 
   function switchTo(lang: "en" | "de") {
     if (lang === currentLang) return;

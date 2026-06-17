@@ -1,0 +1,49 @@
+# SEESZN
+
+> SEESZN ist ein Sichtbarkeitsstudio für B2B-Marken. Wir machen Marken sichtbar
+> und zitierbar in Google, ChatGPT, Perplexity, Gemini und Google AI Overviews —
+> über SEO, GEO (Generative Engine Optimization) und AIO (AI Overview Optimization).
+> Deutsch-first, mit Fokus auf den DACH-Markt.
+
+## Was SEESZN macht
+
+- KI-Sichtbarkeits-Audit: Wir messen, wo eine Marke in Google und KI-Antworten erscheint und wo sie fehlt.
+- SEO-Architektur: Technische Grundlagen, Sucharchitektur, interne Verlinkung, Content-Systeme.
+- GEO / AIO Content-System: Inhalte, die von KI-Systemen abgerufen und als Quelle zitiert werden.
+- Website-Relaunch & Conversion Surface: Editorial, schnell, strukturiert, conversion-ready.
+- Citation & Entity Building: Konsistente Entitäten und belastbare Quellsignale.
+
+## Für wen
+
+Deutschsprachige B2B-Unternehmen, Agenturen, lokale Marktführer und Hidden Champions
+(Industrie, Dienstleistung, Immobilien, expertengeführte Marken), die in klassischer
+Suche und in KI-Antworten gefunden, zitiert und empfohlen werden wollen.
+
+## Position
+
+Klassisches Ranking ist nur noch ein Teil der Sichtbarkeit. Viele Unternehmen sind
+indexiert, aber nicht abrufbar. KI-Systeme bevorzugen Marken, die als Quelle klar,
+strukturiert und belegbar sind. SEESZN baut aus Websites zitierbare Quellenflächen —
+optimiert für Verständnis, Abrufbarkeit und Vertrauen, nicht für Tricks.
+
+## Wichtige Seiten
+
+- Startseite (DE): https://seeszn.com/
+- KI-Sichtbarkeit Agentur: https://seeszn.com/ki-sichtbarkeit-agentur
+- KI-Sichtbarkeits-Audit: https://seeszn.com/ki-sichtbarkeits-audit
+- GEO Agentur: https://seeszn.com/geo-agentur
+- AIO / AI Overview Optimierung: https://seeszn.com/aio-optimierung
+- ChatGPT Sichtbarkeit: https://seeszn.com/chatgpt-sichtbarkeit
+- B2B SEO Agentur: https://seeszn.com/b2b-seo-agentur
+- SEO Agentur Bremen: https://seeszn.com/seo-agentur-bremen
+- Was ist KI-Sichtbarkeit: https://seeszn.com/insights/was-ist-ki-sichtbarkeit
+- Was ist GEO: https://seeszn.com/insights/was-ist-geo
+- Was ist AIO: https://seeszn.com/insights/was-ist-aio
+- SEO vs. GEO vs. AIO: https://seeszn.com/insights/seo-vs-geo-vs-aio
+- Absence Index (Methodik): https://seeszn.com/research/absence-index
+- KI-Sichtbarkeits-Brief: https://seeszn.com/brief/ki-sichtbarkeit
+
+## Kontakt / Diagnose
+
+- Diagnose anfragen: https://seeszn.com/diagnosis
+- E-Mail: hello@seeszn.com

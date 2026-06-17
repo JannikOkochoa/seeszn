@@ -25,7 +25,7 @@ function fadeUp(delay: number) {
 export default function ServicesHero() {
   const t = useTranslations();
   const h = t.servicesPage.hero;
-  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const reduced = useReducedMotion();
 
   const sectionRef = useRef<HTMLElement>(null);

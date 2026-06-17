@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import LegalLayout from "@/components/legal/LegalLayout";
 import Footer from "@/components/Footer";
-import { en } from "@/lib/i18n/en";
+import { de } from "@/lib/i18n/de";
 
 export const metadata: Metadata = {
-  title: "Legal Notice — SEESZN",
-  description: "Legal notice and operator information for SEESZN — a brand of Okri Holdings LLC.",
+  title: "Rechtliche Hinweise — SEESZN",
+  description: "Rechtliche Hinweise und Betreiberangaben für SEESZN — eine Marke der Okri Holdings LLC.",
   robots: { index: false },
 };
 
-export default function LegalPage() {
-  const p = en.legalPage;
+export default function DeLegalPage() {
+  const p = de.legalPage;
   return (
     <>
       <Nav />

@@ -23,7 +23,7 @@ const VALUES = [
 export default function ScanSection() {
   const t = useTranslations();
   const sc = t.servicesPage.scan;
-  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const reduced = useReducedMotion();

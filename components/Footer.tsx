@@ -6,6 +6,7 @@ import { useTranslations } from "@/lib/i18n/context";
 export default function Footer() {
   const t = useTranslations();
   const f = t.footer;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
 
   return (
     <footer className="ft-root" role="contentinfo">
@@ -33,7 +34,7 @@ export default function Footer() {
           <a href="mailto:hello@seeszn.com" className="ft-email">
             {f.email}
           </a>
-          <Link href="/diagnosis" className="ft-cta">
+          <Link href={diagHref} className="ft-cta">
             {f.cta}
             <span className="ft-cta-arrow" aria-hidden="true">→</span>
           </Link>

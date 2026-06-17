@@ -47,7 +47,7 @@ export default function LegalLayout({
         {/* Sibling nav */}
         <nav className="ll-sibnav" aria-label="Legal pages">
           <Link
-            href={active === "legal" ? "#" : (t.locale === "de" ? "/de/legal" : "/legal")}
+            href={active === "legal" ? "#" : (t.locale === "de" ? "/legal" : "/en/legal")}
             className={`ll-siblink${active === "legal" ? " ll-siblink--active" : ""}`}
             aria-current={active === "legal" ? "page" : undefined}
           >
@@ -55,7 +55,7 @@ export default function LegalLayout({
           </Link>
           <span className="ll-sibdiv" aria-hidden="true" />
           <Link
-            href={active === "privacy" ? "#" : (t.locale === "de" ? "/de/privacy" : "/privacy")}
+            href={active === "privacy" ? "#" : (t.locale === "de" ? "/privacy" : "/en/privacy")}
             className={`ll-siblink${active === "privacy" ? " ll-siblink--active" : ""}`}
             aria-current={active === "privacy" ? "page" : undefined}
           >

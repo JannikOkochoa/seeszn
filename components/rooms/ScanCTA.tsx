@@ -39,7 +39,7 @@ export default function ScanCTA({
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const reduced = useReducedMotion();
   const t = useTranslations();
-  const diagHref = t.locale === "de" ? "/de/diagnosis" : "/diagnosis";
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
 
   // Final inhale — headline grows in, ghost word counter-drifts behind
   const { scrollYProgress } = useScroll({
