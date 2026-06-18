@@ -185,7 +185,7 @@ export default function MachineMemory() {
           color: var(--warm-black);
           margin: 0 0 28px;
         }
-        .mm-headline em { font-style: italic; }
+        .mm-headline em { font-style: normal; }
         .mm-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 15px;

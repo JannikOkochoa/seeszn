@@ -203,7 +203,7 @@ export default function OperatingManual() {
           margin: 0;
         }
         .om-headline--small { font-size: clamp(30px, 3.6vw, 48px); }
-        .om-headline em { font-style: italic; }
+        .om-headline em { font-style: normal; }
         .om-copy-col { display: flex; flex-direction: column; gap: 18px; max-width: 420px; }
         .om-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;

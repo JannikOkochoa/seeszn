@@ -54,6 +54,25 @@
   --button-text:     #1f1e1a;
   --button-border:   #8d8372;
   --button-hover-bg: #e2dbcc;
+
+  /* ── Spacing system ──────────────────────────────────
+     One rhythm for the whole site. 8px base, editorial scale.
+     Use these instead of ad-hoc px so every section breathes
+     to the same beat. --section-y / --gutter drive page layout. */
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  40px;
+  --space-8:  56px;
+  --space-9:  72px;
+  --space-10: 96px;
+
+  /* Page rhythm — responsive, calm, generous */
+  --gutter:    clamp(24px, 5vw, 64px);   /* horizontal page padding   */
+  --section-y: clamp(88px, 11vw, 156px); /* vertical space per section */
+  --hero-y:    clamp(96px, 12vw, 168px); /* hero breathing room        */
 }
 
 /* ── Color system — Signal Mode (Night) ──────────────── */
@@ -123,6 +142,76 @@ p {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* ── Typography system ────────────────────────────────
+   One scale for the whole site, German and English.
+   Four roles, each with a single job — no mixing:
+
+     --font-display    Barlow Condensed   headlines, big numbers
+     --font-editorial  Source Serif 4     one upright accent word per headline
+     --font-body       Inter              body, leads, UI labels
+     --font-mono       IBM Plex Mono      technical refs / meta only
+
+   Primary text sits at --ink-strong (#11110f). Use the
+   utility classes below instead of re-declaring type per
+   component, so headings, labels and body stay consistent.
+   ──────────────────────────────────────────────────── */
+
+/* Eyebrow / section label — the small uppercase tag above a heading */
+.t-eyebrow {
+  font-family: var(--font-body), "Helvetica Neue", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Display headline — calm, tight, near-black */
+.t-display {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.0;
+  color: var(--ink-strong);
+}
+
+/* The single editorial accent — one upright serif word inside a headline.
+   Restrained, never italic: a quiet premium statement, not a poetic slogan. */
+.t-accent {
+  font-family: var(--font-editorial), Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink-strong);
+}
+
+/* Lead paragraph — the one-line clarifier under a headline */
+.t-lead {
+  font-family: var(--font-body), "Helvetica Neue", sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+/* Standard body copy */
+.t-body {
+  font-family: var(--font-body), "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text-body);
+}
+
+/* Technical meta — refs, codes, status lines */
+.t-mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 button {

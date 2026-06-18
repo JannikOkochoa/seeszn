@@ -37,7 +37,7 @@ export default function Manifesto() {
     <section
       ref={ref}
       style={{
-        padding: "96px 64px",
+        padding: "var(--section-y) var(--gutter)",
         background: "var(--paper)",
         borderTop: "1px solid var(--warm-black)",
         position: "relative",

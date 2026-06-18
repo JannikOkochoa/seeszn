@@ -12,8 +12,12 @@ export default function ScanProtocol() {
 
   const readRef = useRef(null);
   const readInView = useInView(readRef, { once: true, amount: 0.15 });
+  const delRef = useRef(null);
+  const delInView = useInView(delRef, { once: true, amount: 0.2 });
   const stepRef = useRef(null);
   const stepInView = useInView(stepRef, { once: true, amount: 0.2 });
+  const faqRef = useRef(null);
+  const faqInView = useInView(faqRef, { once: true, amount: 0.15 });
 
   const anim = (inView: boolean, delay: number) => ({
     initial: { opacity: 0, y: 16 },
@@ -23,13 +27,19 @@ export default function ScanProtocol() {
 
   return (
     <>
-      {/* ── 02 — WHAT THE SCAN READS ── */}
+      {/* ── 02 — WHAT WE CHECK ── */}
       <section
         ref={readRef}
         className={`scp-section${readInView ? " scp--on" : ""}`}
-        aria-label="What the scan reads"
+        aria-label={p.measuresLabel}
       >
-        <motion.div {...anim(readInView, 0)} className="scp-label-row">
+        {/* What we look for — the diagnostic stance, near the intake */}
+        <motion.div {...anim(readInView, 0)} className="scp-lookfor">
+          <span className="scp-label">{p.lookForLabel}</span>
+          <p className="scp-lookfor-copy">{p.lookForCopy}</p>
+        </motion.div>
+
+        <motion.div {...anim(readInView, 0.08)} className="scp-label-row">
           <span className="scp-label">02</span>
           <span className="scp-label">{p.measuresLabel}</span>
           <span className="scp-label scp-label--right">{p.measuresRight}</span>
@@ -47,14 +57,37 @@ export default function ScanProtocol() {
         </ul>
       </section>
 
-      {/* ── 03 — PROTOCOL ── */}
+      {/* ── 03 — WHAT YOU RECEIVE ── */}
+      <section
+        ref={delRef}
+        className={`scp-section${delInView ? " scp--on" : ""}`}
+        aria-label={p.deliverablesLabel}
+      >
+        <motion.div {...anim(delInView, 0)} className="scp-label-row">
+          <span className="scp-label">03</span>
+          <span className="scp-label">{p.deliverablesLabel}</span>
+          <span className="scp-label scp-label--right">{p.deliverablesRight}</span>
+        </motion.div>
+
+        <ul className="scp-measures">
+          {p.deliverables.map((d, i) => (
+            <li key={d.name} className="scp-measure scp-measure--del" style={{ "--i": i } as React.CSSProperties}>
+              <span className="scp-measure-num">0{i + 1}</span>
+              <span className="scp-measure-name scp-del-name">{d.name}</span>
+              <span className="scp-measure-q">{d.desc}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ── 04 — PROTOCOL ── */}
       <section
         ref={stepRef}
         className={`scp-section${stepInView ? " scp--on" : ""}`}
-        aria-label="The protocol"
+        aria-label={p.stepsLabel}
       >
         <motion.div {...anim(stepInView, 0)} className="scp-label-row">
-          <span className="scp-label">03</span>
+          <span className="scp-label">04</span>
           <span className="scp-label">{p.stepsLabel}</span>
         </motion.div>
 
@@ -80,6 +113,27 @@ export default function ScanProtocol() {
         </motion.p>
       </section>
 
+      {/* ── 05 — QUESTIONS (visible FAQ, matches FAQPage schema) ── */}
+      <section
+        ref={faqRef}
+        className={`scp-section${faqInView ? " scp--on" : ""}`}
+        aria-label={t.diagnosisPage.faqLabel}
+      >
+        <motion.div {...anim(faqInView, 0)} className="scp-label-row">
+          <span className="scp-label">05</span>
+          <span className="scp-label">{t.diagnosisPage.faqLabel}</span>
+        </motion.div>
+
+        <dl className="scp-faq">
+          {t.diagnosisPage.faq.map((item) => (
+            <div key={item.q} className="scp-faq-item">
+              <dt className="scp-faq-q">{item.q}</dt>
+              <dd className="scp-faq-a">{item.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       <style>{`
         .scp-section {
           background: var(--paper);
@@ -97,6 +151,23 @@ export default function ScanProtocol() {
         }
         .scp-label--right { margin-left: auto; font-size: 9px; }
 
+        /* ── what we look for — diagnostic stance ─────── */
+        .scp-lookfor {
+          max-width: 760px;
+          margin-bottom: 64px;
+          padding-bottom: 40px;
+          border-bottom: 1px solid var(--line);
+        }
+        .scp-lookfor .scp-label { display: block; margin-bottom: 18px; }
+        .scp-lookfor-copy {
+          font-family: var(--font-editorial), serif;
+          font-style: normal;
+          font-size: clamp(20px, 2.4vw, 30px);
+          line-height: 1.3;
+          letter-spacing: -0.01em;
+          color: var(--ink-strong);
+        }
+
         /* ── measures table ──────────────────────────── */
         .scp-measures { list-style: none; }
         .scp-measure {
@@ -113,6 +184,12 @@ export default function ScanProtocol() {
             transform 700ms cubic-bezier(.16,1,.3,1) calc(150ms + var(--i, 0) * 110ms);
         }
         .scp--on .scp-measure { opacity: 1; transform: none; }
+        /* deliverables reuse the measures row, minus the right "reads" column */
+        .scp-measure--del { grid-template-columns: 56px 230px 1fr; }
+        .scp-del-name {
+          font-size: clamp(16px, 1.7vw, 21px) !important;
+          letter-spacing: 0 !important;
+        }
         .scp-measure-num {
           font-family: var(--font-mono), monospace;
           font-size: 10px;
@@ -127,7 +204,7 @@ export default function ScanProtocol() {
         }
         .scp-measure-q {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(15px, 1.6vw, 19px);
           color: var(--ink);
         }
@@ -221,6 +298,31 @@ export default function ScanProtocol() {
           padding-bottom: 2px;
         }
         .scp-note a:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 3px; }
+
+        /* ── FAQ — definition list, fully crawlable ───── */
+        .scp-faq {
+          max-width: 760px;
+          border-top: 1px solid var(--line);
+        }
+        .scp-faq-item {
+          padding: 26px 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .scp-faq-q {
+          font-family: var(--font-display), sans-serif;
+          font-weight: 700;
+          font-size: clamp(17px, 1.8vw, 22px);
+          letter-spacing: 0.01em;
+          color: var(--warm-black);
+          margin-bottom: 12px;
+        }
+        .scp-faq-a {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 14.5px;
+          line-height: 1.65;
+          color: var(--text-body);
+          max-width: 620px;
+        }
 
         @media (prefers-reduced-motion: reduce) {
           .scp-measure, .scp-step {

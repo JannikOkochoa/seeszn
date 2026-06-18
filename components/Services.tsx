@@ -1,8 +1,9 @@
 "use client";
 
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import { useTranslations } from "@/lib/i18n/context";
+import VisibilityField from "@/components/home/VisibilityField";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -15,300 +16,241 @@ const IMGS = [
 
 export default function Services() {
   const t = useTranslations();
-  const ROWS = t.homepageServices.rows;
+  const s = t.homepageServices;
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.1 });
-  const [open, setOpen] = useState<number | null>(null);
+  const inView = useInView(ref, { once: true, amount: 0.05 });
 
   return (
-    <section ref={ref} className={`svc-section${inView ? " svc-section--visible" : ""}`}>
+    <section ref={ref} className={`eng-section${inView ? " eng-section--visible" : ""}`}>
+      {/* Visibility Field — cinematic header stage (label + headline + intro) */}
+      <VisibilityField
+        index="02"
+        label={s.sectionLabel}
+        headline={s.headline}
+        headlineAccent={s.headlineItalic}
+        intro={s.intro}
+      />
 
-      {/* Label */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="svc-label-row"
-      >
-        <span className="svc-label">02</span>
-        <span className="svc-label">{t.homepageServices.sectionLabel}</span>
-      </motion.div>
-
-      {/* Accordion rows */}
-      {ROWS.map((row, i) => (
-        <motion.div
+      {/* Three engagements — emerging from the visibility system above */}
+      {s.rows.map((row, i) => (
+        <motion.article
           key={i}
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, ease: EASE, delay: i * 0.07 }}
-          className="svc-row"
-          style={{ "--reveal-delay": `${i * 130 + 180}ms` } as React.CSSProperties}
+          transition={{ duration: 0.75, ease: EASE, delay: i * 0.12 }}
+          className="eng-row"
+          style={{ "--reveal-delay": `${i * 120 + 160}ms` } as React.CSSProperties}
         >
-          {/* Clickable strip */}
-          <div
-            className="svc-row-grid"
-            onClick={() => setOpen(open === i ? null : i)}
-          >
-            {/* Left: number + name/sub */}
-            <div className="svc-left">
-              <div className="svc-top">
-                <span className="svc-num">{row.num}</span>
-                <span
-                  className={`svc-toggle${open === i ? " svc-toggle--open" : ""}`}
-                  aria-hidden="true"
-                />
+          {/* Text column */}
+          <div className="eng-main">
+            <div className="eng-row-head">
+              <span className="eng-num">{row.num}</span>
+              <span className="t-mono eng-discipline">{row.discipline}</span>
+            </div>
+
+            <h3 className="eng-name">{row.name}</h3>
+            <p className="eng-tag">{row.tag}</p>
+
+            <div className="eng-rule" />
+
+            <div className="eng-cols">
+              <div className="eng-block">
+                <span className="t-eyebrow">{s.problemLabel}</span>
+                <p className="eng-copy">{row.problem}</p>
               </div>
-              <div className="svc-bottom">
-                <p className="svc-name">{row.name}</p>
-                <p className="svc-sub">{row.sub}</p>
+              <div className="eng-block">
+                <span className="t-eyebrow">{s.workLabel}</span>
+                <p className="eng-copy">{row.work}</p>
               </div>
             </div>
 
-            {/* Right: image */}
-            <div className="svc-img-wrap">
-              <img src={IMGS[i]} alt={row.name} className="svc-img" />
-              <div className="svc-img-overlay" />
+            <div className="eng-gain">
+              <span className="t-eyebrow">{s.gainLabel}</span>
+              <ul className="eng-gain-list">
+                {row.gain.map((g, gi) => (
+                  <li key={gi} className="eng-gain-item">
+                    <span className="olive-dot eng-dot" aria-hidden="true" />
+                    <span>{g}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            <a href="#contact" className="eng-cta">
+              {t.common.bookDiagnosis} <span style={{ color: "var(--olive)" }}>→</span>
+            </a>
           </div>
 
-          {/* Expanded detail */}
-          <AnimatePresence>
-            {open === i && (
-              <motion.div
-                key="detail"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.35, ease: EASE }}
-                style={{ overflow: "hidden" }}
-              >
-                <p className="svc-detail">{row.detail}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          {/* Image column */}
+          <div className="eng-img-wrap">
+            <img src={IMGS[i]} alt="" className="eng-img" />
+            <div className="eng-img-overlay" />
+          </div>
+        </motion.article>
       ))}
 
       <style>{`
-        /* ── Section ─────────────────────────────────── */
-        .svc-section {
+        .eng-section {
           background: var(--paper);
           border-top: 1px solid var(--warm-black);
-          padding-top: 48px;
+          padding-top: clamp(32px, 4vw, 56px);
         }
 
-        /* ── Header label ────────────────────────────── */
-        .svc-label-row {
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          padding-left: 64px;
-          margin-bottom: 32px;
-        }
-        .svc-label {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: var(--text-muted);
-        }
+        /* Header lives in <VisibilityField /> — see components/home/VisibilityField.tsx */
 
-        /* ── Row wrapper ─────────────────────────────── */
-        .svc-row {
+        /* ── Row ────────────────────────────────────── */
+        .eng-row {
+          display: grid;
+          grid-template-columns: 1fr 34%;
           border-top: 1px solid var(--warm-black);
         }
-        .svc-row:last-child {
+        .eng-row:last-child {
           border-bottom: 1px solid var(--warm-black);
         }
 
-        /* ── Clickable two-column grid ───────────────── */
-        .svc-row-grid {
-          display: grid;
-          grid-template-columns: 1fr 38%;
-          min-height: 180px;
-          cursor: pointer;
-          transition: background 350ms ease;
-        }
-        .svc-row-grid:hover {
-          background: rgba(17, 16, 14, 0.02);
-        }
-
-        /* ── Left column ─────────────────────────────── */
-        .svc-left {
-          padding: 28px 40px 28px 64px;
+        .eng-main {
+          padding: clamp(48px, 5vw, 72px) clamp(40px, 4vw, 64px) clamp(52px, 5.5vw, 80px) var(--gutter);
           border-right: 1px solid var(--warm-black);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
         }
 
-        /* Number + toggle */
-        .svc-top {
+        .eng-row-head {
           display: flex;
+          align-items: baseline;
           justify-content: space-between;
-          align-items: flex-start;
+          gap: 24px;
+          margin-bottom: 18px;
         }
-
-        .svc-num {
+        .eng-num {
           font-family: var(--font-display), sans-serif;
           font-weight: 700;
-          font-size: clamp(36px, 4.5vw, 56px);
-          color: var(--warm-black);
+          font-size: clamp(40px, 4.5vw, 58px);
           line-height: 1;
+          color: var(--ink-strong);
+        }
+        .eng-discipline {
+          text-align: right;
         }
 
-        /* ── Toggle — CSS cross ──────────────────────── */
-        .svc-toggle {
-          display: block;
-          width: 14px;
-          height: 14px;
-          position: relative;
-          flex-shrink: 0;
-          margin-top: 8px;
-        }
-        .svc-toggle::before,
-        .svc-toggle::after {
-          content: '';
-          position: absolute;
-          background: var(--warm-black);
-          transition:
-            transform 600ms cubic-bezier(.16,1,.3,1),
-            opacity   400ms ease;
-        }
-        /* Horizontal bar — always visible */
-        .svc-toggle::before {
-          width: 100%;
-          height: 1px;
-          top: 50%;
-          left: 0;
-          transform: translateY(-50%);
-        }
-        /* Vertical bar — visible when closed */
-        .svc-toggle::after {
-          width: 1px;
-          height: 100%;
-          top: 0;
-          left: 50%;
-          transform: translateX(-50%);
-        }
-        /* Open state: vertical collapses → shows − */
-        .svc-toggle--open::after {
-          transform: translateX(-50%) scaleY(0);
-          opacity: 0;
-        }
-        /* Hover (closed): rotate bars to × */
-        .svc-row-grid:hover .svc-toggle:not(.svc-toggle--open)::before {
-          transform: translateY(-50%) rotate(45deg);
-        }
-        .svc-row-grid:hover .svc-toggle:not(.svc-toggle--open)::after {
-          transform: translateX(-50%) rotate(-45deg);
-        }
-
-        /* ── Name + sub ──────────────────────────────── */
-        .svc-bottom {
-          /* sits at bottom of flex column */
-        }
-        .svc-name {
+        .eng-name {
           font-family: var(--font-display), sans-serif;
           font-weight: 700;
-          font-size: 22px;
-          color: var(--warm-black);
-          letter-spacing: 0.01em;
-          margin-bottom: 5px;
+          font-size: clamp(26px, 3vw, 36px);
+          line-height: 1.05;
+          letter-spacing: -0.01em;
+          color: var(--ink-strong);
+          margin-bottom: 8px;
         }
-        .svc-sub {
+        .eng-tag {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 15px;
-          font-weight: 400;
-          color: var(--text-body);
-          line-height: 1.6;
-          transition: color 400ms ease;
-        }
-        .svc-row-grid:hover .svc-sub {
-          color: var(--text-primary);
+          line-height: 1.5;
+          color: var(--text-secondary);
         }
 
-        /* ── Image column ────────────────────────────── */
-        .svc-img-wrap {
+        .eng-rule {
+          width: 40px;
+          height: 2px;
+          background: var(--olive);
+          margin: 26px 0;
+        }
+
+        /* Problem + What we do */
+        .eng-cols {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: clamp(40px, 4vw, 56px);
+          margin-bottom: 44px;
+        }
+        .eng-block .t-eyebrow { display: block; margin-bottom: 12px; }
+        .eng-copy {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          line-height: 1.62;
+          color: var(--text-body);
+        }
+
+        /* What you get */
+        .eng-gain { margin-bottom: 40px; }
+        .eng-gain .t-eyebrow { display: block; margin-bottom: 14px; }
+        .eng-gain-list { list-style: none; display: grid; gap: 11px; }
+        .eng-gain-item {
+          display: flex;
+          align-items: baseline;
+          gap: 12px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          line-height: 1.5;
+          color: var(--text-primary);
+        }
+        .eng-dot {
+          width: 5px;
+          height: 5px;
+          background: var(--olive);
+          flex-shrink: 0;
+          transform: translateY(-2px);
+        }
+
+        /* CTA */
+        .eng-cta {
+          display: inline-block;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          border: 1px solid var(--button-border);
+          padding: 13px 26px;
+          min-height: 44px;
+          color: var(--text-primary);
+          transition: background 0.25s, border-color 0.25s, color 0.25s;
+        }
+        .eng-cta:hover {
+          background: var(--warm-black);
+          border-color: var(--warm-black);
+          color: var(--paper);
+        }
+        .eng-cta:hover span { color: var(--paper) !important; }
+
+        /* ── Image ──────────────────────────────────── */
+        .eng-img-wrap {
           position: relative;
           overflow: hidden;
-          /* Clip-path reveal on scroll — left to right */
           clip-path: inset(0 100% 0 0);
           transition: clip-path 900ms cubic-bezier(.16,1,.3,1) var(--reveal-delay, 180ms);
         }
-        .svc-section--visible .svc-img-wrap {
+        .eng-section--visible .eng-img-wrap {
           clip-path: inset(0 0% 0 0);
         }
-        .svc-img {
+        .eng-img {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
-          /* Blur-to-sharp: starts after clip begins to open */
           filter: blur(7px);
-          transition:
-            transform 700ms cubic-bezier(.16,1,.3,1),
-            filter   1050ms cubic-bezier(.16,1,.3,1) calc(var(--reveal-delay, 180ms) + 260ms);
+          transition: filter 1050ms cubic-bezier(.16,1,.3,1) calc(var(--reveal-delay, 180ms) + 260ms);
         }
-        .svc-section--visible .svc-img {
-          filter: blur(0);
-        }
-        .svc-row-grid:hover .svc-img {
-          transform: scale(1.025);
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .svc-img-wrap { clip-path: none !important; transition: none !important; }
-          .svc-img      { filter: none !important;
-                          transition: transform 700ms cubic-bezier(.16,1,.3,1) !important; }
-        }
-        /* Very subtle dark veil on hover */
-        .svc-img-overlay {
+        .eng-section--visible .eng-img { filter: blur(0); }
+        .eng-img-overlay {
           position: absolute;
           inset: 0;
-          background: rgba(17, 16, 14, 0);
-          transition: background 600ms cubic-bezier(.16,1,.3,1);
+          background: rgba(17, 16, 14, 0.04);
           pointer-events: none;
-          z-index: 1;
         }
-        .svc-row-grid:hover .svc-img-overlay {
-          background: rgba(17, 16, 14, 0.07);
-        }
-
-        /* ── Expanded detail ─────────────────────────── */
-        .svc-detail {
-          font-family: var(--font-body), "Helvetica Neue", sans-serif;
-          font-size: 15px;
-          font-weight: 400;
-          color: var(--text-body);
-          line-height: 1.65;
-          max-width: 640px;
-          padding: 0 64px 28px;
+        @media (prefers-reduced-motion: reduce) {
+          .eng-img-wrap { clip-path: none !important; transition: none !important; }
+          .eng-img { filter: none !important; transition: none !important; }
         }
 
-        /* ── Mobile ──────────────────────────────────── */
+        /* ── Mobile ─────────────────────────────────── */
         @media (max-width: 768px) {
-          .svc-section {
-            padding-top: 36px;
-          }
-          .svc-label-row {
-            padding-left: 24px;
-          }
-          .svc-row-grid {
-            grid-template-columns: 1fr;
-          }
-          .svc-img-wrap {
-            display: none;
-          }
-          .svc-left {
-            padding: 24px;
-            border-right: none;
-          }
-          .svc-detail {
-            padding: 0 24px 24px;
-          }
+          .eng-section { padding-top: 40px; }
+          .eng-head { padding: 0 24px 32px; }
+          .eng-row { grid-template-columns: 1fr; }
+          .eng-main { padding: 28px 24px 32px; border-right: none; }
+          .eng-cols { grid-template-columns: 1fr; gap: 24px; }
+          .eng-img-wrap { display: none; }
         }
       `}</style>
     </section>

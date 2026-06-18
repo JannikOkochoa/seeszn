@@ -55,7 +55,7 @@ export default function Contact({ index = "06" }: { index?: string }) {
         }}
       >
         {/* LEFT */}
-        <div style={{ padding: "96px 64px" }}>
+        <div style={{ padding: "var(--section-y) var(--gutter)" }}>
           <motion.div {...anim(0)} style={{ display: "flex", gap: 16, marginBottom: 40 }}>
             <span style={labelStyle}>{index}</span>
           </motion.div>
@@ -63,7 +63,7 @@ export default function Contact({ index = "06" }: { index?: string }) {
           <motion.h2 {...anim(0.08)} style={headlineStyle}>
             {c.headlineRoman}
             <br />
-            <em style={{ fontStyle: "italic" }}>{c.headlineItalic}</em>
+            <em style={{ fontStyle: "normal" }}>{c.headlineItalic}</em>
           </motion.h2>
 
           <motion.p {...anim(0.14)} style={subStyle}>

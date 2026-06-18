@@ -906,7 +906,7 @@ export default function PrintPage() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -990,7 +990,7 @@ export default function PrintPage() {
           margin-bottom: 14pt;
         }
         .pp-cover-title {
-          font-family: "Playfair Display", serif;
+          font-family: "Source Serif 4", serif;
           font-weight: 500;
           font-size: 28pt;
           line-height: 1.18;
@@ -1000,8 +1000,8 @@ export default function PrintPage() {
           max-width: 16ch;
         }
         .pp-cover-subtitle {
-          font-family: "Playfair Display", serif;
-          font-style: italic;
+          font-family: "Source Serif 4", serif;
+          font-style: normal;
           font-size: 12pt;
           line-height: 1.55;
           color: #4a463d;
@@ -1033,7 +1033,7 @@ export default function PrintPage() {
 
         /* ── Headline ─────────────────────────────────── */
         .pp-headline {
-          font-family: "Playfair Display", serif;
+          font-family: "Source Serif 4", serif;
           font-weight: 500;
           font-size: 20pt;
           line-height: 1.22;
@@ -1056,11 +1056,11 @@ export default function PrintPage() {
         .pp-footnote {
           font-size: 8pt;
           color: #81796a;
-          font-style: italic;
+          font-style: normal;
         }
         .pp-closing {
-          font-family: "Playfair Display", serif;
-          font-style: italic;
+          font-family: "Source Serif 4", serif;
+          font-style: normal;
           font-size: 11pt;
           line-height: 1.6;
           color: #eee6d6;
@@ -1074,8 +1074,8 @@ export default function PrintPage() {
 
         /* ── Merksatz ─────────────────────────────────── */
         .pp-merksatz {
-          font-family: "Playfair Display", serif;
-          font-style: italic;
+          font-family: "Source Serif 4", serif;
+          font-style: normal;
           font-size: 12pt;
           line-height: 1.55;
           padding-top: 14pt;
@@ -1089,7 +1089,7 @@ export default function PrintPage() {
           position: absolute;
           bottom: 22mm;
           right: 26mm;
-          font-family: "Playfair Display", serif;
+          font-family: "Source Serif 4", serif;
           font-size: 72pt;
           font-weight: 400;
           line-height: 1;
@@ -1166,7 +1166,7 @@ export default function PrintPage() {
           font-family: "Inter", sans-serif;
           font-size: 7pt;
           color: #8d8372;
-          font-style: italic;
+          font-style: normal;
           margin-left: auto;
         }
         .pp-stair-desc {
@@ -1266,7 +1266,7 @@ export default function PrintPage() {
         }
         .pp-step:first-of-type { border-top: 1px solid #c9c0ae; }
         .pp-step-n {
-          font-family: "Playfair Display", serif;
+          font-family: "Source Serif 4", serif;
           font-size: 22pt;
           color: #c9c0ae;
           line-height: 1.1;

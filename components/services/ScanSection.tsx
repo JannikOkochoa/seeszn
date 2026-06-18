@@ -162,7 +162,7 @@ export default function ScanSection() {
           color: var(--warm-black);
           margin: 0 0 28px;
         }
-        .scn-headline em { font-style: italic; }
+        .scn-headline em { font-style: normal; }
         .scn-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 15px;

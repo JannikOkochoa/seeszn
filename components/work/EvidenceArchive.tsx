@@ -303,7 +303,7 @@ export default function EvidenceArchive() {
         }
         .arti-statement {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(22px, 2.3vw, 31px);
           line-height: 1.2;
           color: var(--warm-black);
@@ -556,7 +556,7 @@ export default function EvidenceArchive() {
           color: var(--warm-black);
           margin: 0 0 26px;
         }
-        .ea-conf-headline em { font-style: italic; }
+        .ea-conf-headline em { font-style: normal; }
         .ea-conf-copy {
           font-family: var(--font-mono), monospace;
           font-size: 12px;

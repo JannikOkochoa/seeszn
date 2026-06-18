@@ -358,7 +358,7 @@ export default function IntelHero() {
         .ih-line--italic {
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-style: italic;
+          font-style: normal;
           text-transform: none;
           font-size: clamp(40px, 6.6vw, 100px);
           line-height: 1.04;

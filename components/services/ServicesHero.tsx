@@ -276,7 +276,7 @@ export default function ServicesHero() {
           display: block;
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(46px, 7vw, 110px);
           letter-spacing: -0.02em;
           line-height: 1.02;

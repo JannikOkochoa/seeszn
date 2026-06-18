@@ -5,7 +5,8 @@ import ManualContents from "@/components/about/ManualContents";
 import OperatingManual from "@/components/about/OperatingManual";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
-import { buildMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "About — The Operating Manual | SEESZN",
@@ -16,9 +17,30 @@ export const metadata: Metadata = buildMetadata({
   altPath: "/about",
 });
 
+const aboutSchema = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "@id": `${SITE_URL}/en/about#about`,
+  url: `${SITE_URL}/en/about`,
+  name: "About — The Operating Manual",
+  inLanguage: "en",
+  isPartOf: { "@id": `${SITE_URL}/#website` },
+  about: { "@id": `${SITE_URL}/#organization` },
+  mainEntity: { "@id": `${SITE_URL}/#organization` },
+};
+
 export default function AboutPage() {
   return (
     <>
+      <JsonLd
+        data={[
+          aboutSchema,
+          breadcrumbSchema([
+            { name: "Home", path: "/en" },
+            { name: "About", path: "/en/about" },
+          ]),
+        ]}
+      />
       <Nav />
       <main>
         <RoomHero
@@ -37,7 +59,7 @@ export default function AboutPage() {
             "THE READING OF YOUR SURFACE IS PRIVATE.",
           ]}
           meta="THE OPERATING MANUAL"
-          cta={{ label: "BOOK A DIAGNOSIS", href: "/diagnosis" }}
+          cta={{ label: "BOOK A DIAGNOSIS", href: "/en/diagnosis" }}
           panel={<ManualContents />}
         />
         <OperatingManual />

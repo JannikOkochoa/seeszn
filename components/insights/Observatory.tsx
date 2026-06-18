@@ -212,7 +212,7 @@ export default function Observatory() {
           margin: 0 0 20px;
           max-width: 480px;
         }
-        .ob-headline em { font-style: italic; }
+        .ob-headline em { font-style: normal; }
         .ob-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 14px;

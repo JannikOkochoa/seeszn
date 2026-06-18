@@ -7,7 +7,8 @@ import SignalMarquee from "@/components/insights/SignalMarquee";
 import FieldNotes from "@/components/insights/FieldNotes";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
-import { buildMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { buildMetadata, breadcrumbSchema } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Insights — The Intelligence Room | SEESZN",
@@ -21,6 +22,12 @@ export const metadata: Metadata = buildMetadata({
 export default function InsightsPage() {
   return (
     <>
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/en" },
+          { name: "Insights", path: "/en/insights" },
+        ])}
+      />
       <Nav />
       <main>
         <IntelHero />

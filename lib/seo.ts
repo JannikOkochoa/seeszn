@@ -91,6 +91,39 @@ export function buildMetadata({
 
 // ─── Reusable JSON-LD graph builders ─────────────────────────────────────────
 
+/**
+ * The SEESZN offer architecture — four engagements, expressed once here so the
+ * sitewide Organization entity and any Service markup stay consistent. Names and
+ * descriptions mirror the wording visible across the homepage, /services and the
+ * commercial landing pages. No invented claims.
+ */
+export const OFFERS: { name: string; serviceType: string; description: string }[] = [
+  {
+    name: "Visibility Audit",
+    serviceType: "KI-Sichtbarkeits-Audit",
+    description:
+      "Diagnose, wo eine B2B-Marke in Google und in KI-Antworten (ChatGPT, Perplexity, Gemini, Google AI Overviews) fehlt, falsch gelesen oder nicht zitiert wird.",
+  },
+  {
+    name: "Search Architecture",
+    serviceType: "SEO & Search Architecture",
+    description:
+      "Die technische, semantische und inhaltliche Struktur, die eine Marke auffindbar und maschinell verständlich macht — Technical SEO, Sucharchitektur und Entity-Klarheit.",
+  },
+  {
+    name: "Answer Engine Content Layer",
+    serviceType: "GEO / AIO Content",
+    description:
+      "Quellenfähige Seiten, FAQs, Entity-Erklärungen und zitierfähige Inhalte (Citation Readiness) für Generative Engine Optimization und Answer Engine Optimization.",
+  },
+  {
+    name: "Ongoing Visibility System",
+    serviceType: "Visibility Care",
+    description:
+      "Laufende Pflege und Weiterentwicklung der Sichtbarkeit über Google, Google AI Overviews, ChatGPT, Perplexity und Gemini — Sichtbarkeit als System, nicht als Einmalprojekt.",
+  },
+];
+
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -101,16 +134,40 @@ export function organizationSchema() {
     url: SITE_URL,
     email: CONTACT_EMAIL,
     logo: abs(DEFAULT_OG_IMAGE),
+    slogan: "Sichtbarkeit für B2B-Marken in Google und KI-Antworten.",
     description:
-      "SEESZN ist ein Sichtbarkeitsstudio für B2B-Marken. Wir bauen Websites, Inhalte und Sucharchitekturen, die in Google, ChatGPT, Perplexity, Gemini und AI Overviews gefunden und zitiert werden.",
+      "SEESZN ist ein Sichtbarkeitsstudio für B2B-Marken. Wir bauen Websites, Inhalte und Sucharchitekturen, die in Google, ChatGPT, Perplexity, Gemini und Google AI Overviews gefunden und zitiert werden.",
     knowsAbout: [
       "SEO",
       "Generative Engine Optimization (GEO)",
-      "AI Overview Optimization (AIO)",
+      "Answer Engine Optimization (AIO)",
+      "AI Overview Optimization",
       "KI-Sichtbarkeit",
+      "AI Search Visibility",
       "Entity SEO",
+      "Citation Readiness",
       "Content-Architektur",
+      "B2B SEO",
     ],
+    areaServed: [
+      { "@type": "Country", name: "Deutschland" },
+      { "@type": "Country", name: "Österreich" },
+      { "@type": "Country", name: "Schweiz" },
+    ],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "SEESZN — Sichtbarkeitssystem für B2B-Marken",
+      itemListElement: OFFERS.map((o) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: o.name,
+          serviceType: o.serviceType,
+          description: o.description,
+          provider: { "@id": `${SITE_URL}/#organization` },
+        },
+      })),
+    },
     sameAs: [] as string[],
   };
 }

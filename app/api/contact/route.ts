@@ -8,10 +8,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { email, url, suspect } = (body ?? {}) as {
+  const { email, url, suspect, name, market } = (body ?? {}) as {
     email?: unknown;
     url?: unknown;
     suspect?: unknown;
+    name?: unknown;
+    market?: unknown;
   };
 
   if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -23,13 +25,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Not configured" }, { status: 503 });
   }
 
-  const lines = [`New diagnosis request submitted by: ${email}`];
-  if (typeof url === "string" && url.trim()) {
-    lines.push(`Surface (URL): ${url.trim().slice(0, 200)}`);
-  }
-  if (typeof suspect === "string" && suspect.trim()) {
-    lines.push(`Suspected leak: ${suspect.trim().slice(0, 100)}`);
-  }
+  const str = (v: unknown, max: number) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, max) : "";
+
+  const lines = [`New visibility diagnosis request from: ${email}`];
+  if (str(name, 120)) lines.push(`Name: ${str(name, 120)}`);
+  if (str(url, 200)) lines.push(`Brand / website: ${str(url, 200)}`);
+  if (str(market, 120)) lines.push(`Market / language: ${str(market, 120)}`);
+  if (str(suspect, 100)) lines.push(`Main concern: ${str(suspect, 100)}`);
 
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({

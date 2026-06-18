@@ -530,7 +530,7 @@ export default function BriefLanding() {
         }
         .bl-subtitle {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: 1.05rem;
           line-height: 1.6;
           color: #4a463d;

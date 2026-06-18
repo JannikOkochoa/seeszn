@@ -145,7 +145,7 @@ export default function LegalLayout({
         }
         .ll-subtitle {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(17px, 1.6vw, 22px);
           color: var(--text-secondary);
           margin: 0 0 44px;

@@ -99,7 +99,7 @@ export default function RoomHero({
 
         <motion.div
           {...fadeUp(0.2)}
-          style={{ width: 48, height: 2, background: "var(--olive)", margin: "18px 0" }}
+          style={{ width: 48, height: 2, background: "var(--olive)", margin: "26px 0" }}
         />
 
         <motion.p {...fadeUp(0.3)} className="rh-sub">
@@ -211,10 +211,10 @@ export default function RoomHero({
           100% { left: 100%; opacity: 0; }
         }
         .rh-left {
-          padding: 64px 56px 64px 64px;
+          padding: var(--hero-y) clamp(40px, 4vw, 56px) var(--hero-y) var(--gutter);
           display: flex;
           flex-direction: column;
-          justify-content: flex-start;
+          justify-content: center;
           position: relative;
           z-index: 2;
           will-change: transform;
@@ -243,7 +243,7 @@ export default function RoomHero({
           display: block;
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(38px, 4.8vw, 68px);
           letter-spacing: -0.02em;
           line-height: 1.08;
@@ -291,7 +291,7 @@ export default function RoomHero({
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 64px 64px 64px 56px;
+          padding: var(--hero-y) var(--gutter) var(--hero-y) clamp(40px, 4vw, 56px);
           position: relative;
           z-index: 2;
           will-change: transform;

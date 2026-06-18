@@ -66,8 +66,8 @@ export default function TheShift() {
           display: grid;
           grid-template-columns: 36% 64%;
           align-items: center;
-          min-height: 260px;
-          padding: 0 5vw;
+          min-height: clamp(300px, 36vh, 400px);
+          padding: 0 var(--gutter);
           border-top: 1px solid rgba(20, 20, 20, .14);
           border-bottom: 1px solid rgba(20, 20, 20, .14);
         }

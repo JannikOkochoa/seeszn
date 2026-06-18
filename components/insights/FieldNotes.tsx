@@ -156,7 +156,7 @@ export default function FieldNotes() {
           margin: 0 0 18px;
           max-width: 760px;
         }
-        .dl-headline em { font-style: italic; }
+        .dl-headline em { font-style: normal; }
         .dl-copy {
           font-family: var(--font-mono), monospace;
           font-size: 10px;

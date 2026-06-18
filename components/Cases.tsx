@@ -98,7 +98,7 @@ export default function Cases() {
       <style>{`
         /* ── Section ─────────────────────────────────── */
         .cases-section {
-          padding: 80px 64px 88px;
+          padding: var(--section-y) var(--gutter);
           background: var(--paper);
           border-top: 1px solid var(--warm-black);
         }

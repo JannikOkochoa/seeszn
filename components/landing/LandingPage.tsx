@@ -283,7 +283,7 @@ export const LANDING_CSS = `
   .lp-section {
     max-width: var(--lp-max);
     margin: 0 auto;
-    padding: clamp(48px, 6vw, 88px) var(--lp-pad);
+    padding: clamp(64px, 8vw, 116px) var(--lp-pad);
     border-top: 1px solid var(--line);
     display: grid;
     grid-template-columns: var(--lp-rail) minmax(0, 1fr);

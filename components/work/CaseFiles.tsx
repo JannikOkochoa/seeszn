@@ -9,9 +9,14 @@ import {
   type MotionStyle,
 } from "framer-motion";
 import { useRef } from "react";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
+// Detailed case-study pages, by card index — the human-readable proof behind
+// each live surface. German-first (the canonical case pages live at /cases/*).
+const CASE_SLUGS = ["rischo", "sivius", "contentkueche"];
 
 // Each case file carries its own material accent — drawn from the client's
 // world, not from a palette generator. Mid-tones that hold in both themes.
@@ -37,6 +42,7 @@ interface CaseFile {
 
 interface Labels {
   visitLabel: string;
+  caseLabel: string;
   surfaceKey: string;
   sectorKey: string;
   scopeKey: string;
@@ -49,12 +55,14 @@ function CaseCard({
   file,
   accent,
   labels,
+  caseHref,
   isLast,
   flip,
 }: {
   file: CaseFile;
   accent: string;
   labels: Labels;
+  caseHref: string;
   isLast: boolean;
   flip: boolean;
 }) {
@@ -179,6 +187,9 @@ function CaseCard({
             >
               {labels.visitLabel} <span className="cf-visit-arrow">↗</span>
             </a>
+            <Link href={caseHref} className="cf-visit cf-case">
+              {labels.caseLabel} <span className="cf-visit-arrow">→</span>
+            </Link>
           </motion.div>
         </div>
 
@@ -227,6 +238,7 @@ export default function CaseFiles() {
 
   const labels: Labels = {
     visitLabel: cf.visitLabel,
+    caseLabel: cf.caseLabel,
     surfaceKey: cf.surfaceKey,
     sectorKey: cf.sectorKey,
     scopeKey: cf.scopeKey,
@@ -268,6 +280,7 @@ export default function CaseFiles() {
           file={file}
           accent={ACCENTS[i % ACCENTS.length]}
           labels={labels}
+          caseHref={`/cases/${CASE_SLUGS[i] ?? "rischo"}`}
           isLast={i === cf.cases.length - 1}
           flip={i % 2 === 1}
         />
@@ -281,7 +294,7 @@ export default function CaseFiles() {
         /* ── Vault intro ───────────────────────────────── */
         .cf-intro {
           position: relative;
-          padding: 120px 64px 88px;
+          padding: var(--section-y) var(--gutter);
           overflow: hidden;
         }
         .cf-vault {
@@ -318,7 +331,7 @@ export default function CaseFiles() {
           color: var(--warm-black);
           margin: 0 0 24px;
         }
-        .cf-headline em { font-style: italic; }
+        .cf-headline em { font-style: normal; }
         .cf-intro-copy {
           position: relative;
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
@@ -450,8 +463,8 @@ export default function CaseFiles() {
           flex: 1;
           display: grid;
           grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
-          gap: 0 64px;
-          padding: 48px 32px 48px 36px;
+          gap: 0 clamp(48px, 5vw, 80px);
+          padding: clamp(48px, 5.5vw, 76px) clamp(28px, 3.5vw, 44px);
           position: relative;
           z-index: 1;
           align-content: center;
@@ -495,12 +508,12 @@ export default function CaseFiles() {
           font-family: var(--font-editorial), serif;
           font-weight: 400;
           font-size: clamp(22px, 2.4vw, 34px);
-          line-height: 1.2;
+          line-height: 1.25;
           color: var(--warm-black);
           max-width: 520px;
-          margin: 0 0 22px;
+          margin: 0 0 30px;
         }
-        .cf-statement em { font-style: italic; }
+        .cf-statement em { font-style: normal; }
         .cf-body {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 14px;
@@ -539,7 +552,7 @@ export default function CaseFiles() {
         .cf-panel-row {
           display: flex;
           gap: 18px;
-          padding: 14px 22px;
+          padding: 17px 24px;
           border-bottom: 1px solid var(--line);
           align-items: baseline;
         }
@@ -607,6 +620,8 @@ export default function CaseFiles() {
         .cf-visit:hover .cf-visit-arrow { color: var(--paper); }
         .cf-visit:focus-visible { outline: 1px solid var(--warm-black); outline-offset: -4px; }
         .cf-visit-arrow { color: var(--cfa); font-size: 14px; transition: color 0.3s; }
+        /* secondary link — the full case study, quieter than the live surface */
+        .cf-case { border-top: 1px solid var(--line); }
 
         /* ── Marquee band ──────────────────────────────── */
         .cf-marquee {

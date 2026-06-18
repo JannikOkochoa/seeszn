@@ -123,7 +123,7 @@ export default function SystemStatement() {
           margin: 0;
           max-width: 640px;
         }
-        .sys-headline em { font-style: italic; }
+        .sys-headline em { font-style: normal; }
 
         /* ── The words ─────────────────────────────────── */
         .sys-words { display: flex; flex-direction: column; }

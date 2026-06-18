@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Barlow_Condensed, Playfair_Display, IBM_Plex_Mono, Inter } from "next/font/google";
+import { Barlow_Condensed, Source_Serif_4, IBM_Plex_Mono, Inter } from "next/font/google";
 import { TranslationProvider } from "@/lib/i18n/context";
 import JsonLd from "@/components/seo/JsonLd";
 import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE, organizationSchema, websiteSchema } from "@/lib/seo";
@@ -12,10 +12,13 @@ const barlow = Barlow_Condensed({
   display: "swap",
 });
 
-const playfair = Playfair_Display({
+// Editorial serif — restrained, upright, premium. Replaces the former
+// Playfair italic treatment. Used for calm statement lines, never romantic italic.
+// One accent word per headline; see .t-accent in globals.css.
+const editorial = Source_Serif_4({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  style: ["normal"],
   variable: "--font-editorial",
   display: "swap",
 });
@@ -82,7 +85,7 @@ export default function RootLayout({
       lang="de"
       data-theme="light"
       suppressHydrationWarning
-      className={`${barlow.variable} ${playfair.variable} ${mono.variable} ${inter.variable}`}
+      className={`${barlow.variable} ${editorial.variable} ${mono.variable} ${inter.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

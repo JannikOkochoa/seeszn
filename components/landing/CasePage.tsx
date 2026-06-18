@@ -20,12 +20,19 @@ export default function CasePage({ study }: { study: CaseStudy }) {
   const caseSchema = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
+    "@id": `${SITE_URL}${path}#case`,
     name: `${study.fullName} — Case`,
     headline: study.statement,
+    abstract: study.problem,
+    genre: "Case Study",
     about: study.sector,
+    keywords: [study.sector, ...study.scope, "KI-Sichtbarkeit", "SEO", "GEO", "AIO"],
     url: `${SITE_URL}${path}`,
+    mainEntityOfPage: `${SITE_URL}${path}`,
     inLanguage: "de-DE",
     author: { "@id": `${SITE_URL}/#organization` },
+    creator: { "@id": `${SITE_URL}/#organization` },
+    publisher: { "@id": `${SITE_URL}/#organization` },
   };
 
   return (

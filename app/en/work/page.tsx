@@ -5,7 +5,9 @@ import ArchiveRegister from "@/components/work/ArchiveRegister";
 import CaseFiles from "@/components/work/CaseFiles";
 import ScanCTA from "@/components/rooms/ScanCTA";
 import Footer from "@/components/Footer";
-import { buildMetadata } from "@/lib/seo";
+import JsonLd from "@/components/seo/JsonLd";
+import { CASES, CASE_SLUGS } from "@/lib/cases";
+import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Work — The Evidence Archive | SEESZN",
@@ -16,9 +18,36 @@ export const metadata: Metadata = buildMetadata({
   altPath: "/work",
 });
 
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": `${SITE_URL}/en/work#collection`,
+  name: "Work — The Evidence Archive",
+  url: `${SITE_URL}/en/work`,
+  inLanguage: "en",
+  isPartOf: { "@id": `${SITE_URL}/#website` },
+  about: { "@id": `${SITE_URL}/#organization` },
+  hasPart: CASE_SLUGS.map((slug) => ({
+    "@type": "CreativeWork",
+    "@id": `${SITE_URL}/cases/${slug}#case`,
+    name: `${CASES[slug].fullName} — Case`,
+    about: CASES[slug].sector,
+    url: `${SITE_URL}/cases/${slug}`,
+  })),
+};
+
 export default function WorkPage() {
   return (
     <>
+      <JsonLd
+        data={[
+          collectionSchema,
+          breadcrumbSchema([
+            { name: "Home", path: "/en" },
+            { name: "Work", path: "/en/work" },
+          ]),
+        ]}
+      />
       <Nav />
       <main>
         <RoomHero
@@ -37,7 +66,7 @@ export default function WorkPage() {
             "THE SURFACES ARE LIVE.",
           ]}
           meta="THE EVIDENCE ARCHIVE"
-          cta={{ label: "BOOK A DIAGNOSIS", href: "/diagnosis" }}
+          cta={{ label: "BOOK A DIAGNOSIS", href: "/en/diagnosis" }}
           panel={<ArchiveRegister />}
         />
         <CaseFiles />

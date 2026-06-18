@@ -150,7 +150,7 @@ export default function ScanCTA({
           color: var(--warm-black);
           margin: 0 0 28px;
         }
-        .scta-headline em { font-style: italic; }
+        .scta-headline em { font-style: normal; }
         .scta-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 15px;
@@ -185,7 +185,7 @@ export default function ScanCTA({
         .scta-rule { width: 32px; height: 1px; background: var(--olive); display: block; }
         .scta-sentence {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: 15px;
           line-height: 1.6;
           color: var(--muted);

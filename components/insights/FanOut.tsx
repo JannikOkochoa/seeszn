@@ -243,7 +243,7 @@ export default function FanOut() {
           color: var(--warm-black);
           margin: 0 0 14px;
         }
-        .fo-headline em { font-style: italic; }
+        .fo-headline em { font-style: normal; }
         .fo-copy {
           font-family: var(--font-body), "Helvetica Neue", sans-serif;
           font-size: 13px;
@@ -337,7 +337,7 @@ export default function FanOut() {
         }
         .fo-pill-query {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: clamp(17px, 1.8vw, 23px);
           line-height: 1.3;
           color: var(--warm-black);
@@ -404,7 +404,7 @@ export default function FanOut() {
           display: block;
           font-family: var(--font-editorial), serif;
           font-weight: 400;
-          font-style: italic;
+          font-style: normal;
           text-transform: none;
           font-size: 0.78em;
           letter-spacing: 0;

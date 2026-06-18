@@ -281,7 +281,7 @@ export default function OperatingRooms() {
         }
         .iw-label-body {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: 17px;
           line-height: 1.55;
           color: var(--text-muted);

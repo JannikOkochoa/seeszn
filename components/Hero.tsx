@@ -103,10 +103,10 @@ export default function Hero() {
       {/* LEFT COLUMN */}
       <motion.div
         style={{
-          padding: "56px 56px 56px 64px",
+          padding: "var(--hero-y) clamp(40px, 4vw, 56px) var(--hero-y) var(--gutter)",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-start",
+          justifyContent: "center",
           position: "relative",
           y: yContent,
           opacity: heroFade,
@@ -340,24 +340,24 @@ export default function Hero() {
           position: relative;
           display: inline-block;
           overflow: hidden;
+          /* overflow:hidden shifts the inline-block baseline to its bottom
+             edge, dropping "nicht." below the roman words — lift it back
+             into optical alignment. */
+          top: -0.07em;
         }
 
         /*
-          "answer." — Bodoni 72 editorial italic.
-          Animation sequence:
-            0%  → blurred, faint, letterforms slightly wide (unresolved)
-            42% → partial blur, opacity climbing, letter-spacing tightening
-            74% → nearly sharp, brief letter-spacing overshoot (lock tension)
-            88% → fully sharp and locked
-           100% → settled at final letter-spacing
+          The accent word — upright editorial serif (Source Serif 4),
+          the calm counterpoint to the condensed roman lines.
+          The blur-resolve animation stays: it reads as the answer
+          "resolving into focus" — a deliberate design element, not decoration.
         */
         .hero-hl-italic {
-          font-family: "Bodoni 72", "Didot", "Bodoni Moda", Georgia, serif;
+          font-family: var(--font-editorial), Georgia, serif;
           font-weight: 400;
-          font-style: italic;
-          font-size: 0.88em;
-          letter-spacing: -0.055em;
-          font-feature-settings: "swsh" 0, "calt" 0;
+          font-style: normal;
+          font-size: 0.92em;
+          letter-spacing: -0.01em;
           display: inline-block;
           animation: answer-resolve 1.28s cubic-bezier(.16,1,.3,1) 0.6s both;
         }
@@ -508,6 +508,6 @@ const subStyle: React.CSSProperties = {
   lineHeight: 1.65,
   letterSpacing: "0.01em",
   color: "var(--text-body)",
-  maxWidth: 360,
+  maxWidth: 430,
 };
 

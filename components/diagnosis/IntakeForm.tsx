@@ -7,8 +7,10 @@ export default function IntakeForm() {
   const t = useTranslations();
   const f = t.diagnosisPage.intakeForm;
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [url, setUrl] = useState("");
+  const [market, setMarket] = useState("");
   const [suspect, setSuspect] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -20,7 +22,7 @@ export default function IntakeForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, url, suspect }),
+        body: JSON.stringify({ name, email, url, market, suspect }),
       });
       setStatus(res.ok ? "success" : "error");
     } catch {
@@ -43,9 +45,26 @@ export default function IntakeForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="itk-form">
+          <p className="itk-intro">{f.intro}</p>
+
+          <div className="itk-field">
+            <label htmlFor="itk-name" className="itk-label">
+              {f.nameLabel} <span className="itk-opt">{f.nameOptional}</span>
+            </label>
+            <input
+              id="itk-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="itk-input"
+              autoComplete="name"
+            />
+          </div>
+
           <div className="itk-field">
             <label htmlFor="itk-email" className="itk-label">
-              {f.field1Label} <span className="itk-req">{f.field1Required}</span>
+              {f.emailLabel} <span className="itk-req">{f.emailRequired}</span>
             </label>
             <input
               id="itk-email"
@@ -61,7 +80,7 @@ export default function IntakeForm() {
 
           <div className="itk-field">
             <label htmlFor="itk-url" className="itk-label">
-              {f.field2Label} <span className="itk-opt">{f.field2Optional}</span>
+              {f.brandLabel} <span className="itk-opt">{f.brandOptional}</span>
             </label>
             <input
               id="itk-url"
@@ -75,9 +94,23 @@ export default function IntakeForm() {
             />
           </div>
 
+          <div className="itk-field">
+            <label htmlFor="itk-market" className="itk-label">
+              {f.marketLabel} <span className="itk-opt">{f.marketOptional}</span>
+            </label>
+            <input
+              id="itk-market"
+              type="text"
+              value={market}
+              onChange={(e) => setMarket(e.target.value)}
+              placeholder="DACH · EN · …"
+              className="itk-input"
+            />
+          </div>
+
           <fieldset className="itk-field itk-fieldset">
             <legend className="itk-label">
-              {f.field3Label} <span className="itk-opt">{f.field3Optional}</span>
+              {f.concernLabel} <span className="itk-opt">{f.concernOptional}</span>
             </legend>
             <div className="itk-chips">
               {f.suspects.map((s) => (
@@ -133,6 +166,15 @@ export default function IntakeForm() {
           color: var(--text-secondary);
         }
         .itk-form { padding: 24px 22px 28px; }
+        .itk-intro {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12.5px;
+          line-height: 1.6;
+          color: var(--text-secondary);
+          margin-bottom: 24px;
+          padding-bottom: 22px;
+          border-bottom: 1px solid var(--line);
+        }
         .itk-field { margin-bottom: 22px; }
         .itk-fieldset { border: none; padding: 0; margin: 0 0 26px; }
         .itk-label {

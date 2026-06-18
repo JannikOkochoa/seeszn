@@ -67,7 +67,7 @@ export default function Footer() {
           grid-template-columns: 1fr auto 1fr;
           gap: 0 48px;
           align-items: start;
-          padding: 56px 64px 52px;
+          padding: clamp(64px, 7vw, 88px) var(--gutter) clamp(56px, 6vw, 72px);
           border-bottom: 1px solid var(--line);
         }
 
@@ -87,7 +87,7 @@ export default function Footer() {
         }
         .ft-tagline {
           font-family: var(--font-editorial), serif;
-          font-style: italic;
+          font-style: normal;
           font-size: 14px;
           line-height: 1.55;
           color: var(--text-secondary);
@@ -185,7 +185,7 @@ export default function Footer() {
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          padding: 16px 64px;
+          padding: 18px var(--gutter);
         }
         .ft-legal-links {
           display: flex;
