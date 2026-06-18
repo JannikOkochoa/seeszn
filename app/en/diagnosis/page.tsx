@@ -41,7 +41,7 @@ export default function DiagnosisPage() {
         <RoomHero
           index="01"
           room="DIAGNOSIS / SCAN ROOM"
-          accession="SZN-SC-05"
+          accession="SZN-VP-01"
           roman={["BEFORE WE BUILD,", "WE LOCATE"]}
           italic="the leak."
           sub={[

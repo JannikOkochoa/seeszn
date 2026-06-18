@@ -8,12 +8,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { email, url, suspect, name, market } = (body ?? {}) as {
+  const { email, url, suspect, name, market, note, scanSummary } = (body ?? {}) as {
     email?: unknown;
     url?: unknown;
     suspect?: unknown;
     name?: unknown;
     market?: unknown;
+    // Newer Sichtbarkeitsprüfung fields. Optional, so old senders stay valid.
+    note?: unknown;
+    scanSummary?: unknown;
   };
 
   if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -33,6 +36,9 @@ export async function POST(request: Request) {
   if (str(url, 200)) lines.push(`Brand / website: ${str(url, 200)}`);
   if (str(market, 120)) lines.push(`Market / language: ${str(market, 120)}`);
   if (str(suspect, 100)) lines.push(`Main concern: ${str(suspect, 100)}`);
+  if (str(note, 600)) lines.push(`Note: ${str(note, 600)}`);
+  // Attach the free-check reading so the reply can start from real findings.
+  if (str(scanSummary, 2000)) lines.push("", "── Sichtbarkeitsprüfung ──", str(scanSummary, 2000));
 
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
