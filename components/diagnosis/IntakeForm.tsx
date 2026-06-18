@@ -116,7 +116,7 @@ export default function IntakeForm() {
           <span className="itk-pip" aria-hidden="true" />
           {f.header}
         </span>
-        <span className="itk-head-r">{f.ref}</span>
+        <span className="itk-head-r itk-free">{f.freeLabel}</span>
       </div>
 
       <div className="itk-body">
@@ -131,6 +131,7 @@ export default function IntakeForm() {
               aria-label={f.header}
             >
               <label htmlFor="itk-domain" className="itk-q">{f.startQuestion}</label>
+              <p className="itk-sub">{f.startSub}</p>
               <div className="itk-inputwrap">
                 <input
                   id="itk-domain"
@@ -151,7 +152,10 @@ export default function IntakeForm() {
                 <span className="itk-cta-arrow" aria-hidden="true">→</span>
               </button>
 
-              <p className="itk-trust">{f.trustNote}</p>
+              <div className="itk-trustblock">
+                <p className="itk-trust">{f.trustNote}</p>
+                <p className="itk-trust itk-trust--dim">{f.scopeNote}</p>
+              </div>
             </motion.form>
           )}
 
@@ -206,7 +210,10 @@ export default function IntakeForm() {
                 <span className="itk-cta-arrow" aria-hidden="true">→</span>
               </button>
 
-              <p className="itk-trust">{result.domain}</p>
+              <div className="itk-trustblock">
+                <p className="itk-trust">{f.freeReassure}</p>
+                <p className="itk-trust itk-trust--dim">{result.domain}</p>
+              </div>
             </motion.div>
           )}
 
@@ -271,19 +278,27 @@ const css = `
   .itk-head-l { display: inline-flex; align-items: center; gap: 10px; }
   .itk-pip { width: 6px; height: 6px; background: var(--d-olive); animation: itk-blink 2.6s ease-in-out infinite; }
   @keyframes itk-blink { 50% { opacity: 0.3; } }
+  .itk-free {
+    color: #15150f; background: var(--d-olive);
+    padding: 4px 8px; font-weight: 600; letter-spacing: 0.16em;
+  }
 
-  .itk-body { padding: 26px 22px 22px; min-height: 300px; display: flex; flex-direction: column; }
+  .itk-body { padding: 26px 22px 22px; min-height: 312px; display: flex; flex-direction: column; }
   .itk-panel { display: flex; flex-direction: column; flex: 1; }
 
   .itk-q {
     display: block;
     font-family: var(--font-body), "Helvetica Neue", sans-serif;
-    font-size: 19px; font-weight: 500; line-height: 1.35; letter-spacing: -0.01em;
-    color: var(--d-bone); margin-bottom: 20px;
+    font-size: 21px; font-weight: 600; line-height: 1.3; letter-spacing: -0.015em;
+    color: var(--d-bone); margin-bottom: 10px;
   }
-  .itk-q--error { color: #e8a07a; }
+  .itk-q--error { color: #e8a07a; font-weight: 500; font-size: 18px; }
+  .itk-sub {
+    font-family: var(--font-body), "Helvetica Neue", sans-serif;
+    font-size: 13px; line-height: 1.5; color: var(--d-muted); margin-bottom: 22px;
+  }
 
-  .itk-inputwrap { margin-bottom: 22px; }
+  .itk-inputwrap { margin-bottom: 20px; }
   .itk-input {
     display: block; width: 100%;
     border: 1px solid var(--d-line2);
@@ -326,11 +341,17 @@ const css = `
   .itk-cta--reveal { background: var(--d-olive); border-color: var(--d-olive); }
   .itk-cta--reveal:hover { background: var(--d-bone); }
 
+  .itk-trustblock { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
   .itk-trust {
-    margin-top: 16px;
     font-family: var(--font-mono), monospace;
-    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-faint);
+    font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-muted);
+    display: flex; align-items: center; gap: 8px;
   }
+  .itk-trust::before {
+    content: ""; width: 5px; height: 5px; flex-shrink: 0; background: var(--d-olive);
+  }
+  .itk-trust--dim { color: var(--d-faint); }
+  .itk-trust--dim::before { background: var(--d-faint); }
 
   /* ── scanning readout ─────────────────────────────── */
   .itk-scanhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 22px; }
