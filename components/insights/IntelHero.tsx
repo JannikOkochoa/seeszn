@@ -27,7 +27,7 @@ const FRAGMENTS = [
   { x: 56, y: 88, d: 0.7  },
 ];
 
-const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/—·";
+const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/·";
 
 // Decode effect — characters resolve left to right out of static.
 // When animations are enabled we start the state empty (server renders

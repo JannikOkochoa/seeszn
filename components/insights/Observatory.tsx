@@ -99,7 +99,7 @@ export default function Observatory() {
 
         {/* RIGHT — the instrument */}
         <div className="ob-right">
-          <div className="ob-radar" role="img" aria-label={`${ob.sectionLabel} — ${ob.systems.map((s) => s.name).join(", ")}`}>
+          <div className="ob-radar" role="img" aria-label={`${ob.sectionLabel}: ${ob.systems.map((s) => s.name).join(", ")}`}>
             {/* Rotating beam */}
             <motion.div
               className="ob-beam"

@@ -9,11 +9,11 @@ import { faqSchema } from "@/lib/seo";
 export const HOME_FAQ_DE: { q: string; a: string }[] = [
   {
     q: "Was ist KI-Sichtbarkeit?",
-    a: "KI-Sichtbarkeit beschreibt, ob eine Marke in KI-gestützten Antworten erscheint und als Quelle zitiert wird — etwa in ChatGPT, Perplexity, Gemini oder Google AI Overviews. Sie erweitert das klassische Suchmaschinen-Ranking.",
+    a: "KI-Sichtbarkeit beschreibt, ob eine Marke in KI-gestützten Antworten erscheint und als Quelle zitiert wird, etwa in ChatGPT, Perplexity, Gemini oder Google AI Overviews. Sie erweitert das klassische Suchmaschinen-Ranking.",
   },
   {
     q: "Was ist GEO?",
-    a: "GEO (Generative Engine Optimization) ist die Optimierung dafür, von generativen Suchsystemen als Quelle abgerufen und zitiert zu werden — nicht nur in einer Ergebnisliste zu ranken.",
+    a: "GEO (Generative Engine Optimization) ist die Optimierung dafür, von generativen Suchsystemen als Quelle abgerufen und zitiert zu werden, statt nur in einer Ergebnisliste zu ranken.",
   },
   {
     q: "Was ist AIO?",
@@ -29,15 +29,15 @@ export const HOME_FAQ_DE: { q: string; a: string }[] = [
   },
   {
     q: "Wie lange dauert der Aufbau von KI-Sichtbarkeit?",
-    a: "Technische Korrekturen wirken schnell. Quell- und Entitätssignale brauchen Wochen bis Monate. Sichtbarkeit ist ein aufgebauter Zustand, kein Schalter — die Dauer variiert je nach Kategorie und Wettbewerb.",
+    a: "Technische Korrekturen wirken schnell. Quell- und Entitätssignale brauchen Wochen bis Monate. Sichtbarkeit ist ein aufgebauter Zustand, kein Schalter, und die Dauer variiert je nach Kategorie und Wettbewerb.",
   },
   {
     q: "Für wen ist SEESZN geeignet?",
-    a: "Für deutschsprachige B2B-Unternehmen, Hidden Champions und expertengeführte Marken, die in Suche und KI-Antworten gefunden, zitiert und empfohlen werden wollen — und die Substanz haben, die dafür nötig ist.",
+    a: "Für deutschsprachige B2B-Unternehmen, Hidden Champions und expertengeführte Marken, die in Suche und KI-Antworten gefunden, zitiert und empfohlen werden wollen und die Substanz haben, die dafür nötig ist.",
   },
   {
     q: "Was kostet ein KI-Sichtbarkeits-Audit?",
-    a: "Der Umfang richtet sich nach Größe und Komplexität der Marke. Der Einstieg ist bewusst niedrigschwellig: eine Domain und eine E-Mail genügen. Den Rahmen klären wir transparent vor Beginn — ohne Retainer-Bindung.",
+    a: "Der Umfang richtet sich nach Größe und Komplexität der Marke. Der Einstieg ist bewusst niedrigschwellig: eine Domain genügt. Den Rahmen klären wir transparent vor Beginn, ohne Retainer-Bindung.",
   },
 ];
 
@@ -66,7 +66,7 @@ export default function HomeFaqDe() {
         <span className="hf-cursor" aria-hidden="true" />
       </h2>
       <p className="hf-lead">
-        Viele Unternehmen sind indexiert, aber nicht abrufbar. Sie ranken — und verschwinden
+        Viele Unternehmen sind indexiert, aber nicht abrufbar. Sie ranken und verschwinden
         trotzdem aus KI-Antworten, Vergleichs-Prompts und Empfehlungsfragen.
         Klassisches Ranking ist nur noch ein Teil der Sichtbarkeit.
       </p>

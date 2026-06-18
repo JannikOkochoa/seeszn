@@ -86,7 +86,7 @@ export default function ServicesHero() {
       <motion.div className="xh-hud" style={{ opacity: heroFade }} aria-hidden="true">
         <span className="xh-hud-tl">SZN-OS / {h.roomLabel}</span>
         <span className="xh-hud-tr">{h.imageCaption}</span>
-        <span className="xh-hud-bl">52.5200° N — 13.4050° E</span>
+        <span className="xh-hud-bl">53.0793° N · 8.8017° E</span>
         <span className="xh-hud-br">SURFACE / SIGNAL / MEMORY</span>
       </motion.div>
 

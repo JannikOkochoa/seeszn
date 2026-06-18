@@ -222,7 +222,7 @@ function ScoreCardView({ card, labels }: { card: ScoreCard; labels: Labels }) {
 
 function SealedScoreCard({ card, labels }: { card: ScoreCard; labels: Labels }) {
   return (
-    <article className="rv-card rv-card--sealed" aria-label={`${card.label} — ${labels.sealedCardStatus}`}>
+    <article className="rv-card rv-card--sealed" aria-label={`${card.label}: ${labels.sealedCardStatus}`}>
       <header className="rv-card-head">
         <h3 className="rv-card-label">{card.label}</h3>
         <span className="rv-card-sealed-icon" aria-hidden="true">
@@ -616,14 +616,14 @@ const css = `
   .rv-card-bar-fill.rv-status--stark { background: var(--signal); }
   .rv-card-reason { font-family: var(--font-body), sans-serif; font-size: 13.5px; line-height: 1.6; color: var(--text-body); }
 
-  /* Sealed cards — intentionally held back, not broken, not loading */
-  .rv-card--sealed { background: var(--paper-soft); }
-  .rv-card-sealed-icon { display: flex; align-items: center; color: var(--text-muted); flex-shrink: 0; opacity: 0.7; }
+  /* Sealed cards — sealed dossier sections, same surface and ink as free cards */
+  .rv-card--sealed { background: var(--paper); }
+  .rv-card-sealed-icon { display: flex; align-items: center; color: var(--signal); flex-shrink: 0; }
   .rv-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-  .rv-card-num--sealed { font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 38px; line-height: 1; letter-spacing: 0.08em; color: var(--text-muted); }
+  .rv-card-num--sealed { font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 38px; line-height: 1; letter-spacing: 0.08em; color: var(--ink-strong); }
   .rv-card-bar--sealed { height: 3px; background: var(--line); margin-bottom: 18px; }
-  .rv-card-bar-fill--sealed { display: block; height: 100%; width: 38%; background: var(--line-strong); }
-  .rv-card-reason--sealed { font-family: var(--font-body), sans-serif; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); font-style: italic; }
+  .rv-card-bar-fill--sealed { display: block; height: 100%; width: 38%; background: #b89233; }
+  .rv-card-reason--sealed { font-family: var(--font-body), sans-serif; font-size: 13px; line-height: 1.55; color: var(--text-body); font-style: italic; }
 
   /* ── observations ─────────────────────────────────── */
   .rv-obs { list-style: none; border-top: 1px solid var(--line); max-width: 920px; }

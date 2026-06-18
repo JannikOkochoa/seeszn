@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Arbeit — Cases & Evidence Archive | SEESZN",
+  title: "Arbeit: Cases & Evidence Archive | SEESZN",
   description:
     "Ausgewählte SEESZN-Cases: RISCHO, SIVIUS und Contentküche. Websites, Sucharchitektur und KI-Sichtbarkeit (GEO/AIO) in laufender Betreuung.",
   path: "/work",
@@ -23,7 +23,7 @@ const collectionSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "@id": `${SITE_URL}/work#collection`,
-  name: "Arbeit — Cases & Evidence Archive",
+  name: "Arbeit: Cases & Evidence Archive",
   url: `${SITE_URL}/work`,
   inLanguage: "de-DE",
   isPartOf: { "@id": `${SITE_URL}/#website` },
@@ -31,7 +31,7 @@ const collectionSchema = {
   hasPart: CASE_SLUGS.map((slug) => ({
     "@type": "CreativeWork",
     "@id": `${SITE_URL}/cases/${slug}#case`,
-    name: `${CASES[slug].fullName} — Case`,
+    name: `${CASES[slug].fullName} · Case`,
     about: CASES[slug].sector,
     url: `${SITE_URL}/cases/${slug}`,
   })),

@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 import { de } from "@/lib/i18n/de";
 
 export const metadata: Metadata = {
-  title: "Datenschutzerklärung — SEESZN",
-  description: "Datenschutzerklärung für SEESZN — wie wir mit deinen Daten umgehen.",
+  title: "Datenschutzerklärung · SEESZN",
+  description: "Datenschutzerklärung für SEESZN: wie wir mit deinen Daten umgehen.",
   robots: { index: false },
 };
 

@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 import { en } from "@/lib/i18n/en";
 
 export const metadata: Metadata = {
-  title: "Legal Notice — SEESZN",
-  description: "Legal notice and operator information for SEESZN — a brand of Okri Holdings LLC.",
+  title: "Legal Notice · SEESZN",
+  description: "Legal notice and operator information for SEESZN, a brand of Okri Holdings LLC.",
   robots: { index: false },
 };
 

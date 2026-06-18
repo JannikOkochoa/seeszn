@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -9,6 +10,7 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 export default function TheShift() {
   const t = useTranslations();
   const ts = t.theShift;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 
@@ -55,7 +57,7 @@ export default function TheShift() {
 
         {/* CTA */}
         <motion.div {...fadeIn(0.18)} className="shift-cta-wrap">
-          <a href="#contact" className="shift-cta-link">{ts.cta}</a>
+          <Link href={diagHref} className="shift-cta-link">{ts.cta}</Link>
         </motion.div>
       </div>
 

@@ -23,8 +23,8 @@ const tag = {
 export function CrawlMap() {
   return (
     <svg viewBox="0 0 480 370" className="rv-svg" role="img"
-      aria-label="Crawl map — site structure drawn as a floorplan with an indexing route and one dead end">
-      <text x={40} y={16} {...meta}>CRAWL MAP — SZN-CR-01</text>
+      aria-label="Crawl map: site structure drawn as a floorplan with an indexing route and one dead end">
+      <text x={40} y={16} {...meta}>CRAWL MAP · SZN-CR-01</text>
 
       {/* floorplan walls */}
       <g className="cm-walls">
@@ -44,7 +44,7 @@ export function CrawlMap() {
       <rect x={116.5} y={196.5} width={7} height={7} fill="none"
         stroke="var(--dust)" strokeWidth={0.9} className="cm-dead" />
       <text x={120} y={218} textAnchor="middle" {...tag} fill="var(--dust)" className="cm-label">
-        DEAD END — NOT INDEXED
+        DEAD END · NOT INDEXED
       </text>
 
       {/* indexing route */}
@@ -81,8 +81,8 @@ const FRAGMENTS = [
 export function FanOut() {
   return (
     <svg viewBox="0 0 480 370" className="rv-svg" role="img"
-      aria-label="Query fan-out — one query splits into retrieval fragments that assemble into an answer field with citations">
-      <text x={28} y={16} {...meta}>QUERY FAN-OUT — SZN-RT-02</text>
+      aria-label="Query fan-out: one query splits into retrieval fragments that assemble into an answer field with citations">
+      <text x={28} y={16} {...meta}>QUERY FAN-OUT · SZN-RT-02</text>
 
       {/* query node */}
       <rect x={36.5} y={181.5} width={7} height={7} fill="var(--ink)" className="fo-q" />
@@ -136,7 +136,7 @@ export function FanOut() {
         <rect x={381} y={186} width={4} height={4} fill="var(--olive)" />
       </g>
       <text x={416} y={252} textAnchor="middle" {...tag} className="fo-caption">ANSWER FIELD</text>
-      <text x={416} y={266} textAnchor="middle" {...meta} className="fo-caption">CITATION — YOUR SURFACE</text>
+      <text x={416} y={266} textAnchor="middle" {...meta} className="fo-caption">CITATION · YOUR SURFACE</text>
     </svg>
   );
 }
@@ -144,18 +144,18 @@ export function FanOut() {
 // ── 03 / TRUST — website as layered object ───────────────────────────────────
 
 const LAYERS = [
-  { y: 70, label: "05 — CONVERSION" },
-  { y: 124, label: "04 — TRUST" },
-  { y: 178, label: "03 — CONTENT" },
-  { y: 232, label: "02 — STRUCTURE" },
-  { y: 286, label: "01 — SPEED" },
+  { y: 70, label: "05 · CONVERSION" },
+  { y: 124, label: "04 · TRUST" },
+  { y: 178, label: "03 · CONTENT" },
+  { y: 232, label: "02 · STRUCTURE" },
+  { y: 286, label: "01 · SPEED" },
 ];
 
 export function SurfaceLayers() {
   return (
     <svg viewBox="0 0 480 370" className="rv-svg" role="img"
-      aria-label="Website as a layered object — speed, structure, content, trust and conversion stacked on one axis">
-      <text x={40} y={16} {...meta}>SURFACE OBJECT — SZN-SF-03</text>
+      aria-label="Website as a layered object: speed, structure, content, trust and conversion stacked on one axis">
+      <text x={40} y={16} {...meta}>SURFACE OBJECT · SZN-SF-03</text>
 
       {/* system axis */}
       <line x1={200} y1={26} x2={200} y2={330}
@@ -195,7 +195,7 @@ const LEAKS = [
 export function DiagnosisReport() {
   return (
     <div className="dxr" role="img"
-      aria-label="Visibility report — five detected leaks, next move: diagnosis">
+      aria-label="Visibility report: five detected leaks, next move: diagnosis">
       <div className="dxr-head">
         <span>VISIBILITY REPORT</span>
         <span>SZN-DX-04</span>

@@ -12,7 +12,7 @@ const SECTIONS = [
 
 export default function ManualContents() {
   return (
-    <div className="mtoc" role="navigation" aria-label="Operating manual — contents">
+    <div className="mtoc" role="navigation" aria-label="Operating manual, contents">
       <div className="mtoc-head">
         <span>OPERATING MANUAL</span>
         <span>EDITION 2026</span>
@@ -34,7 +34,7 @@ export default function ManualContents() {
       </ul>
 
       <div className="mtoc-foot">
-        <span>BERLIN — BANGKOK</span>
+        <span>BREMEN · BANGKOK</span>
         <span>SZN-OM-04</span>
       </div>
 

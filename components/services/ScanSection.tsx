@@ -55,7 +55,7 @@ export default function ScanSection() {
     <section
       ref={ref}
       className={`scn-section${inView ? " scn--on" : ""}`}
-      aria-label="The scan — diagnostic reading"
+      aria-label="The scan, diagnostic reading"
     >
       <motion.div {...anim(0)} className="scn-label-row">
         <span className="scn-label">05</span>
@@ -91,7 +91,7 @@ export default function ScanSection() {
           className="scn-panel"
           style={{ rotateX: srx, rotateY: sry }}
           role="img"
-          aria-label={`Scan panel — brand surface ${sc.statusVal.toLowerCase()}. Readings: ${sc.readings.join(", ")}. ${sc.nextKey}: ${sc.nextVal}.`}
+          aria-label={`Scan panel: brand surface ${sc.statusVal.toLowerCase()}. Readings: ${sc.readings.join(", ")}. ${sc.nextKey}: ${sc.nextVal}.`}
         >
           <div className="scn-head">
             <span>{sc.panelTitle}</span>

@@ -258,7 +258,7 @@ export default function BriefLanding() {
               </p>
               <p className="bl-body">
                 Viele B2B-Firmen sind fachlich stark, aber digital nicht lesbar genug.
-                Dieser Brief erklärt, warum klassische Sichtbarkeit nicht mehr reicht —
+                Dieser Brief erklärt, warum klassische Sichtbarkeit nicht mehr reicht,
                 und wie Unternehmen abrufbar, zitierbar und vertrauenswürdig werden.
               </p>
             </div>
@@ -341,7 +341,7 @@ export default function BriefLanding() {
                 "welche 14 Fragen zeigen, ob deine Firma abrufbar ist",
               ].map((item) => (
                 <li key={item} className="bl-learn-item">
-                  <span className="bl-learn-dash" aria-hidden="true">—</span>
+                  <span className="bl-learn-dash" aria-hidden="true">·</span>
                   <span>{item}</span>
                 </li>
               ))}
@@ -355,7 +355,7 @@ export default function BriefLanding() {
             <h2 className="bl-nohype-headline">Kein KI-Hype. Kein SEO-Blabla.</h2>
             <p className="bl-nohype-body">
               Der Brief erklärt Sichtbarkeit ohne Buzzwords. Er zeigt, warum gute Firmen
-              verschwinden können, obwohl sie fachlich stark sind — und wie Unternehmen
+              verschwinden können, obwohl sie fachlich stark sind, und wie Unternehmen
               beginnen können, ihre Substanz so zu strukturieren, dass Menschen und
               Maschinen sie verstehen.
             </p>

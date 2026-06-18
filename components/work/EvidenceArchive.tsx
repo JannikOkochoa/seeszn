@@ -34,11 +34,11 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-01",
     name: "CRAWL MAP",
     cls: "SEARCH ARCHITECTURE",
-    medium: "MEDIUM — SITE STRUCTURE · FORMAT — DEPTH RINGS",
+    medium: "MEDIUM · SITE STRUCTURE · FORMAT · DEPTH RINGS",
     statement: "The shape of a site decides what a machine can know.",
     problem: "Pages exist; the machine cannot reach them in order.",
     diagnosis: "Flat link mass, orphaned depth, no semantic hierarchy.",
-    output: "An architecture machines can walk — and rank.",
+    output: "An architecture machines can walk and rank.",
     Plate: DepthMap,
     flip: false,
   },
@@ -47,11 +47,11 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-02",
     name: "QUERY FAN-OUT MAP",
     cls: "MACHINE CITATION",
-    medium: "MEDIUM — SEARCH BEHAVIOUR · FORMAT — RADIAL FAN",
+    medium: "MEDIUM · SEARCH BEHAVIOUR · FORMAT · RADIAL FAN",
     statement: "One question becomes thirty searches. Each path has a winner.",
     problem: "AI search decomposes one prompt into hidden sub-queries.",
     diagnosis: "The brand competes on two paths and is absent from the rest.",
-    output: "A map of every path — and the surface that wins each one.",
+    output: "A map of every path, and the surface that wins each one.",
     Plate: RadialFanout,
     flip: true,
   },
@@ -60,10 +60,10 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-03",
     name: "CITATION GAP REPORT",
     cls: "MACHINE CITATION",
-    medium: "MEDIUM — SOURCE ANALYSIS · FORMAT — GAP TABLE",
+    medium: "MEDIUM · SOURCE ANALYSIS · FORMAT · GAP TABLE",
     statement: "Mentioned in the category. Absent from the answer.",
     problem: "Models assemble answers from surfaces the brand never built.",
-    diagnosis: "Listicles, guides and forums carry the category — citing others.",
+    diagnosis: "Listicles, guides and forums carry the category, citing others.",
     output: "A citation plan per surface, not per keyword.",
     Plate: CitationGapSheet,
     flip: false,
@@ -73,11 +73,11 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-04",
     name: "SURFACE CORE SAMPLE",
     cls: "DIGITAL SURFACE",
-    medium: "MEDIUM — WEBSITE · FORMAT — CROSS-SECTION",
+    medium: "MEDIUM · WEBSITE · FORMAT · CROSS-SECTION",
     statement: "A surface read in cross-section, speed to conversion.",
     problem: "The site looks premium and reads as noise.",
     diagnosis: "Unchunked content, thin entity layer, slow first response.",
-    output: "A surface where every layer is legible — to people and parsers.",
+    output: "A surface where every layer is legible, to people and parsers.",
     Plate: CoreSample,
     flip: true,
   },
@@ -86,11 +86,11 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-05",
     name: "SOURCE SURFACE INDEX",
     cls: "MACHINE CITATION",
-    medium: "MEDIUM — ANSWER ECOLOGY · FORMAT — INDEX SHEET",
+    medium: "MEDIUM · ANSWER ECOLOGY · FORMAT · INDEX SHEET",
     statement: "Answers are fed by surfaces. Most brands own none of them.",
     problem: "Content everywhere; sources nowhere.",
     diagnosis: "Nothing in the brand's estate is built to be quoted.",
-    output: "An index of the surfaces that feed answers — and which to own.",
+    output: "An index of the surfaces that feed answers, and which to own.",
     Plate: SourceIndexSheet,
     flip: false,
   },
@@ -99,9 +99,9 @@ const ARTIFACTS: Artifact[] = [
     code: "SZN-AR-06",
     name: "CONVERSION PATH TRACE",
     cls: "DIAGNOSTICS",
-    medium: "MEDIUM — USER PATH · FORMAT — STATION TRACE",
+    medium: "MEDIUM · USER PATH · FORMAT · STATION TRACE",
     statement: "From citation to customer, traced step by step.",
-    problem: "Cited, clicked — then lost.",
+    problem: "Cited, clicked, then lost.",
     diagnosis: "The path from answer to action breaks at the landing surface.",
     output: "A conversion path with evidence at every step.",
     Plate: PathTrace,
@@ -167,13 +167,13 @@ export default function EvidenceArchive() {
   const closeInView = useInView(closeRef, { once: true, amount: 0.3 });
 
   return (
-    <section className="ea-section" aria-label="The artifacts — evidence archive">
+    <section className="ea-section" aria-label="The artifacts, evidence archive">
       <div className="ea-header">
         <div className="ea-chips">
           <span className="ea-chip">02</span>
           <span className="ea-chip">THE ARTIFACTS</span>
         </div>
-        <span className="ea-chip ea-chip--right">CATALOGUED 2026 — ONGOING</span>
+        <span className="ea-chip ea-chip--right">CATALOGUED 2026 · ONGOING</span>
       </div>
 
       {ARTIFACTS.map((a) => (
@@ -189,7 +189,7 @@ export default function EvidenceArchive() {
         className="ea-confidential"
       >
         <div className="ea-conf-inner">
-          <span className="ea-conf-stamp">CLIENT READINGS — PRESENTED IN PERSON</span>
+          <span className="ea-conf-stamp">CLIENT READINGS · PRESENTED IN PERSON</span>
           <h2 className="ea-conf-headline">
             The archive shows instruments,
             <br />
@@ -198,7 +198,7 @@ export default function EvidenceArchive() {
           <p className="ea-conf-copy">
             SPECIFIC CLIENT EVIDENCE IS CONFIDENTIAL.
             <br />
-            IT IS WALKED THROUGH DURING A DIAGNOSIS —
+            IT IS WALKED THROUGH DURING A DIAGNOSIS.
             <br />
             READ AGAINST YOUR OWN SURFACE.
           </p>

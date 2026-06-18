@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -9,27 +10,9 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 export default function Contact({ index = "06" }: { index?: string }) {
   const t = useTranslations();
   const c = t.contact;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email) return;
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setStatus(res.ok ? "success" : "error");
-      if (res.ok) setEmail("");
-    } catch {
-      setStatus("error");
-    }
-  }
 
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: 16 },
@@ -72,87 +55,42 @@ export default function Contact({ index = "06" }: { index?: string }) {
             ))}
           </motion.p>
 
-          {/* Form */}
+          {/* CTA */}
           <motion.div {...anim(0.2)} style={{ marginTop: 40 }}>
-            {status === "success" ? (
-              <p
-                style={{
-                  fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                  fontSize: 15,
-                  color: "var(--text-primary)",
-                  lineHeight: 1.65,
-                }}
-              >
-                {c.successMessage}
-              </p>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder={c.placeholder}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    border: "1px solid var(--line-strong)",
-                    background: "transparent",
-                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                    fontSize: 15,
-                    color: "var(--text-primary)",
-                    padding: "14px 16px",
-                    outline: "none",
-                    marginBottom: 0,
-                    transition: "border-color 0.15s",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "var(--olive)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "var(--warm-black)";
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    background: "var(--warm-black)",
-                    color: "var(--paper)",
-                    border: "none",
-                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.09em",
-                    textTransform: "uppercase",
-                    padding: 14,
-                    marginTop: 0,
-                    cursor: "pointer",
-                    transition: "opacity 0.2s",
-                    opacity: status === "loading" ? 0.6 : 1,
-                  }}
-                >
-                  {status === "loading" ? c.buttonLoading : (
-                    <>{c.buttonIdle} <span style={{ color: "var(--olive)" }}>→</span></>
-                  )}
-                </button>
+            <Link
+              href={diagHref}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                background: "var(--warm-black)",
+                color: "var(--paper)",
+                border: "none",
+                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                padding: "16px 28px",
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              {c.cta} <span style={{ color: "var(--olive)" }}>→</span>
+            </Link>
 
-                {status === "error" && (
-                  <p
-                    style={{
-                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                      fontSize: 13,
-                      color: "var(--clay)",
-                      marginTop: 12,
-                    }}
-                  >
-                    {c.errorMessage}
-                  </p>
-                )}
-              </form>
-            )}
+            <p
+              style={{
+                fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                fontSize: 13,
+                color: "var(--text-muted)",
+                lineHeight: 1.6,
+                marginTop: 16,
+                maxWidth: 360,
+              }}
+            >
+              {c.note}
+            </p>
           </motion.div>
         </div>
 

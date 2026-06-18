@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "KI-Sichtbarkeits-Brief 2026 — Druckversion",
+  title: "KI-Sichtbarkeits-Brief 2026 · Druckversion",
   robots: { index: false, follow: false },
 };
 
@@ -93,7 +93,7 @@ function Page02() {
           Viele Unternehmen spüren gerade etwas, das sie noch nicht benennen können.
         </p>
         <p className="pp-body">
-          Die Website läuft. Das Geschäft läuft. Die Anfragen kommen — aber sie kommen anders.
+          Die Website läuft. Das Geschäft läuft. Die Anfragen kommen, aber sie kommen anders.
           Manche Kanäle werden leiser. Manche Kunden sagen Sätze wie: „Wir haben eine KI gefragt,
           welche Anbieter es gibt.” Und der eigene Name fiel nicht.
         </p>
@@ -105,7 +105,7 @@ function Page02() {
         </p>
         <p className="pp-body">
           Dieses Dokument erklärt diese Regeln. Es ist kein Hype-Papier und kein Untergangsszenario.
-          Es ist ein Versuch, ein neues Sichtbarkeitsproblem so einfach wie möglich zu beschreiben —
+          Es ist ein Versuch, ein neues Sichtbarkeitsproblem so einfach wie möglich zu beschreiben.
           und eine Denkweise mitzugeben, mit der man es lösen kann.
         </p>
         <p className="pp-body">
@@ -116,7 +116,7 @@ function Page02() {
         <p className="pp-body">
           Eine Beobachtung vorweg, die fast alles Folgende zusammenfasst: Die meisten Firmen, die in
           KI-Antworten nicht vorkommen, sind nicht schlecht. Sie sind nur schlecht lesbar. Ihre
-          Qualität existiert — in Projekten, in Köpfen, in zufriedenen Kunden. Aber sie existiert
+          Qualität existiert: in Projekten, in Köpfen, in zufriedenen Kunden. Aber sie existiert
           nicht in einer Form, die ein System abrufen, verstehen und weitergeben kann.
         </p>
         <p className="pp-body">Genau darum geht es auf den folgenden Seiten.</p>
@@ -149,7 +149,7 @@ function Page03() {
           Rangliste kann man erklimmen.
         </p>
         <p className="pp-body">
-          Diese Logik hat eine ganze Industrie geprägt — und das Denken vieler Unternehmen bis heute.
+          Diese Logik hat eine ganze Industrie geprägt, und das Denken vieler Unternehmen bis heute.
           Wenn ein Geschäftsführer „Sichtbarkeit” sagt, meint er meist immer noch: „Wo stehen wir bei
           Google?” Wenn ein Marketingteam „Content” sagt, meint es meist: „Texte, die ranken sollen.”
         </p>
@@ -159,7 +159,7 @@ function Page03() {
         </p>
         <p className="pp-body">
           Aber über diese Welt hat sich eine zweite Schicht gelegt. Eine Schicht, die nach anderen
-          Regeln funktioniert — und die immer öfter entscheidet, ob ein Unternehmen überhaupt in die
+          Regeln funktioniert und die immer öfter entscheidet, ob ein Unternehmen überhaupt in die
           engere Wahl kommt, bevor jemand die Website jemals gesehen hat.
         </p>
         <p className="pp-body">
@@ -183,13 +183,13 @@ function Page04() {
         <h2 className="pp-headline pp-headline--dark">Die neue Sichtbarkeit</h2>
         <p className="pp-body pp-body--dark">
           Heute beginnt ein wachsender Teil aller Recherchen nicht mehr mit einer Liste, sondern mit
-          einer Frage — und endet mit einer Antwort.
+          einer Frage und endet mit einer Antwort.
         </p>
         <p className="pp-body pp-body--dark">
           Jemand fragt ein KI-System: „Welche Anbieter für X gibt es im deutschsprachigen Raum?” Oder:
           „Was kostet ungefähr Y?” Oder: „Worauf muss ich achten, wenn ich Z einkaufe?” Das System
           antwortet in ganzen Sätzen. Es nennt drei, vier, fünf Namen. Es fasst Vergleiche zusammen.
-          Es zitiert Quellen — manchmal sichtbar, manchmal unsichtbar.
+          Es zitiert Quellen, manchmal sichtbar, manchmal unsichtbar.
         </p>
         <p className="pp-body pp-body--dark">Was dabei passiert, ist fundamental anders als ein Ranking:</p>
         <p className="pp-body pp-body--dark">
@@ -200,7 +200,7 @@ function Page04() {
         <p className="pp-body pp-body--dark">
           <strong className="pp-strong--dark">Sichtbarkeit entsteht leiser.</strong> Es gibt keine
           Positionsanzeige. Niemand schickt eine Benachrichtigung: „Sie wurden heute in 200 Antworten
-          nicht erwähnt.” Das Fehlen ist unsichtbar — und genau das macht es gefährlich.
+          nicht erwähnt.” Das Fehlen ist unsichtbar, und genau das macht es gefährlich.
         </p>
         <p className="pp-body pp-body--dark">
           <strong className="pp-strong--dark">Sichtbarkeit entsteht indirekter.</strong> Systeme stützen
@@ -230,17 +230,17 @@ function Page05() {
           „Wir sind doch bei Google drin.”
         </p>
         <p className="pp-body">
-          Drin sein ist die unterste Stufe. Über ihr liegen vier weitere — und jede ist eine eigene Hürde.
+          Drin sein ist die unterste Stufe. Über ihr liegen vier weitere, und jede ist eine eigene Hürde.
         </p>
 
         {/* Staircase diagram */}
         <div className="pp-staircase">
           {[
             { n: "01", label: "INDEXIERT", desc: "Eine Suchmaschine kennt deine Seite. Die Eintrittskarte, nicht der Sitzplatz." },
-            { n: "02", label: "AUFFINDBAR", desc: "Ein Mensch kann dich finden — vor allem, wenn er deinen Namen kennt.", mark: "← Hier stehen die meisten B2B-Firmen" },
+            { n: "02", label: "AUFFINDBAR", desc: "Ein Mensch kann dich finden, vor allem, wenn er deinen Namen kennt.", mark: "← Hier stehen die meisten B2B-Firmen" },
             { n: "03", label: "ABRUFBAR", desc: "Ein System kann dich als passende Antwort heranziehen, wenn jemand eine generische Frage stellt." },
             { n: "04", label: "ZITIERBAR", desc: "Deine Inhalte sind klar und eigenständig genug, dass ein System sie als Beleg verwenden kann." },
-            { n: "05", label: "VERTRAUENSWÜRDIG", desc: "Menschen und Systeme erkennen, warum du relevant bist — bestätigt durch externe Quellen." },
+            { n: "05", label: "VERTRAUENSWÜRDIG", desc: "Menschen und Systeme erkennen, warum du relevant bist, bestätigt durch externe Quellen." },
           ].map((s) => (
             <div key={s.n} className="pp-stair">
               <div className="pp-stair-header">
@@ -270,7 +270,7 @@ function Page06() {
         <h2 className="pp-headline">Das B2B-Problem</h2>
         <p className="pp-body">
           Man könnte meinen, das alles betreffe vor allem Konsumprodukte: Sneaker, Hotels,
-          Software-Abos. Das Gegenteil ist der Fall. B2B ist verwundbarer — aus Gründen, die im
+          Software-Abos. Das Gegenteil ist der Fall. B2B ist verwundbarer, aus Gründen, die im
           Geschäftsmodell selbst liegen.
         </p>
 
@@ -285,7 +285,7 @@ function Page06() {
           },
           {
             label: "B2B-ENTSCHEIDUNGEN HABEN VIELE BETEILIGTE",
-            body: "Der Fachbereich recherchiert anders als der Einkauf, die Geschäftsführung anders als die IT. Jeder dieser Menschen stellt eigene Fragen — und immer öfter stellt er sie einem Antwortsystem.",
+            body: "Der Fachbereich recherchiert anders als der Einkauf, die Geschäftsführung anders als die IT. Jeder dieser Menschen stellt eigene Fragen, und immer öfter stellt er sie einem Antwortsystem.",
           },
           {
             label: "B2B VERGLEICHT, BEVOR ES SPRICHT",
@@ -352,7 +352,7 @@ function Page08() {
         <h2 className="pp-headline pp-headline--dark">Das 5-Ebenen-Modell für KI-Sichtbarkeit</h2>
         <p className="pp-body pp-body--dark">
           Aus all dem lässt sich ein Modell ableiten. Es ist kein Geheimwissen und keine Software.
-          Es ist eine Denkordnung — fünf Ebenen, auf denen Sichtbarkeit entsteht oder bricht.
+          Es ist eine Denkordnung: fünf Ebenen, auf denen Sichtbarkeit entsteht oder bricht.
         </p>
 
         {/* Layers diagram */}
@@ -362,7 +362,7 @@ function Page08() {
             { n: "02", label: "STRUKTUR", desc: "Die Website als Architektur: klare Seitenlogik, interne Verbindungen, technische Sauberkeit." },
             { n: "03", label: "EVIDENZ", desc: "Inhalte, die als Belege funktionieren: Fallstudien, Vergleiche, Kostentransparenz, echte FAQs." },
             { n: "04", label: "QUELLEN", desc: "Externe Erwähnungen, Verzeichnisse, Fachartikel, Bewertungen, Diskussionen." },
-            { n: "05", label: "DIAGNOSE", desc: "Systematische Prüfung, wo Sichtbarkeit bricht — bevor produziert wird." },
+            { n: "05", label: "DIAGNOSE", desc: "Systematische Prüfung, wo Sichtbarkeit bricht, bevor produziert wird." },
           ].map((l) => (
             <div key={l.n} className="pp-layer">
               <div className="pp-layer-header">
@@ -389,10 +389,10 @@ function Page09() {
   return (
     <section className="pp-page">
       <div className="pp-content">
-        <Label>EBENE 01 — IDENTITÄT</Label>
+        <Label>EBENE 01 · IDENTITÄT</Label>
         <h2 className="pp-headline">Ebene 1: Identität</h2>
         <p className="pp-body">
-          Die erste Ebene klingt banal und ist es nicht: Wer bist du — in einer Form, die man
+          Die erste Ebene klingt banal und ist es nicht: Wer bist du, in einer Form, die man
           weitergeben kann?
         </p>
         <p className="pp-body">
@@ -406,8 +406,8 @@ function Page09() {
         {[
           { q: "Was genau bietest du an?", a: "Nicht die Kategorie, sondern das konkrete Angebot." },
           { q: "Für wen?", a: "Branche, Unternehmensgröße, Region, typische Ausgangslage. „Für alle” ist die Antwort, die niemand abrufen kann." },
-          { q: "Wofür willst du genannt werden?", a: "Wenn jemand fragt „Wer kann X?” — bei welchem X soll dein Name fallen?" },
-          { q: "Warum du — sagbar in zwei Sätzen?", a: "Nicht als Slogan, sondern als Begründung: Spezialisierung, Erfahrungstiefe, Region, Methode, nachweisbare Ergebnisse." },
+          { q: "Wofür willst du genannt werden?", a: "Wenn jemand fragt „Wer kann X?” Bei welchem X soll dein Name fallen?" },
+          { q: "Warum du, sagbar in zwei Sätzen?", a: "Nicht als Slogan, sondern als Begründung: Spezialisierung, Erfahrungstiefe, Region, Methode, nachweisbare Ergebnisse." },
         ].map((item, i) => (
           <div key={i} className="pp-factor">
             <p className="pp-factor-label">{item.q}</p>
@@ -428,7 +428,7 @@ function Page10() {
   return (
     <section className="pp-page pp-page--soft">
       <div className="pp-content">
-        <Label>EBENE 02 — STRUKTUR</Label>
+        <Label>EBENE 02 · STRUKTUR</Label>
         <h2 className="pp-headline">Ebene 2: Struktur</h2>
         <p className="pp-body">
           Die meisten B2B-Websites sind Broschüren. Eine abrufbare Website ist etwas anderes. Sie
@@ -437,7 +437,7 @@ function Page10() {
         <p className="pp-body">Strukturarbeit heißt konkret:</p>
         {[
           { label: "EINDEUTIGE THEMENRÄUME", body: "Eine Seite, ein Thema, eine Frage. Sammelt eine Seite fünf Themen, kann ein System keinem davon vertrauen." },
-          { label: "SEITENLOGIK ENTLANG DER ENTSCHEIDUNG", body: "Problemseiten, Branchen- und Zielgruppenseiten, Leistungsseiten, Vergleichsseiten, FAQ — angeordnet so, wie Kunden denken." },
+          { label: "SEITENLOGIK ENTLANG DER ENTSCHEIDUNG", body: "Problemseiten, Branchen- und Zielgruppenseiten, Leistungsseiten, Vergleichsseiten, FAQ, angeordnet so, wie Kunden denken." },
           { label: "INTERNE VERBINDUNGEN", body: "Probleme verlinken auf Lösungen, Lösungen auf Belege, Belege auf Ansprechpartner. Interne Links sind die Flure des Gebäudes." },
           { label: "TECHNISCHE SAUBERKEIT", body: "Schnell ladend, sauber strukturiert, maschinenlesbar ausgezeichnet. Handwerk, das fehlt, macht alles darüber wirkungslos." },
         ].map((item) => (
@@ -460,7 +460,7 @@ function Page11() {
   return (
     <section className="pp-page">
       <div className="pp-content">
-        <Label>EBENE 03 — EVIDENZ</Label>
+        <Label>EBENE 03 · EVIDENZ</Label>
         <h2 className="pp-headline">Ebene 3: Evidenz</h2>
         <p className="pp-body">
           Hier liegt der größte Denkfehler der letzten Jahre: die Gleichung „mehr Content = mehr
@@ -469,13 +469,13 @@ function Page11() {
         </p>
         <p className="pp-body">
           Was zitiert wird, ist Evidenz: Inhalte, die etwas zeigen, was sonst nirgends steht.
-          Beweisflächen — Flächen, auf denen die Kompetenz einer Firma überprüfbar wird.
+          Beweisflächen: Flächen, auf denen die Kompetenz einer Firma überprüfbar wird.
         </p>
         <p className="pp-body">Die wichtigsten Beweisflächen im B2B:</p>
         {[
-          { label: "ERKLÄRSEITEN", body: "Die ein Kundenproblem wirklich durchdringen — mit dem Detailgrad eines Praktikers." },
+          { label: "ERKLÄRSEITEN", body: "Die ein Kundenproblem wirklich durchdringen, mit dem Detailgrad eines Praktikers." },
           { label: "VERGLEICHE", body: "Die ehrlich sind: Ansätze, Optionen, Preismodelle, auch die Fälle, in denen man selbst nicht die beste Wahl ist." },
-          { label: "FALLSTUDIEN", body: "Die einen echten Verlauf zeigen: Ausgangslage, Vorgehen, Hindernisse, Ergebnis. Keine Jubelmeldungen — Dokumentation." },
+          { label: "FALLSTUDIEN", body: "Die einen echten Verlauf zeigen: Ausgangslage, Vorgehen, Hindernisse, Ergebnis. Keine Jubelmeldungen, sondern Dokumentation." },
           { label: "KOSTEN- UND PREISTRANSPARENZ", body: "Die meistgestellte und meistverweigerte Frage im B2B. Wer sie seriös beantwortet, besetzt eine Fläche, die Wettbewerber freiwillig räumen." },
           { label: "FAQs AUS ECHTEN FRAGEN", body: "Nicht ausgedacht im Meetingraum, sondern gesammelt aus Vertrieb, Support und Erstgesprächen." },
         ].map((item) => (
@@ -498,7 +498,7 @@ function Page12() {
   return (
     <section className="pp-page pp-page--soft">
       <div className="pp-content">
-        <Label>EBENE 04 — QUELLEN</Label>
+        <Label>EBENE 04 · QUELLEN</Label>
         <h2 className="pp-headline">Ebene 4: Quellen</h2>
         <p className="pp-body">
           Stell dir vor, jemand behauptet auf einer Party, ein hervorragender Koch zu sein. Niemand
@@ -506,14 +506,14 @@ function Page12() {
         </p>
         <p className="pp-body">
           Genau so wirkt eine Firma, die nur auf der eigenen Website existiert. Antwortsysteme
-          arbeiten — wie gute Journalisten — mit Quellenvielfalt:
+          arbeiten, wie gute Journalisten, mit Quellenvielfalt:
         </p>
         {[
-          { label: "BRANCHENVERZEICHNISSE UND LISTEN", body: "„Die wichtigsten Anbieter für X” — solche Übersichten sind die Vergleichsstrukturen, aus denen Antwortsysteme schöpfen." },
+          { label: "BRANCHENVERZEICHNISSE UND LISTEN", body: "„Die wichtigsten Anbieter für X”: solche Übersichten sind die Vergleichsstrukturen, aus denen Antwortsysteme schöpfen." },
           { label: "FACHARTIKEL UND GASTBEITRÄGE", body: "Echte Beiträge mit Substanz in Branchenmedien. Keine gekauften Advertorials." },
-          { label: "PARTNERSEITEN", body: "Verbände, Hersteller, Technologiepartner, Hochschulen. Oft existieren diese Beziehungen längst — sie sind nur online nirgends dokumentiert." },
+          { label: "PARTNERSEITEN", body: "Verbände, Hersteller, Technologiepartner, Hochschulen. Oft existieren diese Beziehungen längst, sie sind nur online nirgends dokumentiert." },
           { label: "BEWERTUNGEN UND KUNDENSTIMMEN", body: "Drei detaillierte, nachvollziehbare Stimmen schlagen dreißig Fünf-Sterne-Einzeiler." },
-          { label: "ECHTE DISKUSSIONEN", body: "Foren, Communities, Fachgruppen — Orte, an denen unabhängige Menschen über Probleme und Anbieter sprechen." },
+          { label: "ECHTE DISKUSSIONEN", body: "Foren, Communities, Fachgruppen: Orte, an denen unabhängige Menschen über Probleme und Anbieter sprechen." },
         ].map((item) => (
           <div key={item.label} className="pp-factor">
             <p className="pp-factor-label">{item.label}</p>
@@ -534,11 +534,11 @@ function Page13() {
   return (
     <section className="pp-page">
       <div className="pp-content">
-        <Label>EBENE 05 — DIAGNOSE</Label>
+        <Label>EBENE 05 · DIAGNOSE</Label>
         <h2 className="pp-headline">Ebene 5: Diagnose</h2>
         <p className="pp-body">
           Die fünfte Ebene ist eigentlich die erste. Sie steht am Ende des Modells, weil sie alle
-          anderen voraussetzt — aber in der Praxis beginnt jede vernünftige Arbeit mit ihr.
+          anderen voraussetzt, aber in der Praxis beginnt jede vernünftige Arbeit mit ihr.
         </p>
         <p className="pp-body">
           Bevor irgendetwas produziert wird, müssen vier Fragen beantwortet sein:
@@ -546,8 +546,8 @@ function Page13() {
         {[
           { q: "1. Wo bricht Sichtbarkeit technisch?", a: "Seiten, die Systeme nicht sauber lesen können? Zu langsam, fehlende strukturierte Auszeichnung, doppelte Inhalte?" },
           { q: "2. Wo bricht sie thematisch?", a: "Welche der Fragen, die Kunden tatsächlich stellen, haben keine Antwortseite?" },
-          { q: "3. Wo bricht sie im Quellenraum?", a: "In welchen Listen kommen Wettbewerber vor — und die eigene Firma nicht?" },
-          { q: "4. Wo bricht sie in der Positionierung?", a: "Oft liegt die Wurzel nicht in der Technik, sondern auf Ebene eins — und kein Content repariert eine unklare Identität." },
+          { q: "3. Wo bricht sie im Quellenraum?", a: "In welchen Listen kommen Wettbewerber vor, und die eigene Firma nicht?" },
+          { q: "4. Wo bricht sie in der Positionierung?", a: "Oft liegt die Wurzel nicht in der Technik, sondern auf Ebene eins, und kein Content repariert eine unklare Identität." },
         ].map((item) => (
           <div key={item.q} className="pp-factor">
             <p className="pp-factor-label">{item.q}</p>
@@ -568,21 +568,21 @@ function Page14() {
   return (
     <section className="pp-page pp-page--soft">
       <div className="pp-content">
-        <Label>FALLBEISPIEL — TEIL 1/3</Label>
-        <h2 className="pp-headline">Fallbeispiel: Firma A — Die Ausgangslage</h2>
+        <Label>FALLBEISPIEL · TEIL 1/3</Label>
+        <h2 className="pp-headline">Fallbeispiel: Firma A, die Ausgangslage</h2>
         <p className="pp-body">
           Wie das in der Praxis aussieht, zeigt ein Beispiel. Firma A ist fiktiv, aber aus typischen
           Mustern realer mittelständischer Anbieter zusammengesetzt.
         </p>
         <p className="pp-body">
-          Firma A organisiert seit über zwanzig Jahren Klassenfahrten und Bildungsreisen für Schulen —
+          Firma A organisiert seit über zwanzig Jahren Klassenfahrten und Bildungsreisen für Schulen.
           ein erklärungsbedürftiges B2B-Geschäft mit langen Entscheidungswegen, vielen Beteiligten
           und hohem Absicherungsbedürfnis. Die Firma ist gut: erfahrene Mitarbeiter, eingespielte
           Abläufe, treue Stammkunden, kaum Reklamationen.
         </p>
         <p className="pp-body">
           Die Website existiert seit Jahren und ist gepflegt. Google hat alle Seiten im Index. Es gibt
-          soliden Suchtraffic — vor allem von Menschen, die den Firmennamen bereits kennen. Auf Stufe
+          soliden Suchtraffic, vor allem von Menschen, die den Firmennamen bereits kennen. Auf Stufe
           eins und zwei des Sichtbarkeitsmodells steht Firma A stabil.
         </p>
         <p className="pp-body">
@@ -590,16 +590,16 @@ function Page14() {
           gefragt: „Welche Anbieter für Klassenfahrten nach England sind empfehlenswert?” Zurück im
           Büro stellt das Team dieselbe Frage. Das Ergebnis: Die Antwortsysteme nennen zwei große
           Wettbewerber, ein Reisemagazin, zwei Vergleichsportale. Firma A kommt nicht vor. Nicht
-          einmal falsch — gar nicht.
+          einmal falsch, gar nicht.
         </p>
         <p className="pp-body">
-          Zwanzig Jahre Erfahrung — null zitierbare Flächen.
+          Zwanzig Jahre Erfahrung, null zitierbare Flächen.
         </p>
         <p className="pp-body pp-footnote">
           Firma A ist ein fiktives, aus typischen Mustern zusammengesetztes Beispiel.
         </p>
         <Merksatz>
-          Zwanzig Jahre Erfahrung, null zitierbare Flächen — das ist der Normalfall, nicht die Ausnahme.
+          Zwanzig Jahre Erfahrung, null zitierbare Flächen: das ist der Normalfall, nicht die Ausnahme.
         </Merksatz>
       </div>
       <PageNum n="14" />
@@ -612,7 +612,7 @@ function Page15() {
   return (
     <section className="pp-page">
       <div className="pp-content">
-        <Label>FALLBEISPIEL — TEIL 2/3</Label>
+        <Label>FALLBEISPIEL · TEIL 2/3</Label>
         <h2 className="pp-headline">Fallbeispiel: Die Strategie</h2>
         <p className="pp-body">
           Firma A beschließt, nicht „mehr Marketing zu machen”, sondern entlang der fünf Ebenen zu
@@ -644,15 +644,15 @@ function Page16() {
   return (
     <section className="pp-page pp-page--soft">
       <div className="pp-content">
-        <Label>FALLBEISPIEL — TEIL 3/3</Label>
+        <Label>FALLBEISPIEL · TEIL 3/3</Label>
         <h2 className="pp-headline">Fallbeispiel: Was sich verändert</h2>
         <p className="pp-body">
           Was hat Firma A nach diesen Monaten? Keine Garantie, in jeder KI-Antwort aufzutauchen.
           Was sich verändert hat, ist die Ausgangslage:
         </p>
         {[
-          { label: "DIE FIRMA IST ERKLÄRBAR GEWORDEN", body: "Wer heute fragt, was Firma A macht und für wen, bekommt eine präzise Antwort — von der Website, von Mitarbeitern, und zunehmend von Systemen." },
-          { label: "DIE WEBSITE BEANTWORTET ECHTE FRAGEN", body: "Kosten, Ablauf, Pflichten, Vergleichskriterien — die Fragen, die vorher in Erstgesprächen dreißig Minuten kosteten, haben jetzt Seiten." },
+          { label: "DIE FIRMA IST ERKLÄRBAR GEWORDEN", body: "Wer heute fragt, was Firma A macht und für wen, bekommt eine präzise Antwort: von der Website, von Mitarbeitern, und zunehmend von Systemen." },
+          { label: "DIE WEBSITE BEANTWORTET ECHTE FRAGEN", body: "Kosten, Ablauf, Pflichten, Vergleichskriterien: die Fragen, die vorher in Erstgesprächen dreißig Minuten kosteten, haben jetzt Seiten." },
           { label: "EXTERNE QUELLEN BESTÄTIGEN DIE RELEVANZ", body: "Verzeichnisse, ein Fachbeitrag, gepflegte Bewertungen, dokumentierte Partnerschaften. Die Firma ist keine Selbstbehauptung mehr." },
           { label: "SYSTEME HABEN MATERIAL", body: "Wo vorher Marketingprosa stand, stehen jetzt Spannen, Abläufe, dokumentierte Fälle. Ob ein System daraus zitiert, entscheidet das System. Aber es kann es jetzt." },
         ].map((item) => (
@@ -670,7 +670,7 @@ function Page16() {
           wurden vierzehn. Aus null externen Fachkontexten wurden fünf.
         </p>
         <Merksatz>
-          Von „Website vorhanden” zu „Beweisraum aufgebaut” — das ist der eigentliche Wandel.
+          Von „Website vorhanden” zu „Beweisraum aufgebaut”: das ist der eigentliche Wandel.
         </Merksatz>
       </div>
       <PageNum n="16" />
@@ -686,7 +686,7 @@ function Page17() {
         <h2 className="pp-headline pp-headline--dark">Checkliste: Ist deine Firma abrufbar?</h2>
         <p className="pp-body pp-body--dark">
           Vierzehn Fragen. Ehrlich beantwortet, ergeben sie ein klares Bild. Jedes „Nein” ist kein
-          Versagen — es ist eine gefundene Baustelle.
+          Versagen, sondern eine gefundene Baustelle.
         </p>
 
         {[
@@ -694,22 +694,22 @@ function Page17() {
             label: "IDENTITÄT", items: [
               "Kann ein Außenstehender nach fünf Minuten auf eurer Website präzise sagen, was ihr anbietet und für wen?",
               "Habt ihr schriftlich festgelegt, für welche zwei bis drei Themen euer Name fallen soll?",
-              "Lässt sich euer „Warum wir” in zwei konkreten Sätzen sagen — ohne die Worte „innovativ”, „Qualität” und „Partner”?",
+              "Lässt sich euer „Warum wir” in zwei konkreten Sätzen sagen, ohne die Worte „innovativ”, „Qualität” und „Partner”?",
             ]
           },
           {
             label: "STRUKTUR", items: [
               "Hat jede der zehn wichtigsten Kundenfragen eine eigene, auffindbare Seite mit echter Antwort?",
-              "Gibt es Seiten für eure wichtigsten Zielgruppen oder Branchen — nicht nur für eure Leistungen?",
+              "Gibt es Seiten für eure wichtigsten Zielgruppen oder Branchen, nicht nur für eure Leistungen?",
               "Führen interne Links logisch von Problemen zu Lösungen zu Belegen?",
             ]
           },
           {
             label: "EVIDENZ", items: [
-              "Beantwortet eure Website die Kostenfrage — mit Spannen, Faktoren oder Beispielen?",
+              "Beantwortet eure Website die Kostenfrage, mit Spannen, Faktoren oder Beispielen?",
               "Gibt es mindestens eine dokumentierte, nachvollziehbare Fallstudie?",
-              "Existiert ein ehrlicher Vergleich — von Optionen, Ansätzen oder Anbietertypen?",
-              "Stammen eure FAQ aus echten Kundenfragen — oder aus einem Meetingraum?",
+              "Existiert ein ehrlicher Vergleich von Optionen, Ansätzen oder Anbietertypen?",
+              "Stammen eure FAQ aus echten Kundenfragen oder aus einem Meetingraum?",
             ]
           },
           {
@@ -721,7 +721,7 @@ function Page17() {
           },
           {
             label: "DIAGNOSE", items: [
-              "Habt ihr in den letzten drei Monaten KI-Systemen die wichtigsten generischen Fragen eures Marktes gestellt — und protokolliert, wer genannt wird?",
+              "Habt ihr in den letzten drei Monaten KI-Systemen die wichtigsten generischen Fragen eures Marktes gestellt und protokolliert, wer genannt wird?",
             ]
           },
         ].map((group) => (
@@ -760,9 +760,9 @@ function Page18() {
           { n: "02", text: "Analysiere, wer stattdessen genannt wird. Wettbewerber? Magazine? Verzeichnisse? Diese Liste zeigt dir, welche Quellentypen in deinem Feld Antworten speisen." },
           { n: "03", text: "Mache den Außenstehenden-Test. Lass jemanden außerhalb der Firma erklären, was ihr macht und für wen. Notiere wörtlich, was hängen bleibt." },
           { n: "04", text: "Sammle die echten Kundenfragen. Eine Woche lang: Jede Frage aus Vertrieb, Support und Erstgesprächen wird notiert. Am Ende hast du den ehrlichsten Redaktionsplan." },
-          { n: "05", text: "Lies die Diskussionen deines Marktes. Foren, Reddit, Fachgruppen. Nicht um zu posten — um zu verstehen." },
-          { n: "06", text: "Schreibe die Identität auf. Was bieten wir an, für wen, wofür wollen wir genannt werden, warum wir — in zwei Sätzen. Ohne dieses Dokument ist alles Weitere Stückwerk." },
-          { n: "07", text: "Baue die erste Beweisfläche. Eine einzige Seite, die die häufigste Kundenfrage vollständig beantwortet — oft ist es die Kostenfrage." },
+          { n: "05", text: "Lies die Diskussionen deines Marktes. Foren, Reddit, Fachgruppen. Nicht um zu posten, sondern um zu verstehen." },
+          { n: "06", text: "Schreibe die Identität auf. Was bieten wir an, für wen, wofür wollen wir genannt werden, warum wir, in zwei Sätzen. Ohne dieses Dokument ist alles Weitere Stückwerk." },
+          { n: "07", text: "Baue die erste Beweisfläche. Eine einzige Seite, die die häufigste Kundenfrage vollständig beantwortet, oft ist es die Kostenfrage." },
           { n: "08", text: "Repariere die naheliegendste Quelle. Das fehlende Verzeichnis, die veraltete Partnerseite, das ungepflegte Bewertungsprofil. Eine Sache, diese Woche." },
           { n: "09", text: "Dokumentiere einen echten Fall. Ein Projekt, ehrlich aufgeschrieben: Ausgangslage, Vorgehen, Hindernisse, Ergebnis." },
           { n: "10", text: "Wiederhole Schritt 1 in drei Monaten. Gleiche Fragen, gleiches Protokoll. Erst die zweite Messung macht aus einem Foto eine Richtung." },
@@ -785,16 +785,16 @@ function Page18() {
 
 function Page19() {
   const terms = [
-    { term: "AI Search / KI-Suche", def: "Suchsysteme, die nicht Links auflisten, sondern Antworten formulieren — auf Basis vieler Quellen." },
+    { term: "AI Search / KI-Suche", def: "Suchsysteme, die nicht Links auflisten, sondern Antworten formulieren, auf Basis vieler Quellen." },
     { term: "GEO (Generative Engine Optimization)", def: "Der Sammelbegriff für alles, was die Chance erhöht, in KI-generierten Antworten vorzukommen. Das Gegenstück zu SEO." },
-    { term: "AIO (AI Overviews / AI Optimization)", def: "Die KI-Antwortboxen über klassischen Suchergebnissen — oder die Arbeit, in ihnen vorzukommen. Die Begriffe GEO und AIO werden oft synonym verwendet." },
+    { term: "AIO (AI Overviews / AI Optimization)", def: "Die KI-Antwortboxen über klassischen Suchergebnissen, oder die Arbeit, in ihnen vorzukommen. Die Begriffe GEO und AIO werden oft synonym verwendet." },
     { term: "Query Fan-out", def: "Wenn ein KI-System aus einer Nutzerfrage intern mehrere Teilfragen macht und für jede einzeln Quellen sucht." },
     { term: "Citation Surface / Zitierfläche", def: "Jeder Inhalt, der konkret genug ist, um als Beleg in einer Antwort zu dienen: eine Kostenspanne, eine dokumentierte Fallstudie, ein präziser Vergleich." },
     { term: "Entity / Entität", def: "Ein eindeutig identifizierbares „Ding” für Maschinen: eine Firma, ein Ort, ein Produkt." },
     { term: "Retrieval / Abruf", def: "Der Vorgang, mit dem ein System passende Inhalte aus seinen Quellen holt, bevor es eine Antwort formuliert." },
     { term: "Source Surface / Quellenraum", def: "Die Gesamtheit aller Orte, an denen eine Firma außerhalb der eigenen Website vorkommt." },
     { term: "Listicle", def: "Ein Übersichtsartikel in Listenform. Redaktionell gemacht, sind solche Listen legitime Vergleichsstrukturen. Als verdeckte Eigenwerbung getarnt, sind sie das Gegenteil." },
-    { term: "Diagnose", def: "Die systematische Prüfung, wo Sichtbarkeit bricht — technisch, thematisch, im Quellenraum, in der Positionierung — bevor produziert wird." },
+    { term: "Diagnose", def: "Die systematische Prüfung, wo Sichtbarkeit bricht (technisch, thematisch, im Quellenraum, in der Positionierung), bevor produziert wird." },
   ];
 
   return (
@@ -846,7 +846,7 @@ function Page20() {
         </p>
         <p className="pp-body pp-body--dark">
           Der beste Zeitpunkt, damit anzufangen, war vor zwei Jahren. Der zweitbeste ist der Moment,
-          in dem man zum ersten Mal eine KI nach dem eigenen Markt fragt — und der eigene Name
+          in dem man zum ersten Mal eine KI nach dem eigenen Markt fragt, und der eigene Name
           nicht fällt.
         </p>
 
@@ -858,7 +858,7 @@ function Page20() {
           <div className="pp-publisher-rule" />
           <p className="pp-publisher-line">SEESZN</p>
           <p className="pp-publisher-line">Sichtbarkeitssysteme für Marken, die gefunden und verstanden werden wollen.</p>
-          <p className="pp-publisher-line">BERLIN — BANGKOK · 2026</p>
+          <p className="pp-publisher-line">BREMEN · BANGKOK · 2026</p>
         </div>
       </div>
       <PageNum n="20" dark />

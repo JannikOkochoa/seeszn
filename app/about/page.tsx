@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Studio — Über SEESZN | SEESZN",
+  title: "Studio: Über SEESZN | SEESZN",
   description:
     "SEESZN ist ein Sichtbarkeitsstudio: Strategie, Search, Design und Engineering als ein System. Wir bauen Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
   path: "/about",
@@ -23,7 +23,7 @@ const aboutSchema = {
   "@type": "AboutPage",
   "@id": `${SITE_URL}/about#about`,
   url: `${SITE_URL}/about`,
-  name: "Studio — Über SEESZN",
+  name: "Studio: Über SEESZN",
   inLanguage: "de-DE",
   isPartOf: { "@id": `${SITE_URL}/#website` },
   about: { "@id": `${SITE_URL}/#organization` },

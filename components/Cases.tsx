@@ -57,7 +57,7 @@ export default function Cases() {
             {/* Full-bleed image */}
             <img
               src={CARD_IMGS[i]}
-              alt={`${CARD_NAMES[i]} — Case ${card.index}`}
+              alt={`${CARD_NAMES[i]} · Case ${card.index}`}
               className="cases-img"
             />
 
@@ -71,7 +71,7 @@ export default function Cases() {
 
             {/* Top-left: case index + sector */}
             <span className="cases-meta">
-              CASE {card.index} — {card.sector}
+              CASE {card.index} · {card.sector}
             </span>
 
             {/* Top-right: machine trace label — appears on hover */}

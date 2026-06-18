@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 import { en } from "@/lib/i18n/en";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — SEESZN",
-  description: "Privacy policy for SEESZN — how we handle your data, plainly stated.",
+  title: "Privacy Policy · SEESZN",
+  description: "Privacy policy for SEESZN: how we handle your data, plainly stated.",
   robots: { index: false },
 };
 

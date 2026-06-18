@@ -10,9 +10,9 @@ import { CASES, CASE_SLUGS } from "@/lib/cases";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Work — The Evidence Archive | SEESZN",
+  title: "Work: The Evidence Archive | SEESZN",
   description:
-    "Three live systems, built and held in care: Rischo (website + SEO), SIVIUS (website, software, AIO/GEO) and Contentküche (GEO + SEO). Client readings remain confidential — the surfaces are live.",
+    "Three live systems, built and held in care: Rischo (website + SEO), SIVIUS (website, software, AIO/GEO) and Contentküche (GEO + SEO). Client readings remain confidential, the surfaces are live.",
   path: "/en/work",
   locale: "en",
   altPath: "/work",
@@ -22,7 +22,7 @@ const collectionSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "@id": `${SITE_URL}/en/work#collection`,
-  name: "Work — The Evidence Archive",
+  name: "Work: The Evidence Archive",
   url: `${SITE_URL}/en/work`,
   inLanguage: "en",
   isPartOf: { "@id": `${SITE_URL}/#website` },
@@ -30,7 +30,7 @@ const collectionSchema = {
   hasPart: CASE_SLUGS.map((slug) => ({
     "@type": "CreativeWork",
     "@id": `${SITE_URL}/cases/${slug}#case`,
-    name: `${CASES[slug].fullName} — Case`,
+    name: `${CASES[slug].fullName} · Case`,
     about: CASES[slug].sector,
     url: `${SITE_URL}/cases/${slug}`,
   })),
@@ -57,7 +57,7 @@ export default function WorkPage() {
           roman={["PROOF IS WHAT", "THE SYSTEM"]}
           italic="reveals."
           sub={[
-            "THREE LIVE SYSTEMS — BUILT, MEASURED",
+            "THREE LIVE SYSTEMS · BUILT, MEASURED",
             "AND HELD IN CONTINUOUS CARE.",
             "FILED AS CASE RECORDS.",
           ]}

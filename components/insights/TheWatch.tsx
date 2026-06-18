@@ -16,11 +16,11 @@ export default function TheWatch() {
     <div
       className="watch"
       role="img"
-      aria-label="The Watch — retrieval systems under observation: Google AI Mode and AI Overviews, ChatGPT Search, Perplexity, Gemini, Copilot — and the classic search results page, which still counts"
+      aria-label="The Watch: retrieval systems under observation: Google AI Mode and AI Overviews, ChatGPT Search, Perplexity, Gemini, Copilot, and the classic search results page, which still counts"
     >
       <div className="watch-head">
-        <span>THE WATCH — SYSTEMS UNDER OBSERVATION</span>
-        <span>SZN-IN-03</span>
+        <span>THE WATCH · SYSTEMS UNDER OBSERVATION</span>
+        <span></span>
       </div>
 
       <ul className="watch-list">

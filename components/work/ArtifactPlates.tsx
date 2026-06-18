@@ -36,8 +36,8 @@ const BRANCHES: Array<[number, number]> = [
 export function DepthMap() {
   return (
     <svg viewBox="0 0 480 370" className="ap-svg" role="img"
-      aria-label="Crawl map — site structure as depth rings around the homepage, with one orphaned page outside the structure">
-      <text x={40} y={16} {...meta}>CRAWL MAP — SZN-AR-01</text>
+      aria-label="Crawl map: site structure as depth rings around the homepage, with one orphaned page outside the structure">
+      <text x={40} y={16} {...meta}>CRAWL MAP · SZN-AR-01</text>
 
       {/* depth rings */}
       {[55, 105, 155].map((r, i) => (
@@ -112,8 +112,8 @@ const SPOKES = [
 export function RadialFanout() {
   return (
     <svg viewBox="0 0 480 370" className="ap-svg" role="img"
-      aria-label="Query fan-out map — one query radiating into six hidden search paths, two of them covered">
-      <text x={40} y={16} {...meta}>FAN-OUT MAP — SZN-AR-02</text>
+      aria-label="Query fan-out map: one query radiating into six hidden search paths, two of them covered">
+      <text x={40} y={16} {...meta}>FAN-OUT MAP · SZN-AR-02</text>
 
       {SPOKES.map((s, i) => (
         <line key={s.label} x1={240} y1={195} x2={s.x} y2={s.y}
@@ -139,7 +139,7 @@ export function RadialFanout() {
       <text x={240} y={218} textAnchor="middle" {...tag} className="ap2-q">QUERY</text>
 
       <text x={40} y={356} {...tag} className="ap2-caption">
-        SPECIMEN READING — 2 OF 6 PATHS COVERED.
+        SPECIMEN READING · 2 OF 6 PATHS COVERED.
       </text>
     </svg>
   );
@@ -158,7 +158,7 @@ const GAP_ROWS = [
 export function CitationGapSheet() {
   return (
     <div className="apsh" role="img"
-      aria-label="Citation gap report — five surface types retrieved by AI search, only one citing the brand">
+      aria-label="Citation gap report: five surface types retrieved by AI search, only one citing the brand">
       <div className="apsh-head">
         <span>CITATION GAP REPORT</span>
         <span>SZN-AR-03</span>
@@ -199,8 +199,8 @@ const STRATA = [
 export function CoreSample() {
   return (
     <svg viewBox="0 0 480 370" className="ap-svg" role="img"
-      aria-label="Surface core sample — a website read in cross-section: speed, structure, content, trust, conversion; the content layer is thin">
-      <text x={40} y={16} {...meta}>CORE SAMPLE — SZN-AR-04</text>
+      aria-label="Surface core sample: a website read in cross-section: speed, structure, content, trust, conversion; the content layer is thin">
+      <text x={40} y={16} {...meta}>CORE SAMPLE · SZN-AR-04</text>
 
       {STRATA.map((s, i) => (
         <g key={s.label} className="ap4-stratum" style={{ "--i": i } as React.CSSProperties}>
@@ -211,7 +211,7 @@ export function CoreSample() {
             stroke={s.thin ? "var(--olive)" : "rgba(17,16,14,.25)"} strokeWidth={0.8} />
           <text x={310} y={s.y + s.h / 2 + 3} {...tag}
             fill={s.thin ? "var(--olive)" : "var(--text-secondary)"}>
-            {s.thin ? `${s.label} — THIN LAYER` : s.label}
+            {s.thin ? `${s.label} · THIN LAYER` : s.label}
           </text>
         </g>
       ))}
@@ -228,7 +228,7 @@ export function CoreSample() {
       <line x1={188} y1={330} x2={200} y2={330} stroke="rgba(17,16,14,.3)" strokeWidth={0.7}
         className="ap4-tick" style={{ "--i": 5 } as React.CSSProperties} />
 
-      <text x={200} y={34} {...tag} className="ap4-caption">BORE — FULL SURFACE</text>
+      <text x={200} y={34} {...tag} className="ap4-caption">BORE · FULL SURFACE</text>
       <text x={40} y={356} {...tag} className="ap4-caption">
         EVERY LAYER MUST BE LEGIBLE.
       </text>
@@ -250,7 +250,7 @@ const SOURCES = [
 export function SourceIndexSheet() {
   return (
     <div className="apsh" role="img"
-      aria-label="Source surface index — the surface types that feed AI answers and the role each plays">
+      aria-label="Source surface index: the surface types that feed AI answers and the role each plays">
       <div className="apsh-head">
         <span>SOURCE SURFACE INDEX</span>
         <span>SZN-AR-05</span>
@@ -265,7 +265,7 @@ export function SourceIndexSheet() {
         ))}
       </ul>
       <div className="apsh-foot">
-        <span>OWN OR EARN — NEVER IGNORE</span>
+        <span>OWN OR EARN · NEVER IGNORE</span>
       </div>
     </div>
   );
@@ -284,8 +284,8 @@ const STATIONS = [
 export function PathTrace() {
   return (
     <svg viewBox="0 0 480 370" className="ap-svg" role="img"
-      aria-label="Conversion path trace — the path from AI answer to action, with a leak located between surface and evidence">
-      <text x={40} y={16} {...meta}>PATH TRACE — SZN-AR-06</text>
+      aria-label="Conversion path trace: the path from AI answer to action, with a leak located between surface and evidence">
+      <text x={40} y={16} {...meta}>PATH TRACE · SZN-AR-06</text>
 
       <line x1={50} y1={180} x2={420} y2={180}
         stroke="rgba(17,16,14,.4)" strokeWidth={0.9} className="ap6-line" />
@@ -305,12 +305,12 @@ export function PathTrace() {
         <rect x={282} y={258} width={6} height={6} fill="none"
           stroke="var(--olive)" strokeWidth={0.9} />
         <text x={285} y={282} textAnchor="middle" {...tag} fill="var(--olive)">
-          EXIT — LEAK LOCATED
+          EXIT · LEAK LOCATED
         </text>
       </g>
 
       <text x={40} y={356} {...tag} className="ap6-caption">
-        CITED, CLICKED — THEN LOST. THE TRACE SHOWS WHERE.
+        CITED, CLICKED, THEN LOST. THE TRACE SHOWS WHERE.
       </text>
     </svg>
   );

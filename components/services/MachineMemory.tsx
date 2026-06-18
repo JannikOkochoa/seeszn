@@ -52,7 +52,7 @@ export default function MachineMemory() {
     <section
       ref={ref}
       className="mm-section"
-      aria-label="Machine memory — how AI search retrieves"
+      aria-label="Machine memory: how AI search retrieves"
     >
       {/* Ghost backdrop word */}
       <span className="mm-ghost" aria-hidden="true">{mm.sectionLabel}</span>

@@ -17,11 +17,11 @@ export const ARTICLES: Record<string, Article> = {
     slug: "insights/was-ist-ki-sichtbarkeit",
     kicker: "GRUNDLAGEN",
     h1: "Was ist KI-Sichtbarkeit?",
-    lead: "KI-Sichtbarkeit beschreibt, ob eine Marke in KI-gestützten Antworten erscheint — und ob sie als Quelle zitiert wird.",
+    lead: "KI-Sichtbarkeit beschreibt, ob eine Marke in KI-gestützten Antworten erscheint und ob sie als Quelle zitiert wird.",
     datePublished: PUBLISHED,
     answer: {
       question: "Was ist KI-Sichtbarkeit?",
-      body: "KI-Sichtbarkeit ist das Ausmaß, in dem eine Marke in KI-generierten Antworten erscheint und als Quelle zitiert wird — etwa in ChatGPT, Perplexity, Gemini oder Google AI Overviews. Sie erweitert die klassische Suchsichtbarkeit (Ranking) um die Frage, ob KI-Systeme eine Marke kennen, verstehen, abrufen und empfehlen.",
+      body: "KI-Sichtbarkeit ist das Ausmaß, in dem eine Marke in KI-generierten Antworten erscheint und als Quelle zitiert wird, etwa in ChatGPT, Perplexity, Gemini oder Google AI Overviews. Sie erweitert die klassische Suchsichtbarkeit (Ranking) um die Frage, ob KI-Systeme eine Marke kennen, verstehen, abrufen und empfehlen.",
     },
     sections: [
       {
@@ -47,7 +47,7 @@ export const ARTICLES: Record<string, Article> = {
         heading: "Wie man KI-Sichtbarkeit verbessert",
         paragraphs: [
           "KI-Systeme bevorzugen Marken, die als Quelle klar, strukturiert und belegbar sind. Der Weg führt über eine konsistente Entität, zitierfähige Inhalte (eine Aussage, eine Passage) und saubere technische Abrufbarkeit.",
-          "KI-Sichtbarkeit ist kein Schalter, sondern ein aufgebauter Zustand — aus Struktur, Substanz und konsistenten Signalen, die Vertrauen akkumulieren.",
+          "KI-Sichtbarkeit ist kein Schalter, sondern ein aufgebauter Zustand: aus Struktur, Substanz und konsistenten Signalen, die Vertrauen akkumulieren.",
         ],
       },
     ],
@@ -78,7 +78,7 @@ export const ARTICLES: Record<string, Article> = {
     datePublished: PUBLISHED,
     answer: {
       question: "Was ist GEO?",
-      body: "GEO (Generative Engine Optimization) ist die Disziplin, Inhalte und Quellsignale so aufzubereiten, dass generative Suchsysteme — ChatGPT, Perplexity, Gemini, Google AI Overviews — eine Marke abrufen, ihr vertrauen und sie in der generierten Antwort zitieren. Anders als klassisches SEO zielt GEO nicht auf eine Ranking-Position, sondern auf Präsenz innerhalb der Antwort.",
+      body: "GEO (Generative Engine Optimization) ist die Disziplin, Inhalte und Quellsignale so aufzubereiten, dass generative Suchsysteme wie ChatGPT, Perplexity, Gemini und Google AI Overviews eine Marke abrufen, ihr vertrauen und sie in der generierten Antwort zitieren. Anders als klassisches SEO zielt GEO nicht auf eine Ranking-Position, sondern auf Präsenz innerhalb der Antwort.",
     },
     sections: [
       {
@@ -127,14 +127,14 @@ export const ARTICLES: Record<string, Article> = {
     datePublished: PUBLISHED,
     answer: {
       question: "Was ist AIO?",
-      body: "AIO (AI Overview Optimization) ist die Optimierung von Inhalten dafür, in KI-generierten Antwortflächen — allen voran Google AI Overviews — als Quelle zu erscheinen. Ziel ist, in der zusammengefassten Antwort genannt zu werden, statt nur darunter verlinkt zu sein.",
+      body: "AIO (AI Overview Optimization) ist die Optimierung von Inhalten dafür, in KI-generierten Antwortflächen, allen voran Google AI Overviews, als Quelle zu erscheinen. Ziel ist, in der zusammengefassten Antwort genannt zu werden, statt nur darunter verlinkt zu sein.",
     },
     sections: [
       {
         num: "01",
         heading: "Warum AIO wichtig wird",
         paragraphs: [
-          "Die Antwort steht zunehmend über dem klassischen Ergebnis. AI Overviews fassen mehrere Quellen zu einer Antwort zusammen. Wer dort nicht als Quelle auftaucht, verliert Sichtbarkeit — auch bei guten Rankings.",
+          "Die Antwort steht zunehmend über dem klassischen Ergebnis. AI Overviews fassen mehrere Quellen zu einer Antwort zusammen. Wer dort nicht als Quelle auftaucht, verliert Sichtbarkeit, auch bei guten Rankings.",
           "Maschinen zitieren Absätze, nicht Seiten. Retrieval passiert auf Chunk-Ebene.",
         ],
       },
@@ -192,8 +192,8 @@ export const ARTICLES: Record<string, Article> = {
         num: "02",
         heading: "Warum sie zusammengehören",
         paragraphs: [
-          "Die drei Disziplinen widersprechen sich nicht — sie bauen aufeinander auf. Ohne crawlbare, saubere Struktur (SEO) gibt es nichts abzurufen. Ohne zitierfähige, entity-klare Inhalte (GEO) wird nichts ausgewählt. Ohne chunk-fähige Antwortblöcke (AIO) erscheint nichts in der Antwortfläche.",
-          "Wer alle drei separat behandelt, optimiert für drei verschiedene Systeme und baut dreimal. Wer sie als ein System behandelt, baut einmal — und wird in allen drei sichtbar.",
+          "Die drei Disziplinen widersprechen sich nicht, sie bauen aufeinander auf. Ohne crawlbare, saubere Struktur (SEO) gibt es nichts abzurufen. Ohne zitierfähige, entity-klare Inhalte (GEO) wird nichts ausgewählt. Ohne chunk-fähige Antwortblöcke (AIO) erscheint nichts in der Antwortfläche.",
+          "Wer alle drei separat behandelt, optimiert für drei verschiedene Systeme und baut dreimal. Wer sie als ein System behandelt, baut einmal und wird in allen drei sichtbar.",
         ],
       },
     ],
@@ -222,27 +222,27 @@ export const ARTICLES: Record<string, Article> = {
     crumbs: crumbsInsight("SEO vs. GEO vs. AIO", "insights/seo-vs-geo-vs-aio"),
     meta: {
       title: "SEO vs. GEO vs. AIO: der Unterschied erklärt | SEESZN",
-      description: "SEO, GEO und AIO im Vergleich: Ziele, Arenen und Hebel der drei Disziplinen — mit Vergleichstabelle. Neutral erklärt von SEESZN.",
+      description: "SEO, GEO und AIO im Vergleich: Ziele, Arenen und Hebel der drei Disziplinen, mit Vergleichstabelle. Neutral erklärt von SEESZN.",
     },
   },
 
   // ───────────────────────────────────────────────────────────────────────────
   "research/absence-index": {
     slug: "research/absence-index",
-    kicker: "RESEARCH — METHODIK",
+    kicker: "RESEARCH · METHODIK",
     h1: "Der Absence Index: wie wir messen, wo Marken aus Antworten verschwinden",
     lead: "Der Absence Index ist ein internes Beobachtungsmodell dafür, wie oft eine Kategorie ohne die Marken beantwortet wird, die glauben, sie zu besitzen.",
     datePublished: PUBLISHED,
     answer: {
       question: "Was ist der Absence Index?",
-      body: "Der Absence Index ist ein internes Beobachtungsmodell von SEESZN. Er beschreibt, in welchem Anteil eines definierten Prompt-Sets einer Kategorie die relevanten Antworten erzeugt werden können, ohne eine bestimmte Marke zu nennen oder zu zitieren. Er misst Abwesenheit, nicht Ranking — also die Lücke zwischen 'existiert' und 'wird in der Antwort verwendet'.",
+      body: "Der Absence Index ist ein internes Beobachtungsmodell von SEESZN. Er beschreibt, in welchem Anteil eines definierten Prompt-Sets einer Kategorie die relevanten Antworten erzeugt werden können, ohne eine bestimmte Marke zu nennen oder zu zitieren. Er misst Abwesenheit, nicht Ranking: also die Lücke zwischen 'existiert' und 'wird in der Antwort verwendet'.",
     },
     sections: [
       {
         num: "01",
         heading: "Was der Absence Index misst",
         paragraphs: [
-          "Der Index betrachtet ein definiertes Set an Prompts, die für eine Kategorie typisch sind — Vergleiche, Empfehlungen, Alternativen, Kauffragen. Für jeden Prompt wird beobachtet, ob die Antwort eine Zielmarke nennt, zitiert oder als Quelle verwendet.",
+          "Der Index betrachtet ein definiertes Set an Prompts, die für eine Kategorie typisch sind: Vergleiche, Empfehlungen, Alternativen, Kauffragen. Für jeden Prompt wird beobachtet, ob die Antwort eine Zielmarke nennt, zitiert oder als Quelle verwendet.",
           "Daraus ergibt sich ein qualitatives Bild: Wie oft kann die Kategorie beantwortet werden, ohne dass die Marke vorkommt?",
         ],
       },
@@ -269,7 +269,7 @@ export const ARTICLES: Record<string, Article> = {
         heading: "Beispiel-Prompts",
         bullets: [
           "„Beste Anbieter für [Kategorie] im DACH-Raum?“",
-          "„[Marke] vs. [Wettbewerber] — was ist besser?“",
+          "„[Marke] vs. [Wettbewerber]: was ist besser?“",
           "„Welche Alternativen gibt es zu [Marke]?“",
           "„Worauf sollte man bei [Kategorie] achten?“",
         ],
@@ -296,7 +296,7 @@ export const ARTICLES: Record<string, Article> = {
         num: "07",
         heading: "Warum das für Unternehmen zählt",
         paragraphs: [
-          "Wenn eine Kategorie ohne eine Marke beantwortet werden kann, findet ein Teil der Kaufvorbereitung ohne diese Marke statt — unbemerkt. Der Absence Index macht diese unsichtbare Lücke besprechbar und priorisierbar.",
+          "Wenn eine Kategorie ohne eine Marke beantwortet werden kann, findet ein Teil der Kaufvorbereitung ohne diese Marke statt, unbemerkt. Der Absence Index macht diese unsichtbare Lücke besprechbar und priorisierbar.",
         ],
       },
     ],
@@ -319,7 +319,7 @@ export const ARTICLES: Record<string, Article> = {
       { name: "Absence Index", path: "/research/absence-index" },
     ],
     meta: {
-      title: "Absence Index — Methodik der KI-Sichtbarkeitslücke | SEESZN",
+      title: "Absence Index: Methodik der KI-Sichtbarkeitslücke | SEESZN",
       description: "Der Absence Index von SEESZN: ein Beobachtungsmodell, das misst, wie oft eine Kategorie ohne die führenden Marken beantwortet wird. Methodik, Beispiele und Grenzen.",
     },
   },

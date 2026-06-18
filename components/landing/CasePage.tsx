@@ -21,7 +21,7 @@ export default function CasePage({ study }: { study: CaseStudy }) {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
     "@id": `${SITE_URL}${path}#case`,
-    name: `${study.fullName} — Case`,
+    name: `${study.fullName} · Case`,
     headline: study.statement,
     abstract: study.problem,
     genre: "Case Study",
@@ -42,7 +42,7 @@ export default function CasePage({ study }: { study: CaseStudy }) {
       <main className="lp">
         <header className="lp-hero">
           <Breadcrumbs items={crumbs} />
-          <p className="lp-kicker">CASE — {study.sector.toUpperCase()}</p>
+          <p className="lp-kicker">CASE · {study.sector.toUpperCase()}</p>
           <h1 className="lp-h1">{study.fullName}</h1>
           <p className="lp-lead">{study.statement}</p>
 

@@ -133,11 +133,11 @@ function Refusals() {
 }
 
 function Unit() {
-  const { ref, anim } = useReveal();
+  const { ref, inView, anim } = useReveal(0.12);
   const t = useTranslations();
   const manual = t.aboutPage.manual;
   return (
-    <section ref={ref} id="unit" className="om-block">
+    <section ref={ref} id="unit" className={`om-block${inView ? " om-block--on" : ""}`}>
       <motion.div {...anim(0)} className="om-label-row">
         <span className="om-label">M-05</span>
         <span className="om-label">{manual.unit.label}</span>
@@ -153,6 +153,23 @@ function Unit() {
           <p className="om-copy om-copy--dim">{manual.unit.copy2}</p>
         </motion.div>
       </div>
+
+      <motion.div {...anim(0.24)} className="om-label-row om-unit-roleslabel">
+        <span className="om-label">{manual.unit.rolesLabel}</span>
+      </motion.div>
+      <ol className="om-principles">
+        {manual.unit.roles.map((r, i) => (
+          <li key={r.name} className="om-principle" style={{ "--i": i } as React.CSSProperties}>
+            <span className="om-principle-num">0{i + 1}</span>
+            <div>
+              <h3 className="om-principle-name">{r.name}</h3>
+              <p className="om-principle-gloss">{r.gloss}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <motion.p {...anim(0.3)} className="om-unit-note">{manual.unit.note}</motion.p>
     </section>
   );
 }
@@ -322,6 +339,18 @@ export default function OperatingManual() {
           line-height: 1.65;
           color: var(--text-body);
           max-width: 520px;
+        }
+
+        /* ── M-05 — unit roles + transparency note ───── */
+        .om-unit-roleslabel { margin-top: 56px; margin-bottom: 28px; }
+        .om-unit-note {
+          margin-top: 40px;
+          max-width: 620px;
+          font-family: var(--font-mono), monospace;
+          font-size: 11px;
+          letter-spacing: 0.04em;
+          line-height: 1.7;
+          color: var(--text-muted);
         }
 
         /* ── M-04 — refusals ─────────────────────────── */

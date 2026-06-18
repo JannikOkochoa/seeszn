@@ -19,12 +19,28 @@ function stripScriptsStyles(html: string): string {
 
 function decodeEntities(s: string): string {
   return s
+    // Numeric decimal entities: &#8211; → –
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(parseInt(n, 10)))
+    // Numeric hex entities: &#x2013; → –
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)))
+    // Common named entities
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&nbsp;/g, " ")
+    .replace(/&ndash;/g, " - ")
+    .replace(/&mdash;/g, " - ")
+    .replace(/&hellip;/g, "…")
+    .replace(/&rsquo;|&lsquo;/g, "’")
+    .replace(/&rdquo;|&ldquo;/g, "“")
+    .replace(/&middot;/g, "·")
+    .replace(/&bull;/g, "•")
+    .replace(/&rarr;/g, "→")
+    .replace(/&copy;/g, "©")
+    .replace(/&reg;/g, "®")
+    .replace(/&trade;/g, "™")
     .trim();
 }
 

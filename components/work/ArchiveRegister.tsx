@@ -14,7 +14,7 @@ const ROWS = [
 
 export default function ArchiveRegister() {
   return (
-    <div className="areg" role="navigation" aria-label="Archive register — list of artifacts">
+    <div className="areg" role="navigation" aria-label="Archive register, list of artifacts">
       <div className="areg-head">
         <span>ARCHIVE REGISTER</span>
         <span>PUBLIC</span>
@@ -37,7 +37,7 @@ export default function ArchiveRegister() {
 
       <div className="areg-foot">
         <span>06 ARTIFACTS ON DISPLAY</span>
-        <span className="areg-foot-note">CLIENT READINGS — PRIVATE</span>
+        <span className="areg-foot-note">CLIENT READINGS · PRIVATE</span>
       </div>
 
       <style>{`

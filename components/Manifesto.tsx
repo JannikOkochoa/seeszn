@@ -8,6 +8,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { useRef } from "react";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -15,6 +16,7 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 export default function Manifesto() {
   const t = useTranslations();
   const m = t.manifesto;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const reduced = useReducedMotion();
@@ -120,8 +122,8 @@ export default function Manifesto() {
           ))}
 
           <motion.div {...anim(0.34)} style={{ textAlign: "right", marginTop: 24 }}>
-            <a
-              href="#contact"
+            <Link
+              href={diagHref}
               style={{
                 fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
                 fontSize: 12,
@@ -131,7 +133,7 @@ export default function Manifesto() {
               }}
             >
               {m.readMore}
-            </a>
+            </Link>
           </motion.div>
         </div>
       </motion.div>

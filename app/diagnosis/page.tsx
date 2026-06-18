@@ -9,9 +9,9 @@ import type { Metadata } from "next";
 import { buildMetadata, serviceSchema, breadcrumbSchema, faqSchema } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Sichtbarkeit prüfen — KI-Sichtbarkeits-Diagnose | SEESZN",
+  title: "Sichtbarkeit prüfen: KI-Sichtbarkeits-Diagnose | SEESZN",
   description:
-    "Die SEESZN Sichtbarkeits-Diagnose prüft, wo deine B2B-Marke in Google und KI-Antworten — ChatGPT, Perplexity, Gemini und Google AI Overviews — fehlt, falsch gelesen oder nicht zitiert wird. Kein generisches SEO-Audit, sondern eine GEO-/AIO-Diagnose mit priorisierten Maßnahmen.",
+    "Die SEESZN Sichtbarkeits-Diagnose prüft, wo deine B2B-Marke in Google und KI-Antworten wie ChatGPT, Perplexity, Gemini und Google AI Overviews fehlt, falsch gelesen oder nicht zitiert wird. Kein generisches SEO-Audit, sondern eine GEO-/AIO-Diagnose mit priorisierten Maßnahmen.",
   path: "/diagnosis",
   locale: "de",
   altPath: "/en/diagnosis",
@@ -26,7 +26,7 @@ export default function DeDiagnosisPage() {
           serviceSchema({
             name: "KI-Sichtbarkeits-Audit & Search-Diagnose",
             description:
-              "Diagnose, wo eine B2B-Marke in Google und in KI-Antworten (ChatGPT, Perplexity, Gemini, Google AI Overviews) fehlt, falsch gelesen oder nicht zitiert wird — mit priorisierter Roadmap.",
+              "Diagnose, wo eine B2B-Marke in Google und in KI-Antworten (ChatGPT, Perplexity, Gemini, Google AI Overviews) fehlt, falsch gelesen oder nicht zitiert wird, mit priorisierter Roadmap.",
             path: "/diagnosis",
             serviceType: "KI-Sichtbarkeits-Audit",
           }),

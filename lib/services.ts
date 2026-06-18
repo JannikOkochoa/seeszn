@@ -50,7 +50,7 @@ export const ROOMS: Room[] = [
     index: "02",
     station: "RETRIEVE",
     name: "RETRIEVAL ROOM",
-    discipline: "AI SEARCH / GEO / AIO — MACHINE CITATION",
+    discipline: "AI SEARCH / GEO / AIO · MACHINE CITATION",
     statement: ["AI Search does not rank pages.", "It retrieves evidence."],
     body: "We prepare brands for AI-assisted discovery: query fan-outs, citation surfaces, entity-rich content and pages designed to be retrieved, trusted and referenced.",
     deliverables: [
@@ -75,7 +75,7 @@ export const ROOMS: Room[] = [
       "A website is no longer a brochure.",
       "It is the surface machines parse and people judge.",
     ],
-    body: "We design and build websites as retrieval surfaces: fast, editorial, structured and conversion-ready. A site should not only look premium — it should become usable evidence.",
+    body: "We design and build websites as retrieval surfaces: fast, editorial, structured and conversion-ready. A site should not only look premium, it should become usable evidence.",
     deliverables: [
       "Next.js Development",
       "Editorial Landing Pages",

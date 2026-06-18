@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 import VisibilityField from "@/components/home/VisibilityField";
 
@@ -17,6 +18,7 @@ const IMGS = [
 export default function Services() {
   const t = useTranslations();
   const s = t.homepageServices;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.05 });
 
@@ -76,9 +78,9 @@ export default function Services() {
               </ul>
             </div>
 
-            <a href="#contact" className="eng-cta">
+            <Link href={diagHref} className="eng-cta">
               {t.common.bookDiagnosis} <span style={{ color: "var(--olive)" }}>→</span>
-            </a>
+            </Link>
           </div>
 
           {/* Image column */}

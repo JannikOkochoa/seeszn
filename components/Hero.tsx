@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -52,6 +53,7 @@ const PARTICLES: Array<{
 export default function Hero() {
   const t = useTranslations();
   const h = t.hero;
+  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -171,10 +173,10 @@ export default function Hero() {
 
         {/* CTA */}
         <motion.div {...fadeUp(0.4)} style={{ marginTop: 28 }}>
-          <a href="#contact" className="hero-cta">
+          <Link href={diagHref} className="hero-cta">
             {h.cta}{" "}
             <span style={{ color: "var(--olive)" }}>→</span>
-          </a>
+          </Link>
         </motion.div>
 
         {/* Vertical location text — very subtle */}
@@ -195,7 +197,7 @@ export default function Hero() {
             whiteSpace: "nowrap",
           }}
         >
-          PARIS — BREMEN — BANGKOK
+          BREMEN · BANGKOK
         </span>
       </motion.div>
 

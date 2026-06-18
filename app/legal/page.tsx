@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 import { de } from "@/lib/i18n/de";
 
 export const metadata: Metadata = {
-  title: "Rechtliche Hinweise — SEESZN",
-  description: "Rechtliche Hinweise und Betreiberangaben für SEESZN — eine Marke der Okri Holdings LLC.",
+  title: "Rechtliche Hinweise · SEESZN",
+  description: "Rechtliche Hinweise und Betreiberangaben für SEESZN, eine Marke der Okri Holdings LLC.",
   robots: { index: false },
 };
 

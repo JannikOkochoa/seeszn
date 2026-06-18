@@ -203,7 +203,7 @@ export default function Nav() {
             {/* Wordmark */}
             <Link
               href={isDE ? "/" : "/en"}
-              aria-label="SEESZN — Return to home"
+              aria-label="SEESZN, return to home"
               onClick={closeAll}
               style={{
                 textDecoration: "none",
@@ -348,7 +348,7 @@ export default function Nav() {
               <Link
                 href={isDE ? "/" : "/en"}
                 onClick={closeAll}
-                aria-label="SEESZN — Home"
+                aria-label="SEESZN, home"
                 style={{
                   fontFamily: "var(--font-display), sans-serif",
                   fontWeight: 800,

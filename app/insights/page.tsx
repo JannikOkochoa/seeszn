@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Insights — Field Notes zur KI-Sichtbarkeit | SEESZN",
+  title: "Insights: Field Notes zur KI-Sichtbarkeit | SEESZN",
   description:
     "Field Notes aus der Retrieval-Schicht: Was AI Search liest, zitiert und ignoriert. Grundlagen zu KI-Sichtbarkeit, GEO und AIO von SEESZN.",
   path: "/insights",
@@ -26,7 +26,7 @@ const insightsCollectionSchema = {
   "@type": "CollectionPage",
   "@id": `${SITE_URL}/insights#collection`,
   url: `${SITE_URL}/insights`,
-  name: "Insights — Field Notes zur KI-Sichtbarkeit",
+  name: "Insights: Field Notes zur KI-Sichtbarkeit",
   inLanguage: "de-DE",
   isPartOf: { "@id": `${SITE_URL}/#website` },
   about: { "@id": `${SITE_URL}/#organization` },

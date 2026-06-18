@@ -92,7 +92,7 @@ function CaseCard({
       <motion.article
         className={`cf-card${inView ? " cf-card--on" : ""}`}
         style={{ scale, "--cfa": accent } as MotionStyle}
-        aria-label={`Case file ${file.id} — ${file.fullName}`}
+        aria-label={`Case file ${file.id}: ${file.fullName}`}
       >
         {/* Accent spine — draws in from top */}
         <span className="cf-spine" aria-hidden="true" />
@@ -108,7 +108,7 @@ function CaseCard({
 
         {/* File header strip */}
         <div className="cf-head">
-          <span className="cf-head-id">CASE FILE — {file.id}</span>
+          <span className="cf-head-id">CASE FILE · {file.id}</span>
           <span className="cf-head-status">
             <span className="cf-status-dot" aria-hidden="true" />
             {file.status}

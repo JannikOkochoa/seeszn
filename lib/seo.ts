@@ -108,7 +108,7 @@ export const OFFERS: { name: string; serviceType: string; description: string }[
     name: "Search Architecture",
     serviceType: "SEO & Search Architecture",
     description:
-      "Die technische, semantische und inhaltliche Struktur, die eine Marke auffindbar und maschinell verständlich macht — Technical SEO, Sucharchitektur und Entity-Klarheit.",
+      "Die technische, semantische und inhaltliche Struktur, die eine Marke auffindbar und maschinell verständlich macht: Technical SEO, Sucharchitektur und Entity-Klarheit.",
   },
   {
     name: "Answer Engine Content Layer",
@@ -120,7 +120,7 @@ export const OFFERS: { name: string; serviceType: string; description: string }[
     name: "Ongoing Visibility System",
     serviceType: "Visibility Care",
     description:
-      "Laufende Pflege und Weiterentwicklung der Sichtbarkeit über Google, Google AI Overviews, ChatGPT, Perplexity und Gemini — Sichtbarkeit als System, nicht als Einmalprojekt.",
+      "Laufende Pflege und Weiterentwicklung der Sichtbarkeit über Google, Google AI Overviews, ChatGPT, Perplexity und Gemini: Sichtbarkeit als System, nicht als Einmalprojekt.",
   },
 ];
 
@@ -156,7 +156,7 @@ export function organizationSchema() {
     ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "SEESZN — Sichtbarkeitssystem für B2B-Marken",
+      name: "SEESZN · Sichtbarkeitssystem für B2B-Marken",
       itemListElement: OFFERS.map((o) => ({
         "@type": "Offer",
         itemOffered: {

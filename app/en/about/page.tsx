@@ -9,9 +9,9 @@ import JsonLd from "@/components/seo/JsonLd";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "About — The Operating Manual | SEESZN",
+  title: "About: The Operating Manual | SEESZN",
   description:
-    "How SEESZN thinks: premise, operating model, principles and refusals. A visibility studio — strategy, search architecture, editorial design and engineering as one system.",
+    "How SEESZN thinks: premise, operating model, principles and refusals. A visibility studio: strategy, search architecture, editorial design and engineering as one system.",
   path: "/en/about",
   locale: "en",
   altPath: "/about",
@@ -22,7 +22,7 @@ const aboutSchema = {
   "@type": "AboutPage",
   "@id": `${SITE_URL}/en/about#about`,
   url: `${SITE_URL}/en/about`,
-  name: "About — The Operating Manual",
+  name: "About: The Operating Manual",
   inLanguage: "en",
   isPartOf: { "@id": `${SITE_URL}/#website` },
   about: { "@id": `${SITE_URL}/#organization` },
@@ -50,7 +50,7 @@ export default function AboutPage() {
           roman={["WE OPERATE WHERE", "MACHINES DECIDE"]}
           italic="what people see."
           sub={[
-            "SEESZN IS A VISIBILITY STUDIO —",
+            "SEESZN IS A VISIBILITY STUDIO:",
             "STRATEGY, SEARCH, DESIGN AND ENGINEERING",
             "OPERATING AS ONE SYSTEM.",
           ]}

@@ -12,7 +12,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { buildMetadata, serviceSchema, breadcrumbSchema } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Discover — The SEESZN Visibility System | SEESZN",
+  title: "Discover: The SEESZN Visibility System | SEESZN",
   description:
     "Visibility systems for brands entering machine memory. SEESZN connects search architecture, AI retrieval, digital surfaces and diagnosis into one operating system.",
   path: "/en/services",
@@ -26,7 +26,7 @@ export default function ServicesPage() {
       <JsonLd
         data={[
           serviceSchema({
-            name: "SEESZN Visibility System — SEO, GEO & AIO",
+            name: "SEESZN Visibility System: SEO, GEO & AIO",
             description:
               "Search architecture, AI retrieval (GEO/AIO), website development and diagnosis as one visibility system for B2B brands across Google, ChatGPT, Perplexity, Gemini and Google AI Overviews.",
             path: "/en/services",

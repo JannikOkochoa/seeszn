@@ -11,7 +11,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Insights — The Intelligence Room | SEESZN",
+  title: "Insights: The Intelligence Room | SEESZN",
   description:
     "Field notes from the retrieval layer: query fan-out, citation surfaces, chunk-level retrieval, entity clarity, schema, performance and the surfaces that feed AI answers.",
   path: "/en/insights",

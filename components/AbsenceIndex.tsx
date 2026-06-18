@@ -138,7 +138,7 @@ export default function AbsenceIndex() {
 
           <motion.div {...anim(0.28)} style={{ marginTop: 32 }}>
             <a
-              href={t.locale === "de" ? "/research/absence-index" : "#contact"}
+              href={t.locale === "de" ? "/research/absence-index" : "/en/diagnosis"}
               className="abs-cta"
             >
               {t.locale === "de" ? "METHODIK ANSEHEN →" : ai.cta}
@@ -152,7 +152,7 @@ export default function AbsenceIndex() {
             ref={svgRef}
             viewBox="0 0 600 460"
             className="abs-svg"
-            aria-label="Absence Index — diagnostic signal cluster"
+            aria-label="Absence Index, diagnostic signal cluster"
             role="img"
             onMouseEnter={onSvgEnter}
             onMouseMove={onSvgMove}
