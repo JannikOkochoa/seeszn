@@ -11,16 +11,30 @@ import { normalizeUrl, SafeFetchError } from "@/lib/scan/fetcher";
 import { runChecks } from "@/lib/scan/checks";
 import { scoreSurface } from "@/lib/scan/score";
 import { buildAiAnswers } from "@/lib/scan/aiCheck";
+import { clientIp, rateLimit } from "@/lib/rateLimit";
 import type { Locale, ScanError } from "@/lib/scan/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Free scan, but public: cap bursts per IP (no-op outside production).
+const SCAN_LIMIT = 10;
+const SCAN_WINDOW_MS = 10 * 60 * 1000;
+const TOO_MANY = "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.";
 
 function fail(error: string, code: ScanError["code"], status: number): Response {
   return Response.json({ error, code } satisfies ScanError, { status });
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const limit = rateLimit("scan", clientIp(request), SCAN_LIMIT, SCAN_WINDOW_MS);
+  if (!limit.ok) {
+    return Response.json({ error: TOO_MANY, code: "rate_limited" } satisfies ScanError, {
+      status: 429,
+      headers: { "Retry-After": String(limit.retryAfterSec) },
+    });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

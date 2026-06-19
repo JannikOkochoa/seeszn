@@ -2,7 +2,7 @@
 // Delivers the full Sichtbarkeitsprüfung after a valid company email is submitted
 // on the result page. Two emails go out:
 //   1) internal lead to SEESZN_LEAD_EMAIL — must succeed for the request to count
-//   2) a personal automatic email to the user (from Tobias) with the full reading
+//   2) a personal automatic email to the user (from Elana) with the full reading
 //      — best effort; a failure here must never lose the lead.
 //
 // Safety: the email is validated server-side and must be a company domain; every
@@ -12,13 +12,15 @@
 import { Resend } from "resend";
 import { COMPANY_EMAIL_ERROR, isCompanyEmail, isFreemail } from "@/lib/email/freemail";
 import {
+  buildLeadEmailHtml,
   buildLeadEmailText,
   buildUserEmailHtml,
   buildUserEmailText,
-  firstNameFrom,
+  getFirstName,
   leadEmailSubject,
   userEmailSubject,
 } from "@/lib/email/diagnosis";
+import { clientIp, rateLimit } from "@/lib/rateLimit";
 import type { ScanResult } from "@/lib/scan/types";
 
 export const runtime = "nodejs";
@@ -26,7 +28,19 @@ export const runtime = "nodejs";
 const FROM_DEFAULT = "SEESZN <hello@seeszn.com>";
 const LEAD_DEFAULT = "hello@seeszn.com";
 
+// Email delivery is more sensitive than the scan: cap harder (no-op outside prod).
+const CONTACT_LIMIT = 3;
+const CONTACT_WINDOW_MS = 10 * 60 * 1000;
+
 export async function POST(request: Request): Promise<Response> {
+  const limit = rateLimit("contact", clientIp(request), CONTACT_LIMIT, CONTACT_WINDOW_MS);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.", code: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -34,14 +48,22 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { email, name, note, result, market, locale } = (body ?? {}) as {
+  const { email, name, note, result, market, locale, companyUrlConfirm } = (body ?? {}) as {
     email?: unknown;
     name?: unknown;
     note?: unknown;
     result?: unknown;
     market?: unknown;
     locale?: unknown;
+    companyUrlConfirm?: unknown;
   };
+
+  // Honeypot: a hidden field real users never see. If it carries a value, treat
+  // the request as a bot. We soft-accept without sending any email or lead and
+  // never reveal the rule.
+  if (typeof companyUrlConfirm === "string" && companyUrlConfirm.trim() !== "") {
+    return Response.json({ ok: true, userEmailSent: false });
+  }
 
   // 1) Email present + syntactically valid.
   if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -52,6 +74,17 @@ export async function POST(request: Request): Promise<Response> {
   // 2) Company-email requirement (authoritative, server-side).
   if (!isCompanyEmail(cleanEmail)) {
     return Response.json({ error: COMPANY_EMAIL_ERROR, code: "freemail" }, { status: 422 });
+  }
+
+  // Development-only env sanity check. Never logs the API key or user notes,
+  // and never runs in production.
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[contact] env check", {
+      hasResendApiKey: Boolean(process.env.RESEND_API_KEY),
+      from: process.env.SEESZN_FROM_EMAIL ?? `(fallback) ${FROM_DEFAULT}`,
+      replyTo: process.env.SEESZN_REPLY_TO_EMAIL ?? `(fallback) ${LEAD_DEFAULT}`,
+      lead: process.env.SEESZN_LEAD_EMAIL ?? `(fallback) ${LEAD_DEFAULT}`,
+    });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -74,20 +107,24 @@ export async function POST(request: Request): Promise<Response> {
 
   const resend = new Resend(apiKey);
 
-  // ── 1) Internal lead — must succeed ───────────────────────────────────────────
+  // ── 1) Internal lead briefing — must succeed ──────────────────────────────────
+  // Sender identity comes from env (Elana); reply-to is the submitted user email
+  // so a reply lands with the prospect directly.
+  const leadInput = {
+    email: cleanEmail,
+    name: cleanName,
+    note: cleanNote,
+    locale: loc,
+    freemail: isFreemail(cleanEmail),
+    result: scan,
+  };
   const lead = await resend.emails.send({
-    from: FROM_DEFAULT,
+    from: fromAddress,
     to: [leadAddress],
     replyTo: cleanEmail,
-    subject: leadEmailSubject(domain, scan ? scan.overallScore : null),
-    text: buildLeadEmailText({
-      email: cleanEmail,
-      name: cleanName,
-      note: cleanNote,
-      locale: loc,
-      freemail: isFreemail(cleanEmail),
-      result: scan,
-    }),
+    subject: leadEmailSubject(domain, scan),
+    html: buildLeadEmailHtml(leadInput),
+    text: buildLeadEmailText(leadInput),
   });
 
   if (lead.error) {
@@ -100,7 +137,12 @@ export async function POST(request: Request): Promise<Response> {
   let userEmailSent = false;
   if (scan) {
     try {
-      const userInput = { firstName: firstNameFrom(cleanName), domain, result: scan };
+      const userInput = {
+        firstName: getFirstName(cleanName),
+        domain,
+        result: scan,
+        company: !isFreemail(cleanEmail),
+      };
       const sent = await resend.emails.send({
         from: fromAddress,
         to: [cleanEmail],

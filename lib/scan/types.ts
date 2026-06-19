@@ -152,5 +152,5 @@ export interface ScanResult {
 export interface ScanError {
   error: string;
   /** Machine code so the UI can choose the right message. */
-  code: "invalid_domain" | "blocked_target" | "unreachable" | "timeout" | "internal";
+  code: "invalid_domain" | "blocked_target" | "unreachable" | "timeout" | "internal" | "rate_limited";
 }

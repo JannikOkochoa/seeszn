@@ -27,9 +27,9 @@ Copy `.env.example` to `.env.local` and fill in:
 | Variable | Purpose |
 | --- | --- |
 | `RESEND_API_KEY` | Resend key for email delivery. |
-| `SEESZN_LEAD_EMAIL` | Internal lead recipient, e.g. `hello@seeszn.com`. |
-| `SEESZN_FROM_EMAIL` | From header for the user email, e.g. `Tobias von SEESZN <diagnosis@seeszn.com>`. |
-| `SEESZN_REPLY_TO_EMAIL` | Reply-to for the user email, e.g. `tobias@seeszn.com`. |
+| `SEESZN_LEAD_EMAIL` | Internal lead recipient, e.g. `elana@seeszn.com`. |
+| `SEESZN_FROM_EMAIL` | From header for the user email, e.g. `Elana von SEESZN <elana@seeszn.com>`. |
+| `SEESZN_REPLY_TO_EMAIL` | Reply-to for the user email, e.g. `elana@seeszn.com`. |
 | `AI_ANSWER_PROVIDER` | `none` (default) or `google_cse`. |
 | `GOOGLE_CSE_API_KEY` / `GOOGLE_CSE_CX` | Google Custom Search credentials (only used when provider is `google_cse`). |
 
@@ -39,6 +39,21 @@ Copy `.env.example` to `.env.local` and fill in:
 
 The free scan runs without any of these. Email delivery requires Resend; the
 company-email requirement and the 3-query cap are enforced server-side.
+
+## Launch checklist
+
+- [ ] `npm run build` passes
+- [ ] `npm run lint` has no errors
+- [ ] Scan works with `AI_ANSWER_PROVIDER=none`
+- [ ] Scan works with `AI_ANSWER_PROVIDER=google_cse`
+- [ ] Company email is accepted at the gate
+- [ ] `gmail.com` (and other freemail) is blocked at the gate
+- [ ] Internal lead email is received at `SEESZN_LEAD_EMAIL`
+- [ ] User email (from Elana) is received
+- [ ] Missing Google CSE falls back to "Nicht live geprüft" (questions still shown)
+- [ ] `.env.local` is not committed (`git check-ignore .env.local`)
+
+Rate limits (production only): scan 10 requests / IP / 10 min, email 3 / IP / 10 min.
 
 ## Learn More
 

@@ -435,8 +435,10 @@ function DiagnosisSection({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
+  // Honeypot — hidden from real users; only bots tend to fill it.
+  const [companyUrlConfirm, setCompanyUrlConfirm] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "loading" | "sentEmail" | "saved" | "error" | "freemail"
+    "idle" | "loading" | "sentEmail" | "saved" | "error" | "freemail" | "rateLimited"
   >("idle");
   const revealRef = useRef<HTMLDivElement>(null);
 
@@ -463,7 +465,7 @@ function DiagnosisSection({
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, note, locale, market: locale, result }),
+        body: JSON.stringify({ email, name, note, locale, market: locale, result, companyUrlConfirm }),
       });
       if (res.ok) {
         const data = (await res.json().catch(() => ({}))) as { userEmailSent?: boolean };
@@ -473,6 +475,8 @@ function DiagnosisSection({
         onUnlock();
       } else if (res.status === 422) {
         setStatus("freemail");
+      } else if (res.status === 429) {
+        setStatus("rateLimited");
       } else {
         setStatus("error");
       }
@@ -578,6 +582,21 @@ function DiagnosisSection({
                 {labels.companyEmailError}
               </p>
             )}
+            <p className="rv-gate-privacy">{labels.gatePrivacy}</p>
+          </div>
+
+          {/* Honeypot — hidden from people, off the tab order; bots may fill it. */}
+          <div className="rv-hp" aria-hidden="true">
+            <label htmlFor="rv-company-url">Company URL</label>
+            <input
+              id="rv-company-url"
+              type="text"
+              name="companyUrlConfirm"
+              value={companyUrlConfirm}
+              onChange={(e) => setCompanyUrlConfirm(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
           </div>
 
           <button type="submit" className="rv-deliver-cta" disabled={!emailSyntaxValid || status === "loading"}>
@@ -618,6 +637,9 @@ function DiagnosisSection({
               {labels.unlockError}
               <a href="mailto:hello@seeszn.com">hello@seeszn.com</a>
             </p>
+          )}
+          {status === "rateLimited" && (
+            <p className="rv-deliver-error" role="alert">{labels.rateLimited}</p>
           )}
         </div>
       </form>
@@ -750,37 +772,46 @@ const css = `
   .rv-helper { margin-top: 9px; font-family: var(--font-body), sans-serif; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
   .rv-helper--error { color: var(--clay); }
 
+  /* Honeypot — kept in the DOM and out of the viewport, off the tab order */
+  .rv-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  /* Privacy note — small, calm, understated */
+  .rv-gate-privacy { margin-top: 10px; font-family: var(--font-body), sans-serif; font-size: 11.5px; line-height: 1.45; color: var(--text-muted); }
+
   /* ── KI-Antwortfragen teaser ──────────────────────── */
-  .rv-aiq-intro { font-family: var(--font-editorial), serif; font-size: clamp(18px, 2.2vw, 24px); line-height: 1.4; color: var(--ink-strong); max-width: 760px; margin-bottom: 12px; }
-  .rv-aiq-note { font-family: var(--font-body), sans-serif; font-size: 14px; line-height: 1.6; color: var(--text-body); max-width: 720px; margin-bottom: 14px; }
-  .rv-aiq-unavailable { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-muted); border-left: 2px solid var(--line-strong); padding: 8px 14px; margin-bottom: 18px; max-width: 720px; }
-  .rv-aiq-list { list-style: none; border-top: 1px solid var(--line); max-width: 920px; }
-  .rv-aiq-item { padding: 22px 0; border-bottom: 1px solid var(--line); }
-  .rv-aiq-q-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; align-items: baseline; }
-  .rv-aiq-num { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--text-muted); }
-  .rv-aiq-q { font-family: var(--font-display), sans-serif; font-weight: 700; font-size: clamp(17px, 2vw, 21px); line-height: 1.3; color: var(--ink-strong); }
-  .rv-aiq-badge { font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 9px; border: 1px solid currentColor; white-space: nowrap; align-self: center; }
+  /* Editorial rhythm: eyebrow (.rv-block-label) → serif headline → calm lead →
+     thin-ruled prompt rows. Quiet status text, no boxed tags, no SaaS cards. */
+  .rv-aiq-intro { font-family: var(--font-editorial), serif; font-size: clamp(19px, 2.3vw, 26px); line-height: 1.34; letter-spacing: -0.01em; color: var(--ink-strong); max-width: 700px; margin-bottom: 16px; }
+  .rv-aiq-note { font-family: var(--font-body), sans-serif; font-size: 15px; line-height: 1.65; color: var(--text-body); max-width: 660px; margin-bottom: 26px; }
+  .rv-aiq-unavailable { font-family: var(--font-body), sans-serif; font-size: 12.5px; line-height: 1.6; color: var(--text-muted); border-left: 1px solid var(--line-strong); padding: 4px 0 4px 18px; margin: 0 0 26px; max-width: 660px; }
+  .rv-aiq-list { list-style: none; border-top: 1px solid var(--line); max-width: 880px; }
+  .rv-aiq-item { padding: 26px 0; border-bottom: 1px solid var(--line); }
+  .rv-aiq-q-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 16px; align-items: baseline; }
+  .rv-aiq-num { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-faint); }
+  .rv-aiq-q { font-family: var(--font-body), sans-serif; font-weight: 500; font-size: clamp(15px, 1.5vw, 17px); line-height: 1.45; letter-spacing: -0.005em; color: var(--ink-strong); }
+  .rv-aiq-badge { font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; align-self: center; }
   .rv-aiq-badge--gefunden { color: #4f7a2e; }
   .rv-aiq-badge--nicht_gefunden { color: var(--clay); }
-  .rv-aiq-badge--na { color: var(--text-muted); }
+  .rv-aiq-badge--na { color: var(--text-faint); }
   [data-theme="dark"] .rv-aiq-badge--gefunden { color: var(--signal); }
   [data-theme="dark"] .rv-aiq-badge--nicht_gefunden { color: #d98a64; }
 
-  .rv-aiq-detail { margin: 14px 0 0 50px; display: flex; flex-direction: column; gap: 12px; }
-  .rv-aiq-own { font-family: var(--font-body), sans-serif; font-size: 14px; line-height: 1.5; }
+  .rv-aiq-detail { margin: 16px 0 0 46px; display: flex; flex-direction: column; gap: 14px; }
+  .rv-aiq-own { font-family: var(--font-body), sans-serif; font-size: 14px; line-height: 1.55; }
   .rv-aiq-own--found { color: #4f7a2e; }
   .rv-aiq-own--missing { color: var(--clay); }
   [data-theme="dark"] .rv-aiq-own--found { color: var(--signal); }
   [data-theme="dark"] .rv-aiq-own--missing { color: #d98a64; }
   .rv-aiq-pos { color: var(--text-muted); }
-  .rv-aiq-domains-label { display: block; font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
-  .rv-aiq-domains-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
-  .rv-aiq-domain { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--ink-strong); border: 1px solid var(--line-strong); padding: 4px 10px; }
-  .rv-aiq-leak { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .rv-aiq-domains-label { display: block; font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
+  .rv-aiq-domains-list { list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; }
+  .rv-aiq-domain { font-family: var(--font-mono), monospace; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); }
+  .rv-aiq-domain:not(:last-child)::after { content: "·"; margin: 0 10px; color: var(--text-faint); }
+  .rv-aiq-leak { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.02em; color: var(--text-secondary); }
   .rv-aiq-leak-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em; font-size: 9px; margin-right: 10px; }
-  .rv-aiq-interpretation { font-family: var(--font-body), sans-serif; font-size: 14.5px; line-height: 1.6; color: var(--text-body); max-width: 680px; }
-  .rv-aiq-locked { margin: 12px 0 0 50px; font-family: var(--font-body), sans-serif; font-size: 13px; line-height: 1.5; color: var(--text-muted); font-style: italic; }
-  .rv-aiq-disclaimer { margin-top: 22px; font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.04em; line-height: 1.6; color: var(--text-muted); max-width: 760px; }
+  .rv-aiq-interpretation { font-family: var(--font-body), sans-serif; font-size: 14.5px; line-height: 1.65; color: var(--text-body); max-width: 660px; }
+  .rv-aiq-locked { margin: 14px 0 0 46px; font-family: var(--font-body), sans-serif; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); font-style: italic; }
+  .rv-aiq-disclaimer { margin-top: 28px; font-family: var(--font-body), sans-serif; font-size: 12px; line-height: 1.65; color: var(--text-muted); max-width: 720px; }
 
   .rv-deliver-cta { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-top: 14px; padding: 18px 24px; background: var(--ink-strong); color: var(--paper); border: 1px solid var(--ink-strong); cursor: pointer; transition: background 0.25s, color 0.25s; }
   .rv-deliver-cta-label { font-family: var(--font-body), sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; }
@@ -835,5 +866,9 @@ const css = `
     .rv-obs-value--sealed { grid-column: 2; }
     .rv-sealed-row { flex-wrap: wrap; gap: 6px 14px; }
     .rv-sealed-status { margin-left: 22px; text-align: left; max-width: none; }
+    /* Prompt rows: let the status drop under the question instead of crowding it */
+    .rv-aiq-q-row { grid-template-columns: 24px 1fr; gap: 6px 12px; }
+    .rv-aiq-badge { grid-column: 2; justify-self: start; align-self: auto; margin-top: 4px; }
+    .rv-aiq-detail, .rv-aiq-locked { margin-left: 36px; }
   }
 `;
