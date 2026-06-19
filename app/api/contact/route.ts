@@ -1,6 +1,32 @@
-import { Resend } from "resend";
+// ─── POST /api/contact ─────────────────────────────────────────────────────────
+// Delivers the full Sichtbarkeitsprüfung after a valid company email is submitted
+// on the result page. Two emails go out:
+//   1) internal lead to SEESZN_LEAD_EMAIL — must succeed for the request to count
+//   2) a personal automatic email to the user (from Tobias) with the full reading
+//      — best effort; a failure here must never lose the lead.
+//
+// Safety: the email is validated server-side and must be a company domain; every
+// user-controlled value is sanitized; we only ever send to the validated user
+// address and the configured lead address. No secrets are exposed.
 
-export async function POST(request: Request) {
+import { Resend } from "resend";
+import { COMPANY_EMAIL_ERROR, isCompanyEmail, isFreemail } from "@/lib/email/freemail";
+import {
+  buildLeadEmailText,
+  buildUserEmailHtml,
+  buildUserEmailText,
+  firstNameFrom,
+  leadEmailSubject,
+  userEmailSubject,
+} from "@/lib/email/diagnosis";
+import type { ScanResult } from "@/lib/scan/types";
+
+export const runtime = "nodejs";
+
+const FROM_DEFAULT = "SEESZN <hello@seeszn.com>";
+const LEAD_DEFAULT = "hello@seeszn.com";
+
+export async function POST(request: Request): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -8,22 +34,24 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { email, url, suspect, name, market, note, scanSummary, finding, freemail } =
-    (body ?? {}) as {
-      email?: unknown;
-      url?: unknown;
-      suspect?: unknown;
-      name?: unknown;
-      market?: unknown;
-      // Newer Sichtbarkeitsprüfung fields. Optional, so old senders stay valid.
-      note?: unknown;
-      scanSummary?: unknown;
-      finding?: unknown;
-      freemail?: unknown;
-    };
+  const { email, name, note, result, market, locale } = (body ?? {}) as {
+    email?: unknown;
+    name?: unknown;
+    note?: unknown;
+    result?: unknown;
+    market?: unknown;
+    locale?: unknown;
+  };
 
+  // 1) Email present + syntactically valid.
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return Response.json({ error: "Invalid email" }, { status: 400 });
+  }
+  const cleanEmail = email.trim().slice(0, 200);
+
+  // 2) Company-email requirement (authoritative, server-side).
+  if (!isCompanyEmail(cleanEmail)) {
+    return Response.json({ error: COMPANY_EMAIL_ERROR, code: "freemail" }, { status: 422 });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -34,91 +62,87 @@ export async function POST(request: Request) {
   const str = (v: unknown, max: number) =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, max) : "";
 
-  const locale = str(market, 8) === "en" ? "en" : "de";
-  const domain = str(url, 200);
-  const findingLine = str(finding, 400);
-  const isFreemail = freemail === true;
+  const loc = str(locale, 8) === "en" || str(market, 8) === "en" ? "en" : "de";
+  const cleanName = str(name, 120);
+  const cleanNote = str(note, 600);
+  const scan = isScanResult(result) ? sanitizeResult(result) : undefined;
+  const domain = scan?.domain ?? "";
 
-  const lines = [`New visibility diagnosis request from: ${email}`];
-  if (str(name, 120)) lines.push(`Name: ${str(name, 120)}`);
-  if (domain) lines.push(`Brand / website: ${domain}`);
-  if (str(market, 120)) lines.push(`Market / language: ${str(market, 120)}`);
-  lines.push(`Freemail address: ${isFreemail ? "yes" : "no"}`);
-  if (str(suspect, 100)) lines.push(`Main concern: ${str(suspect, 100)}`);
-  if (str(note, 600)) lines.push(`Note: ${str(note, 600)}`);
-  // Attach the free-check reading so the reply can start from real findings.
-  if (str(scanSummary, 2000)) lines.push("", "── Sichtbarkeitsprüfung ──", str(scanSummary, 2000));
+  const fromAddress = process.env.SEESZN_FROM_EMAIL || FROM_DEFAULT;
+  const leadAddress = process.env.SEESZN_LEAD_EMAIL || LEAD_DEFAULT;
+  const replyTo = process.env.SEESZN_REPLY_TO_EMAIL || LEAD_DEFAULT;
 
   const resend = new Resend(apiKey);
 
-  // 1) Internal lead — this one must succeed for the request to count.
-  const { error } = await resend.emails.send({
-    from: "SEESZN <hello@seeszn.com>",
-    to: ["hello@seeszn.com"],
-    subject: `Diagnosis request from ${email}`,
-    text: lines.join("\n"),
+  // ── 1) Internal lead — must succeed ───────────────────────────────────────────
+  const lead = await resend.emails.send({
+    from: FROM_DEFAULT,
+    to: [leadAddress],
+    replyTo: cleanEmail,
+    subject: leadEmailSubject(domain, scan ? scan.overallScore : null),
+    text: buildLeadEmailText({
+      email: cleanEmail,
+      name: cleanName,
+      note: cleanNote,
+      locale: loc,
+      freemail: isFreemail(cleanEmail),
+      result: scan,
+    }),
   });
 
-  if (error) {
+  if (lead.error) {
     return Response.json({ error: "Send failed" }, { status: 500 });
   }
 
-  // 2) Confirmation to the user — best effort. A failure here (e.g. sandbox
-  //    sending limits) must not fail the lead, so we never await its result
-  //    into the response path beyond a guarded try/catch. Honest content only:
-  //    we confirm the analysis is on its way and restate the first finding.
-  try {
-    await resend.emails.send({
-      from: "SEESZN <hello@seeszn.com>",
-      to: [email],
-      replyTo: "hello@seeszn.com",
-      subject: confirmationSubject(locale, domain),
-      text: confirmationBody(locale, { domain, finding: findingLine }),
-    });
-  } catch {
-    // Outbound confirmation unavailable — the lead is still recorded.
+  // ── 2) Personal automatic email to the user — best effort ─────────────────────
+  // A failure here must not lose the lead: we report userEmailSent=false and the
+  // UI shows the "Analyse gespeichert" fallback.
+  let userEmailSent = false;
+  if (scan) {
+    try {
+      const userInput = { firstName: firstNameFrom(cleanName), domain, result: scan };
+      const sent = await resend.emails.send({
+        from: fromAddress,
+        to: [cleanEmail],
+        replyTo,
+        subject: userEmailSubject(domain),
+        html: buildUserEmailHtml(userInput),
+        text: buildUserEmailText(userInput),
+      });
+      userEmailSent = !sent.error;
+    } catch {
+      userEmailSent = false;
+    }
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, userEmailSent });
 }
 
-function confirmationSubject(locale: "de" | "en", domain: string): string {
-  if (locale === "en") {
-    return domain ? `Your visibility analysis for ${domain}` : "Your visibility analysis";
-  }
-  return domain ? `Deine Sichtbarkeitsprüfung für ${domain}` : "Deine Sichtbarkeitsprüfung";
-}
+// ── narrow + sanitize the incoming scan result ──────────────────────────────────
+// We never trust the client payload: it is shape-checked and clamped before it is
+// used to build emails. Strings stay raw here (the HTML builder escapes them).
 
-function confirmationBody(
-  locale: "de" | "en",
-  { domain, finding }: { domain: string; finding: string },
-): string {
-  if (locale === "en") {
-    const parts = [
-      "Thanks for running the visibility check.",
-      domain ? `We have your first reading for ${domain}.` : "We have your first reading.",
-    ];
-    if (finding) parts.push("", `First reading: ${finding}`);
-    parts.push(
-      "",
-      "We review the results manually and get back to you with the prioritized next steps and the most useful first move.",
-      "",
-      "SEESZN",
-      "hello@seeszn.com",
-    );
-    return parts.join("\n");
-  }
-  const parts = [
-    "Danke für die Sichtbarkeitsprüfung.",
-    domain ? `Deine erste Einordnung für ${domain} liegt vor.` : "Deine erste Einordnung liegt vor.",
-  ];
-  if (finding) parts.push("", `Erste Einordnung: ${finding}`);
-  parts.push(
-    "",
-    "Wir prüfen die Ergebnisse zusätzlich manuell und melden uns mit den priorisierten nächsten Schritten und dem sinnvollsten ersten Schritt.",
-    "",
-    "SEESZN",
-    "hello@seeszn.com",
+function isScanResult(v: unknown): v is ScanResult {
+  if (!v || typeof v !== "object") return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r.domain === "string" &&
+    typeof r.overallScore === "number" &&
+    Array.isArray(r.scores) &&
+    Array.isArray(r.aiAnswerChecks)
   );
-  return parts.join("\n");
+}
+
+function sanitizeResult(r: ScanResult): ScanResult {
+  const cap = (s: unknown, max: number) => (typeof s === "string" ? s.slice(0, max) : "");
+  return {
+    ...r,
+    domain: cap(r.domain, 200),
+    finding: cap(r.finding, 600),
+    meaning: cap(r.meaning, 1200),
+    nextStep: cap(r.nextStep, 600),
+    scores: (r.scores ?? []).slice(0, 6),
+    observations: (r.observations ?? []).slice(0, 20),
+    aiAnswerChecks: (r.aiAnswerChecks ?? []).slice(0, 3),
+  };
 }

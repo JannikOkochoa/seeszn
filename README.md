@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Sichtbarkeitsprüfung — environment
+
+Copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Purpose |
+| --- | --- |
+| `RESEND_API_KEY` | Resend key for email delivery. |
+| `SEESZN_LEAD_EMAIL` | Internal lead recipient, e.g. `hello@seeszn.com`. |
+| `SEESZN_FROM_EMAIL` | From header for the user email, e.g. `Tobias von SEESZN <diagnosis@seeszn.com>`. |
+| `SEESZN_REPLY_TO_EMAIL` | Reply-to for the user email, e.g. `tobias@seeszn.com`. |
+| `AI_ANSWER_PROVIDER` | `none` (default) or `google_cse`. |
+| `GOOGLE_CSE_API_KEY` / `GOOGLE_CSE_CX` | Google Custom Search credentials (only used when provider is `google_cse`). |
+
+- `AI_ANSWER_PROVIDER=none` generates the 3 KI-Antwortfragen without live web checks.
+- `AI_ANSWER_PROVIDER=google_cse` runs exactly 3 Google Custom Search checks per scan, one per question.
+- This is a **Web-Signalcheck** of the visible web surface, not a live ChatGPT, Gemini, Perplexity or Google AI Overview ranking.
+
+The free scan runs without any of these. Email delivery requires Resend; the
+company-email requirement and the 3-query cap are enforced server-side.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

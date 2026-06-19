@@ -10,6 +10,7 @@
 import { normalizeUrl, SafeFetchError } from "@/lib/scan/fetcher";
 import { runChecks } from "@/lib/scan/checks";
 import { scoreSurface } from "@/lib/scan/score";
+import { buildAiAnswers } from "@/lib/scan/aiCheck";
 import type { Locale, ScanError } from "@/lib/scan/types";
 
 export const runtime = "nodejs";
@@ -56,6 +57,11 @@ export async function POST(request: Request): Promise<Response> {
     const { signals, finalUrl } = await runChecks(url);
     const displayDomain = new URL(finalUrl).hostname.replace(/^www\./, "");
     const result = scoreSurface({ domain: displayDomain, url: finalUrl, signals, locale: loc });
+    // Generate the 3 KI-Antwortfragen and run the optional Web-Signalcheck.
+    // Never breaks the scan: buildAiAnswers degrades to checked=false on failure.
+    const { questions, checks } = await buildAiAnswers(displayDomain, signals, loc);
+    result.aiAnswerQuestions = questions;
+    result.aiAnswerChecks = checks;
     return Response.json(result);
   } catch (err) {
     if (err instanceof SafeFetchError) {

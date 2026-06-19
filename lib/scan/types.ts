@@ -77,6 +77,45 @@ export interface RawSignals {
   performanceState: "measured" | "unavailable";
 }
 
+// ─── KI-Antwortfragen — questions where AI systems should name the brand ──────────
+// These are NOT generic SEO keywords. They are questions a potential customer
+// might ask ChatGPT, Gemini, Perplexity or Google AI Overviews, where the scanned
+// brand should be visible if it is clearly understood and well sourced. The
+// optional web-signal check is a "Web-Signalcheck" from visible page signals at
+// the time of the scan, never a durable AI ranking.
+
+/** Which of the three fixed question roles a question fills. */
+export type AiQuestionKind = "category" | "brand" | "problem";
+
+/** A single generated KI-Antwortfrage before any web-signal check. */
+export interface AiAnswerQuestion {
+  question: string;
+  kind: AiQuestionKind;
+}
+
+/** A visible domain from the web-signal check top results. */
+export interface VisibleDomain {
+  domain: string;
+  title?: string;
+  position: number;
+}
+
+/** The result of (optionally) checking one KI-Antwortfrage against the web surface. */
+export interface AiAnswerCheck {
+  question: string;
+  kind: AiQuestionKind;
+  provider: "none" | "google_cse";
+  checked: boolean;
+  label: "Nicht live geprüft" | "Web-Signalcheck";
+  ownDomainFound: boolean;
+  ownDomainPosition?: number;
+  visibleDomains: VisibleDomain[];
+  visibleCompetitors: VisibleDomain[];
+  status: "gefunden" | "nicht_gefunden" | "nicht_geprueft";
+  leakType?: "Kategorie-Leak" | "Vertrauens-Leak" | "Antwort-Leak" | "Brand-Signal" | "Unklar";
+  interpretation: string;
+}
+
 /** The full reading returned by /api/scan and rendered in the result cockpit. */
 export interface ScanResult {
   /** Normalized display host, e.g. "example.de". */
@@ -100,6 +139,12 @@ export interface ScanResult {
   meaning: string;
   /** "Nächster sinnvoller Schritt" — one short paragraph. */
   nextStep: string;
+  /** Exactly 3 generated KI-Antwortfragen (raw question strings). */
+  aiAnswerQuestions: string[];
+  /** Exactly 3 web-signal checks, one per KI-Antwortfrage. */
+  aiAnswerChecks: AiAnswerCheck[];
+  /** Detected brand name used in the KI-Antwortfragen. */
+  brandName: string;
   signals: RawSignals;
 }
 

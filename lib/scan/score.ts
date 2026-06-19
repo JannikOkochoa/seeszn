@@ -18,6 +18,7 @@ import type {
   ScanStatus,
   ScoreCard,
 } from "./types";
+import { detectBrandName } from "./aiQuestions";
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
@@ -396,6 +397,12 @@ export function scoreSurface({ domain, url, signals, locale }: ScoreInput): Scan
     observations: buildObservations(signals, locale),
     meaning: buildMeaning(cards, locale),
     nextStep: buildNextStep(cards, locale),
+    // KI-Antwortfragen are attached by the scan route (the optional web-signal
+    // check is async). We seed the brand name and empty arrays here so the result
+    // shape is always complete even if that step is skipped.
+    aiAnswerQuestions: [],
+    aiAnswerChecks: [],
+    brandName: detectBrandName(domain, signals),
     signals,
   };
 }

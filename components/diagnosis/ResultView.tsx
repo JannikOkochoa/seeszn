@@ -15,8 +15,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "@/lib/i18n/context";
-import type { CategoryId, ScanResult, ScanStatus, ScoreCard } from "@/lib/scan/types";
+import type { AiAnswerCheck, CategoryId, ScanResult, ScanStatus, ScoreCard } from "@/lib/scan/types";
 import { sessionKeyFor } from "@/lib/scan/storage";
+import { isCompanyEmail, isFreemail } from "@/lib/email/freemail";
 
 type Load = "loading" | "ready" | "error";
 
@@ -114,6 +115,7 @@ export default function ResultView() {
       <ResultHeader result={result} backHref={backHref} labels={r} locale={locale} />
       <ResultScores result={result} labels={r} unlocked={unlocked} />
       <ResultSeen result={result} labels={r} unlocked={unlocked} />
+      <AiQuestionsSection result={result} labels={r} unlocked={unlocked} />
       <DiagnosisSection
         result={result}
         labels={r}
@@ -320,37 +322,101 @@ function ResultSeen({
   );
 }
 
-// ── Scan summary for lead payload ──────────────────────────────────────────────
+// ── KI-Antwortfragen — result page teaser ───────────────────────────────────────
+// Fragen, bei denen KI-Systeme deine Marke nennen müssten. Before email: Q1 is a
+// full teaser, Q2 shows status only, Q3 is fully withheld. After email: all three
+// open with the full web-signal detail. This is a Web-Signalcheck, not a ranking.
 
-function buildSummary(result: ScanResult): string {
-  const lines = [
-    `Domain: ${result.domain}`,
-    `URL: ${result.url}`,
-    `Overall readiness: ${result.overallScore}/100 (${result.overallStatus})`,
-    `Gaps: ${result.gapCount}`,
-    "Scores (weakest first):",
-    ...[...result.scores]
-      .sort((a, b) => a.score - b.score)
-      .map((s) => `  - ${s.label}: ${s.score}/100 (${s.status}) -> ${s.nextStep}`),
-    `Finding: ${result.finding}`,
-    `Meaning: ${result.meaning}`,
-    `Most useful next step: ${result.nextStep}`,
-  ];
-  return lines.join("\n");
+function aiStatusText(check: AiAnswerCheck, l: Labels): string {
+  if (!check.checked) return l.aiStatusNichtGeprueft;
+  return check.status === "gefunden" ? l.aiStatusGefunden : l.aiStatusNichtGefunden;
 }
 
-// Freemail providers — used only to set a non-blocking helper and a freemail flag.
-// We never reject these addresses.
-const FREEMAIL = new Set([
-  "gmail.com", "googlemail.com", "outlook.com", "outlook.de", "hotmail.com", "hotmail.de",
-  "live.com", "live.de", "msn.com", "icloud.com", "me.com", "mac.com", "gmx.de", "gmx.net",
-  "gmx.com", "web.de", "yahoo.com", "yahoo.de", "ymail.com", "t-online.de", "freenet.de",
-  "aol.com", "mail.com", "proton.me", "protonmail.com",
-]);
+function AiQuestionDetail({ check, labels }: { check: AiAnswerCheck; labels: Labels }) {
+  const competitors = check.visibleCompetitors.length ? check.visibleCompetitors : check.visibleDomains;
+  return (
+    <div className="rv-aiq-detail">
+      {check.checked && (
+        <p className={`rv-aiq-own rv-aiq-own--${check.ownDomainFound ? "found" : "missing"}`}>
+          {check.ownDomainFound ? labels.aiOwnFound : labels.aiOwnNotFound}
+          {check.ownDomainFound && typeof check.ownDomainPosition === "number" && (
+            <span className="rv-aiq-pos"> · {labels.aiPositionLabel} {check.ownDomainPosition}</span>
+          )}
+        </p>
+      )}
+      {competitors.length > 0 && (
+        <div className="rv-aiq-domains">
+          <span className="rv-aiq-domains-label">
+            {check.visibleCompetitors.length ? labels.aiCompetitorsLabel : labels.aiVisibleLabel}
+          </span>
+          <ul className="rv-aiq-domains-list">
+            {competitors.slice(0, 5).map((d) => (
+              <li key={`${d.domain}-${d.position}`} className="rv-aiq-domain">{d.domain}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {check.leakType && (
+        <p className="rv-aiq-leak">
+          <span className="rv-aiq-leak-label">{labels.aiLeakLabel}</span>
+          {check.leakType}
+        </p>
+      )}
+      <p className="rv-aiq-interpretation">{check.interpretation}</p>
+    </div>
+  );
+}
 
-function isFreemail(email: string): boolean {
-  const domain = email.split("@")[1]?.trim().toLowerCase();
-  return domain ? FREEMAIL.has(domain) : false;
+function AiQuestionsSection({
+  result,
+  labels,
+  unlocked,
+}: {
+  result: ScanResult;
+  labels: Labels;
+  unlocked: boolean;
+}) {
+  const checks = result.aiAnswerChecks;
+  if (!checks.length) return null;
+  const anyChecked = checks.some((c) => c.checked);
+
+  return (
+    <div className="rv-block">
+      <div className="rv-block-head">
+        <span className="rv-block-label">{labels.aiSectionTitle}</span>
+      </div>
+      <p className="rv-aiq-intro">{labels.aiTeaserIntro}</p>
+      <p className="rv-aiq-note">{labels.aiPruefsetNote}</p>
+      {!anyChecked && <p className="rv-aiq-unavailable">{labels.aiUnavailable}</p>}
+
+      <ol className="rv-aiq-list">
+        {checks.map((check, i) => {
+          const open = unlocked || i === 0;
+          const statusOnly = !unlocked && i === 1;
+          const locked = !unlocked && i === 2;
+          return (
+            <li key={`${check.question}-${i}`} className="rv-aiq-item">
+              <div className="rv-aiq-q-row">
+                <span className="rv-aiq-num">{String(i + 1).padStart(2, "0")}</span>
+                <span className="rv-aiq-q">{check.question}</span>
+                {(open || statusOnly) && (
+                  <span className={`rv-aiq-badge rv-aiq-badge--${check.checked ? check.status : "na"}`}>
+                    {aiStatusText(check, labels)}
+                  </span>
+                )}
+              </div>
+
+              {open && <AiQuestionDetail check={check} labels={labels} />}
+              {statusOnly && <p className="rv-aiq-locked">{labels.aiLockedQ2}</p>}
+              {locked && <p className="rv-aiq-locked">{labels.aiLockedQ3}</p>}
+            </li>
+          );
+        })}
+      </ol>
+
+      <p className="rv-aiq-disclaimer">{labels.aiDisclaimer}</p>
+    </div>
+  );
 }
 
 // ── Delivery gate ──────────────────────────────────────────────────────────────
@@ -369,12 +435,16 @@ function DiagnosisSection({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "sentEmail" | "saved" | "error" | "freemail"
+  >("idle");
   const revealRef = useRef<HTMLDivElement>(null);
 
-  const emailValid = /\S+@\S+\.\S+/.test(email);
-  const showFreemailHelper = emailValid && isFreemail(email);
-  const sent = status === "success";
+  const emailSyntaxValid = /\S+@\S+\.\S+/.test(email);
+  const companyValid = isCompanyEmail(email);
+  const showFreemailHelper =
+    emailSyntaxValid && isFreemail(email) && status !== "freemail";
+  const sent = status === "sentEmail" || status === "saved";
 
   useEffect(() => {
     if (sent) revealRef.current?.focus();
@@ -382,26 +452,27 @@ function DiagnosisSection({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailValid) return;
+    if (!emailSyntaxValid) return;
+    // Company-email requirement — checked here and again on the server.
+    if (!companyValid) {
+      setStatus("freemail");
+      return;
+    }
     setStatus("loading");
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name,
-          note,
-          url: result.domain,
-          market: locale,
-          finding: result.finding,
-          freemail: isFreemail(email),
-          scanSummary: buildSummary(result),
-        }),
+        body: JSON.stringify({ email, name, note, locale, market: locale, result }),
       });
       if (res.ok) {
-        setStatus("success");
+        const data = (await res.json().catch(() => ({}))) as { userEmailSent?: boolean };
+        // Lead recorded. If the automatic email could not be delivered, we still
+        // unlock the page and show the "Analyse gespeichert" fallback.
+        setStatus(data.userEmailSent === false ? "saved" : "sentEmail");
         onUnlock();
+      } else if (res.status === 422) {
+        setStatus("freemail");
       } else {
         setStatus("error");
       }
@@ -418,8 +489,12 @@ function DiagnosisSection({
         <div className="rv-confirm" role="status" aria-live="polite">
           <span className="rv-confirm-pip" aria-hidden="true" />
           <div>
-            <p className="rv-confirm-title">{labels.unlockDoneTitle}</p>
-            <p className="rv-confirm-copy">{labels.unlockDoneCopy}</p>
+            <p className="rv-confirm-title">
+              {status === "saved" ? labels.savedTitle : labels.unlockDoneTitle}
+            </p>
+            <p className="rv-confirm-copy">
+              {status === "saved" ? labels.savedCopy : labels.unlockDoneCopy}
+            </p>
           </div>
         </div>
 
@@ -498,9 +573,14 @@ function DiagnosisSection({
             {showFreemailHelper && (
               <p id="rv-freemail" className="rv-helper">{labels.freemailHelper}</p>
             )}
+            {status === "freemail" && (
+              <p id="rv-freemail" className="rv-helper rv-helper--error" role="alert">
+                {labels.companyEmailError}
+              </p>
+            )}
           </div>
 
-          <button type="submit" className="rv-deliver-cta" disabled={!emailValid || status === "loading"}>
+          <button type="submit" className="rv-deliver-cta" disabled={!emailSyntaxValid || status === "loading"}>
             <span className="rv-deliver-cta-label">
               {status === "loading" ? labels.unlockSending : labels.unlockCta}
             </span>
@@ -668,6 +748,39 @@ const css = `
   .rv-input--lead { font-size: 17px; padding: 17px 16px; }
 
   .rv-helper { margin-top: 9px; font-family: var(--font-body), sans-serif; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+  .rv-helper--error { color: var(--clay); }
+
+  /* ── KI-Antwortfragen teaser ──────────────────────── */
+  .rv-aiq-intro { font-family: var(--font-editorial), serif; font-size: clamp(18px, 2.2vw, 24px); line-height: 1.4; color: var(--ink-strong); max-width: 760px; margin-bottom: 12px; }
+  .rv-aiq-note { font-family: var(--font-body), sans-serif; font-size: 14px; line-height: 1.6; color: var(--text-body); max-width: 720px; margin-bottom: 14px; }
+  .rv-aiq-unavailable { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-muted); border-left: 2px solid var(--line-strong); padding: 8px 14px; margin-bottom: 18px; max-width: 720px; }
+  .rv-aiq-list { list-style: none; border-top: 1px solid var(--line); max-width: 920px; }
+  .rv-aiq-item { padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .rv-aiq-q-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; align-items: baseline; }
+  .rv-aiq-num { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--text-muted); }
+  .rv-aiq-q { font-family: var(--font-display), sans-serif; font-weight: 700; font-size: clamp(17px, 2vw, 21px); line-height: 1.3; color: var(--ink-strong); }
+  .rv-aiq-badge { font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 9px; border: 1px solid currentColor; white-space: nowrap; align-self: center; }
+  .rv-aiq-badge--gefunden { color: #4f7a2e; }
+  .rv-aiq-badge--nicht_gefunden { color: var(--clay); }
+  .rv-aiq-badge--na { color: var(--text-muted); }
+  [data-theme="dark"] .rv-aiq-badge--gefunden { color: var(--signal); }
+  [data-theme="dark"] .rv-aiq-badge--nicht_gefunden { color: #d98a64; }
+
+  .rv-aiq-detail { margin: 14px 0 0 50px; display: flex; flex-direction: column; gap: 12px; }
+  .rv-aiq-own { font-family: var(--font-body), sans-serif; font-size: 14px; line-height: 1.5; }
+  .rv-aiq-own--found { color: #4f7a2e; }
+  .rv-aiq-own--missing { color: var(--clay); }
+  [data-theme="dark"] .rv-aiq-own--found { color: var(--signal); }
+  [data-theme="dark"] .rv-aiq-own--missing { color: #d98a64; }
+  .rv-aiq-pos { color: var(--text-muted); }
+  .rv-aiq-domains-label { display: block; font-family: var(--font-mono), monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .rv-aiq-domains-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .rv-aiq-domain { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--ink-strong); border: 1px solid var(--line-strong); padding: 4px 10px; }
+  .rv-aiq-leak { font-family: var(--font-mono), monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .rv-aiq-leak-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em; font-size: 9px; margin-right: 10px; }
+  .rv-aiq-interpretation { font-family: var(--font-body), sans-serif; font-size: 14.5px; line-height: 1.6; color: var(--text-body); max-width: 680px; }
+  .rv-aiq-locked { margin: 12px 0 0 50px; font-family: var(--font-body), sans-serif; font-size: 13px; line-height: 1.5; color: var(--text-muted); font-style: italic; }
+  .rv-aiq-disclaimer { margin-top: 22px; font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: 0.04em; line-height: 1.6; color: var(--text-muted); max-width: 760px; }
 
   .rv-deliver-cta { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; margin-top: 14px; padding: 18px 24px; background: var(--ink-strong); color: var(--paper); border: 1px solid var(--ink-strong); cursor: pointer; transition: background 0.25s, color 0.25s; }
   .rv-deliver-cta-label { font-family: var(--font-body), sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; }
