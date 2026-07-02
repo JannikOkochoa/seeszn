@@ -10,7 +10,7 @@
 // address and the configured lead address. No secrets are exposed.
 
 import { Resend } from "resend";
-import { COMPANY_EMAIL_ERROR, isCompanyEmail, isFreemail } from "@/lib/email/freemail";
+import { COMPANY_EMAIL_ERROR, emailDomain, isCompanyEmail, isFreemail } from "@/lib/email/freemail";
 import {
   buildLeadEmailHtml,
   buildLeadEmailText,
@@ -28,19 +28,14 @@ export const runtime = "nodejs";
 const FROM_DEFAULT = "SEESZN <hello@seeszn.com>";
 const LEAD_DEFAULT = "hello@seeszn.com";
 
-// Email delivery is more sensitive than the scan: cap harder (no-op outside prod).
-const CONTACT_LIMIT = 3;
+// Per email-domain + IP: 5 submissions per 10 min (no-op outside production).
+// Keyed by domain rather than IP alone so a shared Hostinger reverse-proxy IP
+// does not pool every user into one rate-limit bucket.
+const CONTACT_LIMIT = 5;
 const CONTACT_WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
-  const limit = rateLimit("contact", clientIp(request), CONTACT_LIMIT, CONTACT_WINDOW_MS);
-  if (!limit.ok) {
-    return Response.json(
-      { error: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.", code: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } },
-    );
-  }
-
+  // Parse body first — the composite rate-limit key needs the email domain.
   let body: unknown;
   try {
     body = await request.json();
@@ -60,9 +55,23 @@ export async function POST(request: Request): Promise<Response> {
 
   // Honeypot: a hidden field real users never see. If it carries a value, treat
   // the request as a bot. We soft-accept without sending any email or lead and
-  // never reveal the rule.
+  // never reveal the rule. Check before consuming rate-limit budget.
   if (typeof companyUrlConfirm === "string" && companyUrlConfirm.trim() !== "") {
     return Response.json({ ok: true, userEmailSent: false });
+  }
+
+  // Composite key: email domain + client IP.
+  // IP alone is unsafe behind Hostinger's shared reverse proxy where all requests
+  // arrive from the same upstream IP; adding the email domain gives per-company
+  // scoping so one sender can't exhaust another company's budget.
+  const ip = clientIp(request);
+  const senderDomain = typeof email === "string" ? emailDomain(email.trim().slice(0, 200)) : "unknown";
+  const limit = rateLimit("contact", `${senderDomain}:${ip}`, CONTACT_LIMIT, CONTACT_WINDOW_MS);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.", code: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } },
+    );
   }
 
   // 1) Email present + syntactically valid.
@@ -89,7 +98,8 @@ export async function POST(request: Request): Promise<Response> {
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return Response.json({ error: "Not configured" }, { status: 503 });
+    console.error("[contact] RESEND_API_KEY is not set — email delivery is disabled. Set it in Hostinger environment variables.");
+    return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }
 
   const str = (v: unknown, max: number) =>

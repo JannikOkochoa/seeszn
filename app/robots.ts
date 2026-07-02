@@ -11,7 +11,7 @@ import { SITE_URL } from "@/lib/seo";
 // product. Only training-only/aggressive scrapers are left to the default rule.
 
 export default function robots(): MetadataRoute.Robots {
-  const disallow = ["/api/", "/brief/ki-sichtbarkeit/print"];
+  const disallow = ["/api/", "/brief/ki-sichtbarkeit/print", "/kluehspies-room"];
 
   return {
     rules: [

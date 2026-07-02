@@ -1,10 +1,15 @@
-// ─── Lightweight in-memory IP rate limiting ────────────────────────────────────
+// ─── Lightweight in-memory rate limiting ────────────────────────────────────────
 // Dependency-free fixed-window limiter for the public POST routes. State lives in
 // the module scope of the Node runtime — good enough to blunt abuse and bursts on
 // a single instance. It is intentionally simple: no Redis, no external service.
 //
 // Local development is never throttled (enforced only when NODE_ENV=production), so
 // repeated local testing does not lock you out. No IPs or secrets are logged.
+//
+// ⚠ Composite keys: behind a shared reverse proxy (e.g. Hostinger), all traffic
+// may arrive from the same upstream IP. Callers should build a composite key that
+// includes a per-user signal (e.g. email domain) alongside the IP so that one
+// user cannot exhaust the budget of every other user on the same host.
 
 interface Window {
   count: number;
