@@ -2,7 +2,6 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
-import { KLUE } from "./data";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -13,8 +12,8 @@ interface PasswordGateProps {
 
 /**
  * Zugangstür zum Website Lab. Bewusst einfach gehalten: ein Passwort,
- * lokal gespeichert — kein Auth-System, kein Account. Der Anspruch ist
- * trotzdem derselbe wie im Raum dahinter: ruhig, präzise, SEESZN.
+ * lokal gespeichert — kein Auth-System, kein Account. Gestaltet wie der
+ * Raum dahinter: ein Serif, ein Sans, eine Hairline, viel Ruhe.
  */
 export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGateProps) {
   const reduced = useReducedMotion();
@@ -34,38 +33,27 @@ export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGat
 
   return (
     <div className="kg">
-      <div className="kg-grid" aria-hidden="true" />
-
       <motion.div
-        className="kg-card"
-        initial={reduced ? false : { opacity: 0, y: 22 }}
+        className="kg-inner"
+        initial={reduced ? false : { opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: EASE }}
       >
-        {/* Kopfzeile — Klühspies-Farbmarke trifft SEESZN-Meta */}
-        <div className="kg-head">
-          <span className="kg-mark" aria-hidden="true">
-            <i style={{ background: KLUE.blue }} />
-            <i style={{ background: KLUE.yellow }} />
-          </span>
-          <span className="t-mono">Privater Bereich</span>
-        </div>
+        <p className="kg-eyebrow">Privater Bereich · Klühspies × SEESZN</p>
 
         <h1 className="kg-title">
-          Klühspies <span className="t-accent kg-title-accent">Website Lab</span>
+          Klühspies <span className="kg-resolve">Website Lab.</span>
         </h1>
-        <p className="kg-sub">Private strategy room powered by SEESZN</p>
+        <p className="kg-sub">Privater Strategieraum, powered by SEESZN.</p>
 
         <motion.form
           onSubmit={submit}
           className="kg-form"
           key={shake}
-          animate={
-            shake > 0 && !reduced ? { x: [0, -7, 7, -4, 4, 0] } : undefined
-          }
+          animate={shake > 0 && !reduced ? { x: [0, -7, 7, -4, 4, 0] } : undefined}
           transition={{ duration: 0.4 }}
         >
-          <label className="t-mono kg-label" htmlFor="kg-password">
+          <label className="kg-eyebrow kg-label" htmlFor="kg-password">
             Passwort
           </label>
           <input
@@ -92,9 +80,7 @@ export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGat
           </button>
         </motion.form>
 
-        <p className="kg-foot t-mono">
-          Zugang nur für Klühspies Reisen &amp; SEESZN
-        </p>
+        <p className="kg-foot">Zugang nur für Klühspies Reisen &amp; SEESZN</p>
       </motion.div>
 
       <style>{`
@@ -105,70 +91,60 @@ export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGat
           justify-content: center;
           background: var(--paper);
           padding: 24px;
-          position: relative;
-          overflow: hidden;
         }
-        .kg-grid {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background-image:
-            linear-gradient(color-mix(in srgb, var(--warm-black) 4%, transparent) 1px, transparent 1px),
-            linear-gradient(90deg, color-mix(in srgb, var(--warm-black) 4%, transparent) 1px, transparent 1px);
-          background-size: 120px 120px;
-          mask-image: radial-gradient(ellipse 70% 70% at 50% 42%, black 0%, transparent 78%);
-        }
-        .kg-card {
-          position: relative;
-          z-index: 1;
+        .kg-inner {
           width: 100%;
-          max-width: 420px;
-          background: var(--surface-raised);
-          border: 1px solid var(--line);
-          padding: clamp(32px, 5vw, 48px);
+          max-width: 400px;
         }
-        .kg-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 34px;
-        }
-        .kg-mark { display: inline-flex; gap: 4px; }
-        .kg-mark i { width: 10px; height: 10px; display: block; }
-        .kg-title {
-          font-family: var(--font-display), sans-serif;
-          font-weight: 700;
-          font-size: clamp(30px, 5vw, 38px);
-          line-height: 1.02;
-          letter-spacing: -0.01em;
+        .kg-eyebrow {
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--ink-strong);
-          margin: 0 0 10px;
+          color: var(--text-muted);
+          margin: 0 0 26px;
         }
-        .kg-title-accent {
-          display: block;
-          text-transform: none;
-          font-size: 0.88em;
+        .kg-title {
+          font-family: var(--font-editorial), Georgia, serif;
+          font-weight: 400;
+          font-size: clamp(32px, 6vw, 40px);
+          line-height: 1.15;
+          letter-spacing: -0.01em;
+          color: var(--ink-strong);
+          margin: 0 0 12px;
+        }
+        .kg-resolve {
+          display: inline-block;
+          animation: kg-resolve 1.28s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+        }
+        @keyframes kg-resolve {
+          0%   { filter: blur(6px);   opacity: 0.16; }
+          42%  { filter: blur(2.5px); opacity: 0.55; }
+          74%  { filter: blur(0.4px); opacity: 0.96; }
+          100% { filter: blur(0);     opacity: 1; }
         }
         .kg-sub {
-          font-family: var(--font-body), sans-serif;
-          font-size: 14px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 15px;
+          line-height: 1.6;
           color: var(--text-secondary);
-          margin: 0 0 34px;
+          margin: 0 0 44px;
         }
         .kg-form { display: flex; flex-direction: column; }
-        .kg-label { display: block; margin-bottom: 8px; }
+        .kg-label { margin-bottom: 6px; }
         .kg-input {
           appearance: none;
           width: 100%;
-          border: 1px solid var(--border-btn);
-          background: var(--paper-soft);
+          border: none;
+          border-bottom: 1px solid var(--border-btn);
+          background: transparent;
           color: var(--ink-strong);
-          font-family: var(--font-body), sans-serif;
-          font-size: 15px;
-          letter-spacing: 0.14em;
-          padding: 13px 16px;
-          min-height: 48px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 16px;
+          letter-spacing: 0.12em;
+          padding: 10px 0 12px;
+          min-height: 44px;
           outline: none;
           transition: border-color 0.25s;
         }
@@ -176,22 +152,21 @@ export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGat
         .kg-input[aria-invalid="true"] { border-color: var(--clay); }
         .kg-input::placeholder { color: var(--text-faint); letter-spacing: 0.2em; }
         .kg-error {
-          font-family: var(--font-body), sans-serif;
-          font-size: 12.5px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
           color: var(--clay);
-          margin: 8px 0 0;
+          margin: 10px 0 0;
         }
         .kg-btn {
-          margin-top: 16px;
+          margin-top: 30px;
           border: 1px solid var(--warm-black);
           background: var(--warm-black);
           color: var(--paper);
-          font-family: var(--font-body), sans-serif;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.09em;
-          text-transform: uppercase;
-          padding: 14px 26px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.01em;
+          padding: 13px 26px;
           min-height: 48px;
           display: inline-flex;
           align-items: center;
@@ -200,12 +175,18 @@ export default function PasswordGate({ expectedPassword, onUnlock }: PasswordGat
           transition: background 0.25s, color 0.25s;
         }
         .kg-btn:hover { background: transparent; color: var(--ink-strong); }
-        .kg-btn:focus-visible { outline: 1px solid var(--warm-black); outline-offset: 4px; }
+        .kg-btn:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 4px; }
         .kg-foot {
-          margin: 30px 0 0;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 11px;
+          letter-spacing: 0.04em;
+          color: var(--text-muted);
+          margin: 44px 0 0;
           padding-top: 18px;
-          border-top: 1px solid var(--line-soft);
-          font-size: 10px;
+          border-top: 1px solid var(--line);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kg-resolve { animation: none; }
         }
       `}</style>
     </div>

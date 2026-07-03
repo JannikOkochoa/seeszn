@@ -18,16 +18,14 @@ interface HomepageMockupProps {
 export default function HomepageMockup({ activeId, onPinSelect }: HomepageMockupProps) {
   return (
     <div className="kx">
-      {/* Browser-Chrome — macht klar: Das ist ein Entwurf im Lab */}
+      {/* Kopfzeile — macht klar: Das ist ein Entwurf im Lab */}
       <div className="kx-chrome">
-        <span className="kx-dots" aria-hidden="true">
-          <i className="kx-round" />
-          <i className="kx-round" />
-          <i className="kx-round" />
-        </span>
         <span className="kx-url">kluehspies.de · Homepage-Entwurf</span>
         <span className="kx-chip">Mockup</span>
       </div>
+
+      {/* Scan-Sweep — die Signatur-Linie der Hauptseite, hier über dem Entwurf */}
+      <span className="kx-sweep" aria-hidden="true" />
 
       <div className="kx-site">
         {/* Navigation — Blau als Führungsfarbe */}
@@ -222,40 +220,55 @@ export default function HomepageMockup({ activeId, onPinSelect }: HomepageMockup
       <style>{`
         /* ── Rahmen (SEESZN-Instrument, scharfkantig) ─────────── */
         .kx {
+          position: relative;
+          overflow: hidden;
           border: 1px solid var(--line);
           background: var(--surface-raised);
         }
         .kx-chrome {
           display: flex;
-          align-items: center;
+          align-items: baseline;
+          justify-content: space-between;
           gap: 14px;
-          padding: 10px 14px;
+          padding: 12px 16px;
           border-bottom: 1px solid var(--line);
         }
-        .kx-dots { display: inline-flex; gap: 5px; }
-        .kx-dots i {
-          width: 8px; height: 8px; display: block;
-          background: color-mix(in srgb, var(--warm-black) 18%, transparent);
-        }
         .kx-url {
-          font-family: var(--font-mono), monospace;
-          font-size: 10px;
-          letter-spacing: 0.06em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 12px;
           color: var(--text-muted);
-          flex: 1;
           min-width: 0;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
         .kx-chip {
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
-          letter-spacing: 0.1em;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--ink-strong);
-          border: 1px solid var(--border-btn);
-          padding: 3px 8px;
+          color: var(--text-muted);
+          white-space: nowrap;
+        }
+
+        /* Scan-Sweep — 1px Signal-Linie, läuft alle 9s einmal durch */
+        .kx-sweep {
+          position: absolute;
+          top: 0; bottom: 0;
+          width: 1px;
+          background: var(--signal);
+          z-index: 5;
+          opacity: 0;
+          animation: kx-sweep 9s cubic-bezier(0.16, 1, 0.3, 1) 2s infinite;
+          pointer-events: none;
+        }
+        @keyframes kx-sweep {
+          0%   { left: 0%; opacity: 0; }
+          4%   { opacity: 0.45; }
+          30%  { opacity: 0.1; }
+          38%  { left: 100%; opacity: 0; }
+          100% { left: 100%; opacity: 0; }
         }
 
         /* ── Innenwelt: Klühspies-CI, immer hell ──────────────── */
@@ -497,8 +510,8 @@ export default function HomepageMockup({ activeId, onPinSelect }: HomepageMockup
           border: 1.5px solid #1f1e1a;
           background: #1f1e1a;
           color: #f5f1e8;
-          font-family: var(--font-mono), monospace;
-          font-size: 10.5px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 11px;
           font-weight: 500;
           display: inline-flex;
           align-items: center;
@@ -518,14 +531,19 @@ export default function HomepageMockup({ activeId, onPinSelect }: HomepageMockup
           top: -24px;
           right: 28px;
           z-index: 6;
-          font-family: var(--font-mono), monospace;
-          font-size: 9px;
+          font-family: var(--font-body), "Helvetica Neue", sans-serif;
+          font-size: 10px;
+          font-weight: 500;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           background: #1f1e1a;
           color: #f5f1e8;
           padding: 4px 8px;
           white-space: nowrap;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .kx-sweep { display: none; }
         }
 
         /* ── Container-Anpassung: Mockup bleibt in schmalen Spalten sauber ── */
