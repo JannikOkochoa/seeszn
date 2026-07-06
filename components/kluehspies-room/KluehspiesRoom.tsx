@@ -1,15 +1,17 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import PasswordGate from "./PasswordGate";
 import HomepageMockup from "./HomepageMockup";
+import KpiMonitoring from "./KpiMonitoring";
 import SignalAperture from "@/components/SignalAperture";
 import {
   approvalItems,
   BRAND_MANUAL_URL,
   brandColors,
   brandValues,
+  experiments,
   headingStructure,
   overviewCards,
   recommendations,
@@ -21,6 +23,16 @@ import {
 } from "./data";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
+// Bereichs-Navigation in der Kopfleiste; die IDs sitzen auf den Sektionen.
+const NAV = [
+  { id: "uebersicht", label: "Übersicht" },
+  { id: "mockups", label: "Mockups" },
+  { id: "kpi-monitoring", label: "KPI Monitoring" },
+  { id: "seo-pipeline", label: "SEO Pipeline" },
+  { id: "experimente", label: "Experimente" },
+  { id: "freigaben", label: "Freigaben" },
+] as const;
 
 type ItemState = { status: RecStatus; note: string | null };
 
@@ -74,6 +86,25 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
   const [appState, setAppState] = useState<Record<string, ItemState>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
+  // Scroll-Spy für die Bereichs-Navigation: der Bereich in Lesehöhe ist aktiv.
+  const [activeNav, setActiveNav] = useState<string>(NAV[0].id);
+  useEffect(() => {
+    if (access !== "open") return;
+    const sections = NAV.map((item) => document.getElementById(item.id)).filter(
+      (el): el is HTMLElement => el !== null
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveNav(entry.target.id);
+        }
+      },
+      { rootMargin: "-35% 0px -60% 0px" }
+    );
+    sections.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [access]);
+
   function selectFromPin(id: string) {
     setActiveId(id);
     cardRefs.current[id]?.scrollIntoView({
@@ -121,18 +152,33 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
     <div className="kr">
       {/* ── Kopfleiste ─────────────────────────────────────── */}
       <header className="kr-top">
-        <span className="kr-wordmark">Klühspies Website Lab</span>
-        <div className="kr-top-r">
-          <span className="kr-eyebrow kr-top-meta">SEESZN · Q3 Website Sprint</span>
-          <SignalAperture />
+        <div className="kr-top-row">
+          <span className="kr-wordmark">Klühspies Website Lab</span>
+          <div className="kr-top-r">
+            <span className="kr-eyebrow kr-top-meta">SEESZN · Q3 Website Sprint</span>
+            <SignalAperture />
+          </div>
         </div>
+        <nav className="kr-nav" aria-label="Bereiche">
+          {NAV.map((item) => (
+            <a
+              key={item.id}
+              href={`#${item.id}`}
+              className="kr-nav-link"
+              data-active={activeNav === item.id || undefined}
+              aria-current={activeNav === item.id ? "true" : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
       </header>
 
       <main className="kr-main">
-        {/* ── 01 · Überblick ─────────────────────────────────── */}
-        <Reveal className="kr-section kr-intro" reduced={reduced}>
+        {/* ── 01 · Übersicht ─────────────────────────────────── */}
+        <Reveal id="uebersicht" className="kr-section kr-intro" reduced={reduced}>
           <header className="kr-head">
-            <p className="kr-eyebrow">01 · Überblick</p>
+            <p className="kr-eyebrow">01 · Übersicht</p>
             <h1 className="kr-display">
               Ein privater Arbeitsraum für bessere{" "}
               <span className="kr-resolve">Sichtbarkeit.</span>
@@ -161,12 +207,12 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           </div>
         </Reveal>
 
-        {/* ── 02 · Website Lab ───────────────────────────────── */}
-        <Reveal className="kr-section" reduced={reduced}>
+        {/* ── 02 · Mockups ───────────────────────────────────── */}
+        <Reveal id="mockups" className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
             index="02"
-            eyebrow="Website Lab"
+            eyebrow="Mockups"
             title="Das Homepage-Mockup."
             lead="Ein kontrollierter Website-Entwurf, auf dem Empfehlungen direkt sichtbar werden. Pins anklicken, die passende Empfehlung öffnet sich rechts."
           />
@@ -205,12 +251,24 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           </div>
         </Reveal>
 
-        {/* ── 03 · H-Struktur ────────────────────────────────── */}
-        <Reveal className="kr-section" reduced={reduced}>
+        {/* ── 03 · KPI Monitoring ────────────────────────────── */}
+        <Reveal id="kpi-monitoring" className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
             index="03"
-            eyebrow="Struktur"
+            eyebrow="KPI Monitoring"
+            title="Der Blick auf die Zahlen."
+            lead="Sechs Fragen, ein Blick: Verbessern sich die Rankings, läuft der Content-Takt, bewegt sich der Linkaufbau, kommen die Produktseiten voran, blockiert etwas, und was ist der nächste Schritt."
+          />
+          <KpiMonitoring reduced={reduced} />
+        </Reveal>
+
+        {/* ── 04 · SEO Pipeline ──────────────────────────────── */}
+        <Reveal id="seo-pipeline" className="kr-section" reduced={reduced}>
+          <SectionHead
+            reduced={reduced}
+            index="04"
+            eyebrow="SEO Pipeline"
             title="Empfohlene H-Struktur."
             lead="Von der generischen Startseite zur klaren semantischen Hierarchie: so lesen Google, AI-Systeme und Lehrkräfte dieselbe Geschichte."
           />
@@ -245,11 +303,48 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           <p className="kr-goal">{headingStructure.goal}</p>
         </Reveal>
 
-        {/* ── 04 · Freigaben ─────────────────────────────────── */}
-        <Reveal className="kr-section" reduced={reduced}>
+        {/* ── 05 · Experimente ───────────────────────────────── */}
+        <Reveal id="experimente" className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
-            index="04"
+            index="05"
+            eyebrow="Experimente"
+            title="Was wir gezielt beweisen."
+            lead="Jede größere Maßnahme startet als Experiment mit klarer Hypothese und Messgröße. Was funktioniert, wird zum Standard für alle Seiten."
+          />
+          <div className="kr-exps">
+            {experiments.map((exp) => (
+              <article key={exp.id} className="kr-exp">
+                <div>
+                  <h3 className="kr-title">{exp.title}</h3>
+                  <p className="kr-metaline">
+                    <span
+                      className="kr-status"
+                      data-state={exp.status === "Wartet auf Freigabe" ? "open" : undefined}
+                    >
+                      <i className="olive-dot" aria-hidden="true" />
+                      {exp.status}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <span className="kr-rc-label">Hypothese</span>
+                  <p className="kr-ap-text">{exp.hypothesis}</p>
+                </div>
+                <div>
+                  <span className="kr-rc-label">Messgröße</span>
+                  <p className="kr-meta kr-exp-metric">{exp.metric}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Reveal>
+
+        {/* ── 06 · Freigaben ─────────────────────────────────── */}
+        <Reveal id="freigaben" className="kr-section" reduced={reduced}>
+          <SectionHead
+            reduced={reduced}
+            index="06"
             eyebrow="Abstimmung"
             title="Offene Freigaben."
             lead="Drei Entscheidungen, die die Umsetzung starten. Freigeben oder für das nächste Gespräch vormerken, direkt hier im Raum."
@@ -271,11 +366,11 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           </div>
         </Reveal>
 
-        {/* ── 05 · Markenrahmen ──────────────────────────────── */}
+        {/* ── 07 · Markenrahmen ──────────────────────────────── */}
         <Reveal className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
-            index="05"
+            index="07"
             eyebrow="Markenrahmen"
             title="Die Klühspies-CI als Leitplanke."
             lead="Grundlage ist das hinterlegte Brand Manual. Jede Empfehlung und jedes Mockup-Element bewegt sich innerhalb dieser Leitplanken."
@@ -324,11 +419,11 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           </div>
         </Reveal>
 
-        {/* ── 06 · Arbeitsprotokoll ──────────────────────────── */}
+        {/* ── 08 · Arbeitsprotokoll ──────────────────────────── */}
         <Reveal className="kr-section kr-section--last" reduced={reduced}>
           <SectionHead
             reduced={reduced}
-            index="06"
+            index="08"
             eyebrow="Arbeitsprotokoll"
             title="Was SEESZN zuletzt vorbereitet hat."
             lead="Der Arbeitsstand hinter den Empfehlungen, transparent und in Reihenfolge."
@@ -436,15 +531,48 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           position: sticky;
           top: 0;
           z-index: 50;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          padding: 16px var(--gutter);
+          padding: 0 var(--gutter);
           background: color-mix(in srgb, var(--paper) 90%, transparent);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
           border-bottom: 1px solid var(--line);
+        }
+        .kr-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 14px 0 10px;
+        }
+        .kr-nav {
+          display: flex;
+          gap: 24px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: 2px 0 13px;
+        }
+        .kr-nav::-webkit-scrollbar { display: none; }
+        .kr-nav-link {
+          flex: none;
+          font-family: var(--sans);
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          text-decoration: none;
+          padding-bottom: 3px;
+          border-bottom: 1px solid transparent;
+          transition: color 0.25s, border-color 0.25s;
+        }
+        .kr-nav-link:hover { color: var(--ink-strong); }
+        .kr-nav-link[data-active] { color: var(--ink-strong); border-color: var(--warm-black); }
+        .kr-nav-link:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 3px; }
+
+        /* Sanftes Springen zu den Bereichen, Kopfleiste bleibt frei */
+        .kr-section[id] { scroll-margin-top: 92px; }
+        @media (prefers-reduced-motion: no-preference) {
+          html:has(.kr) { scroll-behavior: smooth; }
         }
         .kr-wordmark {
           font-family: var(--serif);
@@ -516,9 +644,9 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
         .kr-lab-note { margin-top: 14px; }
         .kr-side {
           position: sticky;
-          top: 92px;
+          top: 112px;
           align-self: start;
-          max-height: calc(100dvh - 116px);
+          max-height: calc(100dvh - 136px);
           overflow-y: auto;
           scrollbar-width: thin;
           scrollbar-color: var(--line-strong) transparent;
@@ -712,6 +840,18 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
         .kr-ap-side .kr-actions { margin-top: 0; }
         .kr-ap-side .kr-note { max-width: 240px; }
 
+        /* ── Experimente — Zeilen wie die Freigaben ─────────── */
+        .kr-exps { border-bottom: 1px solid var(--line); }
+        .kr-exp {
+          display: grid;
+          grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 0.9fr);
+          gap: 20px clamp(24px, 3.5vw, 56px);
+          align-items: start;
+          border-top: 1px solid var(--line);
+          padding: 30px 0 34px;
+        }
+        .kr-exp-metric { max-width: 280px; }
+
         /* ── Markenrahmen ───────────────────────────────────── */
         .kr-ci {
           display: grid;
@@ -814,10 +954,12 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           .kr-hs { grid-template-columns: 1fr; }
           .kr-ap { grid-template-columns: 1fr; gap: 16px; }
           .kr-ap-text { max-width: 640px; }
+          .kr-exp { grid-template-columns: 1fr; gap: 16px; }
+          .kr-exp-metric { max-width: 640px; }
           .kr-ci { grid-template-columns: 1fr; }
         }
         @media (max-width: 720px) {
-          .kr-top { flex-wrap: wrap; }
+          .kr-top-row { flex-wrap: wrap; }
           .kr-top-meta { display: none; }
           .kr-stats { grid-template-columns: 1fr; }
           .kr-stat { border-left: none !important; padding-left: 0 !important; }
@@ -839,16 +981,19 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
 /* ── Bausteine ─────────────────────────────────────────────── */
 
 function Reveal({
+  id,
   className,
   reduced,
   children,
 }: {
+  id?: string;
   className?: string;
   reduced: boolean | null;
   children: React.ReactNode;
 }) {
   return (
     <motion.section
+      id={id}
       className={className}
       initial={reduced ? false : { opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
