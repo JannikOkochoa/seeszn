@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import PasswordGate from "./PasswordGate";
+import { useEffect, useRef, useState } from "react";
 import HomepageMockup from "./HomepageMockup";
 import KpiMonitoring from "./KpiMonitoring";
+import KpiWorkspace from "./kpi/KpiWorkspace";
 import SignalAperture from "@/components/SignalAperture";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { WorkspaceInit } from "@/lib/kpi/types";
 import {
   approvalItems,
   BRAND_MANUAL_URL,
@@ -15,7 +17,6 @@ import {
   headingStructure,
   overviewCards,
   recommendations,
-  STORAGE_KEY,
   workLog,
   type ApprovalItem,
   type Recommendation,
@@ -36,37 +37,15 @@ const NAV = [
 
 type ItemState = { status: RecStatus; note: string | null };
 
-// ── Zugang: bewusst nur localStorage, kein echtes Auth-System. ──
-// Als externer Store angebunden: Server rendert "checking" (leere Fläche),
-// der Client löst nach der Hydration in "open"/"locked" auf.
-type Access = "checking" | "locked" | "open";
-const accessListeners = new Set<() => void>();
-function subscribeAccess(cb: () => void) {
-  accessListeners.add(cb);
-  return () => {
-    accessListeners.delete(cb);
-  };
-}
-function readAccess(): Access {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "granted" ? "open" : "locked";
-  } catch {
-    return "locked";
-  }
-}
-function readAccessOnServer(): Access {
-  return "checking";
-}
-function writeAccess(granted: boolean) {
-  try {
-    if (granted) localStorage.setItem(STORAGE_KEY, "granted");
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch {}
-  accessListeners.forEach((cb) => cb());
-}
+const ROLE_LABEL: Record<WorkspaceInit["viewer"]["role"], string> = {
+  seeszn_admin: "SEESZN Admin",
+  kluehspies_editor: "Klühspies Editor",
+  viewer: "Viewer",
+};
 
 interface KluehspiesRoomProps {
-  expectedPassword: string;
+  /** Serverseitig geladener, RLS-gefilterter Initialzustand. */
+  workspace: WorkspaceInit;
 }
 
 /**
@@ -76,9 +55,9 @@ interface KluehspiesRoomProps {
  * sitzt in der Kopfleiste. Die Klühspies-CI lebt ausschließlich im
  * Mockup und im Markenrahmen, nicht im Raum-Chrome.
  */
-export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps) {
+export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
   const reduced = useReducedMotion();
-  const access = useSyncExternalStore(subscribeAccess, readAccess, readAccessOnServer);
+  const { viewer } = workspace;
 
   // ── Lab-Zustand: aktive Empfehlung + lokale Demo-Freigaben ──
   const [activeId, setActiveId] = useState<string | null>("rec-01");
@@ -89,7 +68,6 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
   // Scroll-Spy für die Bereichs-Navigation: der Bereich in Lesehöhe ist aktiv.
   const [activeNav, setActiveNav] = useState<string>(NAV[0].id);
   useEffect(() => {
-    if (access !== "open") return;
     const sections = NAV.map((item) => document.getElementById(item.id)).filter(
       (el): el is HTMLElement => el !== null
     );
@@ -103,7 +81,15 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
     );
     sections.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [access]);
+  }, []);
+
+  async function signOut() {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    // Reload erzwingen: die URL kann sich nur um den Hash unterscheiden.
+    window.history.replaceState(null, "", "/kluehspies-room");
+    window.location.reload();
+  }
 
   function selectFromPin(id: string) {
     setActiveId(id);
@@ -141,13 +127,6 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
     }));
   }
 
-  if (access === "checking") {
-    return <div style={{ minHeight: "100dvh", background: "var(--paper)" }} aria-hidden="true" />;
-  }
-  if (access === "locked") {
-    return <PasswordGate expectedPassword={expectedPassword} onUnlock={() => writeAccess(true)} />;
-  }
-
   return (
     <div className="kr">
       {/* ── Kopfleiste ─────────────────────────────────────── */}
@@ -156,6 +135,12 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
           <span className="kr-wordmark">Klühspies Website Lab</span>
           <div className="kr-top-r">
             <span className="kr-eyebrow kr-top-meta">SEESZN · Q3 Website Sprint</span>
+            <span className="kr-eyebrow kr-top-user" title={viewer.email}>
+              {viewer.name} · {ROLE_LABEL[viewer.role]}
+            </span>
+            <button type="button" className="kr-link kr-top-logout" onClick={() => void signOut()}>
+              Abmelden
+            </button>
             <SignalAperture />
           </div>
         </div>
@@ -258,9 +243,15 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
             index="03"
             eyebrow="KPI Monitoring"
             title="Der Blick auf die Zahlen."
-            lead="Sechs Fragen, ein Blick: Verbessern sich die Rankings, läuft der Content-Takt, bewegt sich der Linkaufbau, kommen die Produktseiten voran, blockiert etwas, und was ist der nächste Schritt."
+            lead="Ein Steuerungswert im Zentrum: organische Klicks auf den Produktseiten, direkt aus der Google Search Console, mit Ziel, Verlauf und den Maßnahmen dahinter."
           />
-          <KpiMonitoring reduced={reduced} />
+          <KpiWorkspace init={workspace} />
+          <div className="kr-kpi-legacy">
+            <p className="kr-eyebrow kr-kpi-legacy-label">
+              Weitere Arbeitsstände · redaktionell gepflegt
+            </p>
+            <KpiMonitoring reduced={reduced} />
+          </div>
         </Reveal>
 
         {/* ── 04 · SEO Pipeline ──────────────────────────────── */}
@@ -451,7 +442,7 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
         <span className="kr-meta kr-foot-conf">
           Vertraulich · nur für die Abstimmung zwischen Klühspies Reisen und SEESZN
         </span>
-        <button type="button" onClick={() => writeAccess(false)} className="kr-link">
+        <button type="button" onClick={() => void signOut()} className="kr-link">
           Abmelden
         </button>
       </footer>
@@ -583,6 +574,12 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
         }
         .kr-top-r { display: flex; align-items: center; gap: 20px; }
         .kr-top-meta { white-space: nowrap; }
+        .kr-top-user { white-space: nowrap; color: var(--ink-strong); }
+        .kr-top-logout { white-space: nowrap; }
+
+        /* Redaktionelle KPI-Landschaft unterhalb des Live-KPI */
+        .kr-kpi-legacy { margin-top: clamp(64px, 8vw, 104px); }
+        .kr-kpi-legacy-label { border-top: 1px solid var(--line); padding-top: 18px; }
 
         /* ── Rhythmus ───────────────────────────────────────── */
         .kr-main { padding: 0 var(--gutter); max-width: 1400px; margin: 0 auto; }
@@ -961,6 +958,8 @@ export default function KluehspiesRoom({ expectedPassword }: KluehspiesRoomProps
         @media (max-width: 720px) {
           .kr-top-row { flex-wrap: wrap; }
           .kr-top-meta { display: none; }
+          .kr-top-user { display: none; }
+          .kr-top-r { gap: 14px; min-width: 0; }
           .kr-stats { grid-template-columns: 1fr; }
           .kr-stat { border-left: none !important; padding-left: 0 !important; }
           .kr-stat + .kr-stat { border-top: 1px solid var(--line); }

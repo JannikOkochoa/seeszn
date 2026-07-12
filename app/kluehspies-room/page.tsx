@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import KluehspiesRoom from "@/components/kluehspies-room/KluehspiesRoom";
+import KluehspiesLogin from "@/components/kluehspies-room/KluehspiesLogin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { loadWorkspace } from "@/lib/kpi/loadWorkspace";
 import { buildMetadata } from "@/lib/seo";
 
 // Klühspies-CI-Schrift, nur in diesem Raum geladen. Source Sans Pro heißt
@@ -22,15 +25,39 @@ export const metadata: Metadata = buildMetadata({
   noindex: true,
 });
 
-export default function KluehspiesRoomPage() {
-  // Einfache Zugangskontrolle, bewusst noch ohne echtes Auth-System.
-  // Produktiv KLUEHSPIES_ROOM_PASSWORD als Env-Variable setzen;
-  // der Fallback ist ein klar markiertes Übergangspasswort.
-  const expectedPassword = process.env.KLUEHSPIES_ROOM_PASSWORD ?? "kluehspies2026"; // TEMP-Fallback
+// Session-abhängig, nie vorrendern.
+export const dynamic = "force-dynamic";
+
+export default async function KluehspiesRoomPage() {
+  // Cookie-Session serverseitig validieren; ohne Session gibt es keine
+  // Kundendaten, nur die Login-Ansicht.
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <div className={sourceSans.variable}>
+        <KluehspiesLogin />
+      </div>
+    );
+  }
+
+  // Initialdaten mit dem Session-Client laden: RLS begrenzt alles auf die
+  // Organisation des Nutzers. Ohne Membership gibt es keinen Zugang.
+  const workspace = await loadWorkspace(supabase, user);
+  if (!workspace) {
+    return (
+      <div className={sourceSans.variable}>
+        <KluehspiesLogin noAccessEmail={user.email ?? "diesem Konto"} />
+      </div>
+    );
+  }
 
   return (
     <div className={sourceSans.variable}>
-      <KluehspiesRoom expectedPassword={expectedPassword} />
+      <KluehspiesRoom workspace={workspace} />
     </div>
   );
 }
