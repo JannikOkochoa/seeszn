@@ -6,6 +6,7 @@
 //   createSupabaseAdminClient  – Secret Key (service_role, umgeht RLS). Nur in
 //     sicherem Servercode verwenden, niemals in Client-Bundles importieren.
 
+import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

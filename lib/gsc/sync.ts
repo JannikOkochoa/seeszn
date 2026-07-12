@@ -6,6 +6,7 @@
 // Fehlerpfad: sync_run und data_source erhalten den Fehler, der letzte
 // gültige Datenstand (data_available_until) bleibt unangetastet.
 
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GscProvider } from "./types";
 
@@ -14,6 +15,12 @@ export const GSC_PROVIDER_NAME = "google_search_console";
 
 /** Backfill-Fenster, wenn noch gar keine Daten vorhanden sind. */
 const DEFAULT_BACKFILL_DAYS = 28;
+/**
+ * Nach dieser Zeit gilt ein syncing-Claim als verwaist (abgestürzter Prozess)
+ * und darf von einem neuen Sync übernommen werden. Ein regulärer Lauf liegt
+ * weit darunter; siehe auch Kommentar an data_sources.sync_claimed_at.
+ */
+export const STALE_CLAIM_TIMEOUT_MS = 15 * 60 * 1000;
 /** Upsert-Batchgröße, hält Requests unter den PostgREST-Limits. */
 const CHUNK_SIZE = 500;
 
@@ -62,13 +69,16 @@ export async function runGscSync(opts: {
   const { admin, provider, siteUrl } = opts;
   const { id: dataSourceId, organization_id: organizationId } = opts.dataSource;
 
-  // Parallele Syncs verhindern: atomarer Statuswechsel idle/error -> syncing.
-  // Nur genau ein Aufrufer gewinnt das konditionale UPDATE.
+  // Parallele Syncs verhindern: atomarer Statuswechsel -> syncing. Nur genau
+  // ein Aufrufer gewinnt das konditionale UPDATE. Ein bestehender
+  // syncing-Claim darf nur übernommen werden, wenn er älter als das
+  // Stale-Timeout ist (abgestürzter Prozess) oder keinen Zeitstempel trägt.
+  const staleCutoff = new Date(Date.now() - STALE_CLAIM_TIMEOUT_MS).toISOString();
   const claim = await admin
     .from("data_sources")
-    .update({ status: "syncing" })
+    .update({ status: "syncing", sync_claimed_at: new Date().toISOString() })
     .eq("id", dataSourceId)
-    .neq("status", "syncing")
+    .or(`status.neq.syncing,sync_claimed_at.is.null,sync_claimed_at.lt.${staleCutoff}`)
     .select("id, data_available_until");
   if (claim.error) throw new Error(claim.error.message);
   if (!claim.data || claim.data.length === 0) throw new SyncConflictError();
@@ -92,6 +102,35 @@ export async function runGscSync(opts: {
   const syncRunId = run.data.id as string;
 
   try {
+    // Falls der Claim übernommen wurde: verwaiste running-Läufe des
+    // abgestürzten Prozesses schließen und die Übernahme protokollieren.
+    const orphaned = await admin
+      .from("sync_runs")
+      .update({
+        status: "error",
+        completed_at: new Date().toISOString(),
+        error_message: "Abgebrochen: veralteter Sync-Claim wurde von einem neuen Sync übernommen.",
+      })
+      .eq("data_source_id", dataSourceId)
+      .eq("status", "running")
+      .neq("id", syncRunId)
+      .select("id");
+    if (orphaned.error) throw new Error(orphaned.error.message);
+    if (orphaned.data.length > 0) {
+      const audit = await admin.from("audit_events").insert({
+        organization_id: organizationId,
+        entity_type: "data_source",
+        entity_id: dataSourceId,
+        action: "sync.stale_claim_takeover",
+        metadata: {
+          supersededSyncRunIds: orphaned.data.map((r) => r.id as string),
+          newSyncRunId: syncRunId,
+          staleTimeoutMs: STALE_CLAIM_TIMEOUT_MS,
+        },
+      });
+      if (audit.error) throw new Error(audit.error.message);
+    }
+
     // Nur fehlende Tage importieren: ab dem Tag nach dem letzten Datenstand
     // bis gestern (GSC liefert für heute keine finalen Werte).
     const toDate = yesterdayUtc();

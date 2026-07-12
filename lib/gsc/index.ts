@@ -2,6 +2,7 @@
 // Echter Provider nur bei vorhandenen Credentials, sonst Demo-Daten mit
 // identischer Schnittstelle. Der Aufrufer merkt keinen Unterschied.
 
+import "server-only";
 import { DemoGscProvider } from "./demoProvider";
 import { GoogleGscProvider } from "./googleProvider";
 import type { GscProvider } from "./types";

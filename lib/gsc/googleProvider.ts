@@ -4,6 +4,7 @@
 // aktiv, wenn GSC_CLIENT_EMAIL und GSC_PRIVATE_KEY gesetzt sind; bis dahin
 // übernimmt der Demo-Provider mit identischer Schnittstelle.
 
+import "server-only";
 import { createSign } from "node:crypto";
 import type { GscFetchParams, GscMetricRow, GscProvider } from "./types";
 
