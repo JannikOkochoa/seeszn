@@ -8,13 +8,15 @@
 import { useMemo, useState } from "react";
 import {
   APPROVAL_STATUS_LABEL,
+  COMPANY_LABEL,
   TASK_PRIORITY_LABEL,
   TASK_STATUS_LABEL,
+  type MemberCompany,
   type TaskPriority,
   type TaskRow,
   type TaskStatus,
 } from "@/lib/kpi/types";
-import { displayName, formatDate } from "@/lib/kpi/format";
+import { displayName, formatDate, formatDateTime } from "@/lib/kpi/format";
 import { useWorkspace } from "./workspace";
 
 type DueFilter = "all" | "overdue" | "week";
@@ -23,15 +25,20 @@ export default function TaskList() {
   const {
     kpiTasks,
     profiles,
+    members,
     pages,
     latestApprovalByTask,
     setTaskDrawerId,
     canWrite,
+    isAdmin,
+    deletedTasks,
+    restoreTask,
     openCreate,
     anchor,
   } = useWorkspace();
 
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all" | "active">("active");
+  const [showDeleted, setShowDeleted] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
   const [pageFilterLocal, setPageFilterLocal] = useState<string>("all");
@@ -104,11 +111,26 @@ export default function TaskList() {
           <select className="kw-select" value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)}>
             <option value="all">Alle</option>
             <option value="none">Nicht zugewiesen</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {displayName(p)}
-              </option>
-            ))}
+            {(["seeszn", "kluehspies"] as MemberCompany[]).map((company) => {
+              const options = members
+                .filter(
+                  (m) =>
+                    m.company === company &&
+                    (m.status === "active" || m.status === "invited"),
+                )
+                .sort((a, b) => displayName(a).localeCompare(displayName(b), "de"));
+              if (options.length === 0) return null;
+              return (
+                <optgroup key={company} label={COMPANY_LABEL[company]}>
+                  {options.map((m) => (
+                    <option key={m.profile_id} value={m.profile_id}>
+                      {displayName(m)}
+                      {m.status === "invited" ? " (eingeladen)" : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
         </label>
         <label className="kw-field-compact">
@@ -267,6 +289,63 @@ export default function TaskList() {
       <p className="kr-meta kw-task-foot">
         Stand {formatDate(anchor)} · Maßnahmen, Kommentare und Freigaben werden live synchronisiert.
       </p>
+
+      {/* SEESZN-Admin-Ansicht: soft-gelöschte Maßnahmen einsehen und
+          wiederherstellen. Für Editor/Viewer nicht sichtbar. */}
+      {isAdmin && deletedTasks.length > 0 && (
+        <div className="kw-deleted-block">
+          <button
+            type="button"
+            className="kw-link"
+            aria-expanded={showDeleted}
+            onClick={() => setShowDeleted((v) => !v)}
+          >
+            Gelöschte Maßnahmen ({deletedTasks.length}) {showDeleted ? "ausblenden" : "anzeigen"}
+          </button>
+          {showDeleted && (
+            <ul className="kw-task-rows kw-deleted-rows">
+              {deletedTasks.map((t) => {
+                const deletedBy = profiles.find((p) => p.id === t.deleted_by);
+                const page = pages.find((p) => p.id === t.page_id);
+                return (
+                  <li key={t.id} className="kw-task-row">
+                    <div className="kw-deleted-row">
+                      <div>
+                        <span className="kw-task-title">{t.title}</span>
+                        <span className="kw-task-meta">
+                          <span>
+                            Gelöscht von {displayName(deletedBy)}
+                            {t.deleted_at ? ` am ${formatDateTime(t.deleted_at)}` : ""}
+                          </span>
+                          {t.deletion_reason && (
+                            <>
+                              <span className="kw-task-sep" aria-hidden="true">
+                                ·
+                              </span>
+                              <span>„{t.deletion_reason}“</span>
+                            </>
+                          )}
+                          {page && (
+                            <>
+                              <span className="kw-task-sep" aria-hidden="true">
+                                ·
+                              </span>
+                              <span>{page.name}</span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+                      <button type="button" className="kw-link" onClick={() => void restoreTask(t.id)}>
+                        Wiederherstellen
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

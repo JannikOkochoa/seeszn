@@ -15,6 +15,8 @@ const ALLOWED_ACTIONS = new Set([
   "task.updated",
   "task.status_changed",
   "task.assigned",
+  "task.deleted",
+  "task.restored",
   "approval.requested",
   "approval.decided",
   "annotation.created",

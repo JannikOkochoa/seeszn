@@ -33,6 +33,12 @@ function sentence(
     }
     case "task.updated":
       return `${actorName} hat die Maßnahme bearbeitet.`;
+    case "task.deleted": {
+      const reason = typeof meta.reason === "string" && meta.reason ? ` Grund: „${meta.reason}“.` : "";
+      return `${actorName} hat die Maßnahme gelöscht.${reason}`;
+    }
+    case "task.restored":
+      return `${actorName} hat die Maßnahme wiederhergestellt.`;
     case "approval.requested":
       return `${actorName} hat eine Freigabe angefordert.`;
     case "approval.decided": {

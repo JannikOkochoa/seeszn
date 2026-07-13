@@ -7,6 +7,8 @@
 
 import { useState } from "react";
 import Drawer from "./Drawer";
+import OwnerPicker from "./OwnerPicker";
+import ProductPagePicker from "./ProductPagePicker";
 import {
   TASK_PRIORITY_LABEL,
   TASK_STATUS_LABEL,
@@ -14,7 +16,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/kpi/types";
-import { displayName, formatDate, formatNumber } from "@/lib/kpi/format";
+import { formatDate, formatNumber } from "@/lib/kpi/format";
 import { useWorkspace, type TaskDraft } from "./workspace";
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -39,7 +41,7 @@ export default function TaskCreateDrawer() {
 }
 
 function CreateForm({ draft }: { draft: TaskDraft }) {
-  const { closeCreate, createTask, profiles, pages, kpi, currentRange } = useWorkspace();
+  const { closeCreate, createTask, kpi, currentRange } = useWorkspace();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState(draft.observation ?? "");
@@ -155,28 +157,27 @@ function CreateForm({ draft }: { draft: TaskDraft }) {
         </label>
 
         <div className="kw-form-row">
-          <label className="kw-field">
-            <span className="kr-eyebrow">Produktseite</span>
-            <select className="kw-select" value={pageId} onChange={(e) => setPageId(e.target.value)}>
-              <option value="">Keine Seite</option>
-              {pages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="kw-field">
-            <span className="kr-eyebrow">Owner</span>
-            <select className="kw-select" value={ownerId} onChange={(e) => setOwnerId(e.target.value)}>
-              <option value="">Später zuweisen</option>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {displayName(p)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="kw-field">
+            <label className="kr-eyebrow" htmlFor="kw-create-page">
+              Produktseite
+            </label>
+            <ProductPagePicker
+              id="kw-create-page"
+              value={pageId || null}
+              onChange={(next) => setPageId(next ?? "")}
+            />
+          </div>
+          <div className="kw-field">
+            <label className="kr-eyebrow" htmlFor="kw-create-owner">
+              Owner
+            </label>
+            <OwnerPicker
+              id="kw-create-owner"
+              value={ownerId || null}
+              onChange={(next) => setOwnerId(next ?? "")}
+              clearLabel="Später zuweisen"
+            />
+          </div>
         </div>
 
         <div className="kw-form-row">

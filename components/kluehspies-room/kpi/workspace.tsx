@@ -105,6 +105,8 @@ interface WorkspaceContextValue {
   organizationId: string;
   kpi: WorkspaceInit["kpi"];
   profiles: WorkspaceInit["profiles"];
+  /** Mitglieder der Organisation (Owner-Auswahl, Erwähnungen), nie hart codiert. */
+  members: WorkspaceInit["members"];
   pages: WorkspaceInit["pages"];
   productPages: WorkspaceInit["pages"];
   // Live-Zustand
@@ -148,10 +150,16 @@ interface WorkspaceContextValue {
   kpiTasks: TaskRow[];
   activeTaskCount: number;
   latestApprovalByTask: Map<string, ApprovalRow>;
+  /** Soft-gelöschte Maßnahmen, nur für die SEESZN-Admin-Ansicht. */
+  deletedTasks: TaskRow[];
+  /** Nach einer Löschung 10 Sekunden lang gesetzt: Rückgängig-Angebot. */
+  pendingUndo: { taskId: string; title: string } | null;
   // Rechte (nur UX; Sicherheit bleibt RLS)
   canWrite: boolean;
   canSync: boolean;
   canEditTarget: boolean;
+  isAdmin: boolean;
+  canDeleteTask: (task: TaskRow) => boolean;
   // Drawer
   kpiDrawerOpen: boolean;
   setKpiDrawerOpen: (open: boolean) => void;
@@ -172,7 +180,13 @@ interface WorkspaceContextValue {
     >,
   ) => Promise<ActionResult>;
   loadComments: (taskId: string) => Promise<void>;
-  addComment: (taskId: string, body: string) => Promise<ActionResult>;
+  addComment: (
+    taskId: string,
+    body: string,
+    mentionedProfileIds?: string[],
+  ) => Promise<ActionResult>;
+  deleteTask: (id: string, reason: string) => Promise<ActionResult>;
+  restoreTask: (id: string) => Promise<ActionResult>;
   loadActivity: (taskId: string) => Promise<void>;
   requestApproval: (taskId: string) => Promise<ActionResult>;
   decideApproval: (
@@ -236,10 +250,30 @@ export function WorkspaceProvider({
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<TaskDraft | null>(null);
   const [createNonce, setCreateNonce] = useState(0);
+  const [pendingUndo, setPendingUndo] = useState<{ taskId: string; title: string } | null>(null);
 
   const canWrite = viewer.role === "seeszn_admin" || viewer.role === "kluehspies_editor";
   const canSync = viewer.role === "seeszn_admin";
   const canEditTarget = viewer.role === "seeszn_admin";
+  const isAdmin = viewer.role === "seeszn_admin";
+
+  // Löschrechte spiegeln den Soft-Delete-Trigger: Admin alles, Editor nur
+  // eigene oder ihm zugewiesene Maßnahmen, Viewer nie.
+  const canDeleteTask = useCallback(
+    (task: TaskRow): boolean => {
+      if (viewer.role === "seeszn_admin") return true;
+      if (viewer.role !== "kluehspies_editor") return false;
+      return task.created_by === viewer.id || task.owner_id === viewer.id;
+    },
+    [viewer.role, viewer.id],
+  );
+
+  // Das Rückgängig-Fenster schließt sich nach zehn Sekunden von selbst.
+  useEffect(() => {
+    if (!pendingUndo) return;
+    const timer = setTimeout(() => setPendingUndo(null), 10_000);
+    return () => clearTimeout(timer);
+  }, [pendingUndo]);
 
   /* ── Audit (fire and forget, Server validiert alles) ─────────────────────── */
   const logAudit = useCallback(
@@ -462,6 +496,9 @@ export function WorkspaceProvider({
         created_by: viewer.id,
         created_at: nowIso,
         updated_at: nowIso,
+        deleted_at: null,
+        deleted_by: null,
+        deletion_reason: null,
       };
       setTasks((prev) => [optimistic, ...prev]);
 
@@ -575,7 +612,11 @@ export function WorkspaceProvider({
   );
 
   const addComment = useCallback(
-    async (taskId: string, body: string): Promise<ActionResult> => {
+    async (
+      taskId: string,
+      body: string,
+      mentionedProfileIds: string[] = [],
+    ): Promise<ActionResult> => {
       const inserted = await supabase
         .from("comments")
         .insert({ organization_id: organizationId, task_id: taskId, profile_id: viewer.id, body })
@@ -585,6 +626,19 @@ export function WorkspaceProvider({
         return { ok: false, message: "Der Kommentar konnte nicht gespeichert werden." };
       }
       const row = inserted.data as CommentRow;
+
+      // Erwähnungen speichern die profile_id, nicht nur den sichtbaren Text.
+      // Ein Fehler hier lässt den Kommentar bestehen (Markierung bleibt Text).
+      const uniqueMentions = [...new Set(mentionedProfileIds)];
+      if (uniqueMentions.length > 0) {
+        await supabase.from("comment_mentions").insert(
+          uniqueMentions.map((profileId) => ({
+            comment_id: row.id,
+            mentioned_profile_id: profileId,
+            organization_id: organizationId,
+          })),
+        );
+      }
       setCommentsByTask((prev) => {
         const existing = prev.get(taskId) ?? [];
         if (existing.some((c) => c.id === row.id)) return prev;
@@ -596,6 +650,64 @@ export function WorkspaceProvider({
       return { ok: true };
     },
     [supabase, organizationId, viewer.id, logAudit],
+  );
+
+  const deleteTask = useCallback(
+    async (id: string, reason: string): Promise<ActionResult> => {
+      const before = tasks.find((t) => t.id === id);
+      if (!before) return { ok: false, message: "Maßnahme nicht gefunden." };
+
+      const patch = {
+        deleted_at: new Date().toISOString(),
+        deleted_by: viewer.id,
+        deletion_reason: reason.trim() || null,
+      };
+      setTasks((prev) => upsertById(prev, { ...before, ...patch }));
+
+      const updated = await supabase.from("tasks").update(patch).eq("id", id).select().single();
+      if (updated.error || !updated.data) {
+        setTasks((prev) => upsertById(prev, before));
+        return { ok: false, message: "Die Maßnahme konnte nicht gelöscht werden." };
+      }
+      setTasks((prev) => upsertById(prev, updated.data as TaskRow));
+
+      // Vollständiges Audit-Event mit Snapshot der Maßnahme zum Löschzeitpunkt.
+      const owner = init.profiles.find((p) => p.id === before.owner_id);
+      const page = init.pages.find((p) => p.id === before.page_id);
+      logAudit("task.deleted", "task", id, {
+        title: before.title,
+        status: before.status,
+        owner: owner ? owner.full_name?.trim() || owner.email || "" : "",
+        page: page?.name ?? "",
+        reason: reason.trim(),
+      });
+
+      setPendingUndo({ taskId: id, title: before.title });
+      return { ok: true };
+    },
+    [supabase, tasks, viewer.id, init.profiles, init.pages, logAudit],
+  );
+
+  const restoreTask = useCallback(
+    async (id: string): Promise<ActionResult> => {
+      const before = tasks.find((t) => t.id === id);
+      if (!before) return { ok: false, message: "Maßnahme nicht gefunden." };
+
+      const updated = await supabase
+        .from("tasks")
+        .update({ deleted_at: null, deleted_by: null, deletion_reason: null })
+        .eq("id", id)
+        .select()
+        .single();
+      if (updated.error || !updated.data) {
+        return { ok: false, message: "Die Maßnahme konnte nicht wiederhergestellt werden." };
+      }
+      setTasks((prev) => upsertById(prev, updated.data as TaskRow));
+      logAudit("task.restored", "task", id, { title: before.title });
+      setPendingUndo((current) => (current?.taskId === id ? null : current));
+      return { ok: true };
+    },
+    [supabase, tasks, logAudit],
   );
 
   const loadActivity = useCallback(
@@ -840,8 +952,19 @@ export function WorkspaceProvider({
   const kpiTasks = useMemo(() => {
     if (!kpi) return [];
     const linked = new Set(taskLinks.filter((l) => l.kpi_definition_id === kpi.id).map((l) => l.task_id));
-    return tasks.filter((t) => linked.has(t.id) || t.kpi_definition_id === kpi.id);
+    // Soft-gelöschte Maßnahmen sind aus allen normalen Listen ausgeblendet.
+    return tasks.filter(
+      (t) => t.deleted_at === null && (linked.has(t.id) || t.kpi_definition_id === kpi.id),
+    );
   }, [tasks, taskLinks, kpi]);
+
+  const deletedTasks = useMemo(
+    () =>
+      tasks
+        .filter((t) => t.deleted_at !== null)
+        .sort((a, b) => (b.deleted_at ?? "").localeCompare(a.deleted_at ?? "")),
+    [tasks],
+  );
 
   const activeTaskCount = useMemo(
     () => kpiTasks.filter((t) => t.status !== "closed").length,
@@ -868,6 +991,7 @@ export function WorkspaceProvider({
     organizationId,
     kpi,
     profiles: init.profiles,
+    members: init.members,
     pages: init.pages,
     productPages,
     dataSource,
@@ -894,9 +1018,13 @@ export function WorkspaceProvider({
     kpiTasks,
     activeTaskCount,
     latestApprovalByTask,
+    deletedTasks,
+    pendingUndo,
     canWrite,
     canSync,
     canEditTarget,
+    isAdmin,
+    canDeleteTask,
     kpiDrawerOpen,
     setKpiDrawerOpen,
     taskDrawerId,
@@ -910,6 +1038,8 @@ export function WorkspaceProvider({
     updateTask,
     loadComments,
     addComment,
+    deleteTask,
+    restoreTask,
     loadActivity,
     requestApproval,
     decideApproval,

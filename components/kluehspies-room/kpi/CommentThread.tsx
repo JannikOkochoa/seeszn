@@ -1,15 +1,22 @@
 "use client";
 
 // ─── Kommentare ───────────────────────────────────────────────────────────────
-// Chronologischer Thread pro Maßnahme mit Realtime-Aktualisierung. Die
-// Oberfläche spiegelt die Backend-Rechte: Viewer liest nur.
+// Chronologischer Thread pro Maßnahme mit Realtime-Aktualisierung und echten
+// @-Erwähnungen: Vorschlagsliste beim Tippen, Speicherung der profile_id in
+// comment_mentions, optische Markierung erwähnter Namen. Die Oberfläche
+// spiegelt die Backend-Rechte: Viewer liest nur.
 
 import { useEffect, useState } from "react";
 import { displayName, formatDateTime } from "@/lib/kpi/format";
+import MentionTextarea, {
+  extractMentionedProfileIds,
+  renderWithMentions,
+} from "./MentionTextarea";
 import { useWorkspace } from "./workspace";
 
 export default function CommentThread({ taskId }: { taskId: string }) {
-  const { commentsByTask, loadComments, addComment, profiles, canWrite, viewer } = useWorkspace();
+  const { commentsByTask, loadComments, addComment, profiles, members, canWrite, viewer } =
+    useWorkspace();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -25,7 +32,8 @@ export default function CommentThread({ taskId }: { taskId: string }) {
     if (!body.trim()) return;
     setSending(true);
     setError(null);
-    const result = await addComment(taskId, body.trim());
+    const text = body.trim();
+    const result = await addComment(taskId, text, extractMentionedProfileIds(text, members));
     setSending(false);
     if (!result.ok) {
       setError(result.message);
@@ -51,7 +59,7 @@ export default function CommentThread({ taskId }: { taskId: string }) {
                   <span className="kw-comment-author">{displayName(author)}</span>
                   <span className="kr-meta">{formatDateTime(c.created_at)}</span>
                 </div>
-                <p className="kw-comment-body">{c.body}</p>
+                <p className="kw-comment-body">{renderWithMentions(c.body, members)}</p>
               </li>
             );
           })}
@@ -63,13 +71,12 @@ export default function CommentThread({ taskId }: { taskId: string }) {
           <label className="kw-visually-hidden" htmlFor={`kw-comment-${taskId}`}>
             Kommentar schreiben
           </label>
-          <textarea
+          <MentionTextarea
             id={`kw-comment-${taskId}`}
-            className="kw-input kw-textarea"
-            rows={2}
-            placeholder="Kommentar schreiben… (@Name für Erwähnungen)"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
+            members={members}
+            placeholder="Kommentar schreiben… (@Name für Erwähnungen)"
           />
           {error && (
             <p className="kw-form-error" role="alert">

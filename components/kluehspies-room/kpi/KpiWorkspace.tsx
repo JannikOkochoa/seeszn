@@ -14,6 +14,7 @@ import TaskList from "./TaskList";
 import KpiDetailDrawer from "./KpiDetailDrawer";
 import TaskDetailDrawer from "./TaskDetailDrawer";
 import TaskCreateDrawer from "./TaskCreateDrawer";
+import UndoToast from "./UndoToast";
 
 export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
   return (
@@ -30,6 +31,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <KpiDetailDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
+      <UndoToast />
 
       <style>{`
         /* ── KPI-Workspace: gleiche Sprache wie der Raum ────────────────── */
@@ -417,6 +419,111 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-props-hint { margin-top: 16px; }
         .kw-task-desc { max-width: 640px; margin-bottom: 14px; white-space: pre-wrap; }
         .kw-task-created { margin-top: 16px; }
+
+        /* ── Gruppierte Auswahl (Owner, Produktseiten) ──────────────────── */
+        .kw-picker { position: relative; display: flex; flex-direction: column; gap: 6px; }
+        .kw-picker-trigger { text-align: left; width: 100%; }
+        .kw-picker-placeholder { color: var(--text-muted); }
+        .kw-picker-open-link { align-self: flex-start; color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid var(--border-btn); padding-bottom: 1px; }
+        .kw-picker-open-link:hover { color: var(--ink-strong); border-color: var(--warm-black); }
+        .kw-picker-panel {
+          position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+          background: var(--paper); border: 1px solid var(--line-strong);
+          box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--warm-black) 45%, transparent);
+          display: flex; flex-direction: column; min-width: 240px;
+        }
+        .kw-picker-search { border-bottom: 1px solid var(--line); padding: 10px 14px 11px; min-height: 40px; }
+        .kw-picker-search:focus { border-color: var(--line-strong); }
+        .kw-picker-list { max-height: 300px; overflow-y: auto; padding: 4px 0 8px; }
+        .kw-picker-group-label {
+          display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+          font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+          color: var(--text-muted); padding: 12px 14px 6px;
+          border-top: 1px solid var(--line-soft); margin-top: 4px;
+        }
+        .kw-picker-group:first-child .kw-picker-group-label { border-top: none; margin-top: 0; }
+        .kw-picker-count { font-variant-numeric: tabular-nums; color: var(--text-faint); letter-spacing: 0; }
+        .kw-picker-option {
+          display: flex; align-items: baseline; gap: 10px; padding: 8px 14px; cursor: pointer;
+          font-size: 14px; color: var(--ink-strong);
+        }
+        .kw-picker-option[data-active] { background: var(--paper-soft); box-shadow: inset 2px 0 0 var(--signal); }
+        .kw-picker-option[data-selected] .kw-picker-option-label { font-weight: 600; }
+        .kw-picker-option--clear { color: var(--text-muted); }
+        .kw-picker-option-label { flex: 1; min-width: 0; }
+        .kw-picker-option-meta { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+        .kw-picker-option-link {
+          flex: none; font-size: 12px; color: var(--text-muted); text-decoration: none; padding: 0 2px;
+        }
+        .kw-picker-option-link:hover { color: var(--ink-strong); }
+        .kw-picker-empty { padding: 14px; margin: 0; }
+
+        /* ── @-Erwähnungen ──────────────────────────────────────────────── */
+        .kw-mention-field { position: relative; }
+        .kw-mention-panel {
+          position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
+          min-width: 220px; max-height: 240px; overflow-y: auto;
+          background: var(--paper); border: 1px solid var(--line-strong);
+          box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--warm-black) 45%, transparent);
+          padding: 4px 0;
+        }
+        .kw-mention {
+          background: color-mix(in srgb, var(--signal) 26%, transparent);
+          color: var(--ink-strong); font-weight: 500; padding: 0 2px;
+        }
+
+        /* ── Drei-Punkte-Menü im Task-Drawer ────────────────────────────── */
+        .kw-task-tools { position: relative; display: flex; justify-content: flex-end; margin-bottom: 4px; }
+        .kw-menu-trigger {
+          font-family: var(--sans); font-size: 18px; line-height: 1; letter-spacing: 0.08em;
+          color: var(--text-muted); background: none; border: none; cursor: pointer;
+          padding: 4px 8px; min-height: 32px;
+        }
+        .kw-menu-trigger:hover { color: var(--ink-strong); }
+        .kw-menu-trigger:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 3px; }
+        .kw-menu {
+          position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 260px;
+          background: var(--paper); border: 1px solid var(--line-strong);
+          box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--warm-black) 45%, transparent);
+          display: flex; flex-direction: column; padding: 6px 0;
+        }
+        .kw-menu-item {
+          display: flex; flex-direction: column; gap: 2px; text-align: left;
+          font-family: var(--sans); font-size: 14px; color: var(--ink-strong);
+          background: none; border: none; cursor: pointer; padding: 10px 16px;
+        }
+        .kw-menu-item:hover { background: var(--paper-soft); }
+        .kw-menu-item:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: -1px; }
+        .kw-menu-item--danger { color: var(--clay); }
+        .kw-menu-note { font-size: 12px; color: var(--text-muted); }
+
+        /* ── Löschen: Dialog, Hinweis, Admin-Ansicht, Rückgängig ────────── */
+        .kw-confirm {
+          border: 1px solid var(--line-strong); background: var(--paper-soft);
+          padding: 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px;
+        }
+        .kw-confirm-title { margin: 0; color: var(--ink-strong); }
+        .kw-deleted-note {
+          border-left: 2px solid var(--clay); background: var(--paper-soft);
+          padding: 14px 18px; margin-bottom: 18px;
+          display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+        }
+        .kw-deleted-block { margin-top: clamp(28px, 3.5vw, 44px); border-top: 1px solid var(--line); padding-top: 16px; }
+        .kw-deleted-rows { margin-top: 14px; }
+        .kw-deleted-row {
+          display: flex; justify-content: space-between; align-items: baseline; gap: 20px;
+          padding: 16px 10px;
+        }
+        .kw-deleted-row > div { display: flex; flex-direction: column; gap: 8px; }
+        .kw-undo {
+          position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 120;
+          display: flex; align-items: baseline; gap: 18px;
+          background: var(--paper); border: 1px solid var(--line-strong);
+          box-shadow: 0 18px 40px -24px color-mix(in srgb, var(--warm-black) 50%, transparent);
+          padding: 12px 20px; font-family: var(--sans); font-size: 13px; color: var(--text-body);
+          max-width: min(560px, calc(100vw - 32px));
+        }
+        .kw-undo-text { color: var(--ink-strong); }
 
         /* ── Responsiv ──────────────────────────────────────────────────── */
         @media (max-width: 1100px) {

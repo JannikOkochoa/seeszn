@@ -24,6 +24,20 @@ export interface ProfileRow {
   full_name: string | null;
 }
 
+export type MemberCompany = "seeszn" | "kluehspies";
+export type MemberStatus = "active" | "invited";
+
+/** Mitglied der aktuellen Organisation: profiles + memberships zusammengeführt. */
+export interface MemberRow {
+  profile_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: Role;
+  /** Null bei Bestandszeilen; die Anzeige fällt dann auf die Rolle zurück. */
+  company: MemberCompany | null;
+  status: MemberStatus;
+}
+
 export interface KpiDefinitionRow {
   id: string;
   organization_id: string;
@@ -58,11 +72,20 @@ export interface TargetRow {
   end_date: string | null;
 }
 
+export type PageRegion = "deutschland" | "europa";
+
 export interface PageRow {
   id: string;
   name: string;
   url: string;
   segment: string | null;
+  city: string | null;
+  country: string | null;
+  region: PageRegion | null;
+  active: boolean;
+  source: string | null;
+  last_synced_at: string | null;
+  archived_at: string | null;
 }
 
 export interface MetricRow {
@@ -111,6 +134,10 @@ export interface TaskRow {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** Soft Delete: gesetzt = aus normalen Listen ausgeblendet, nie physisch gelöscht. */
+  deleted_at: string | null;
+  deleted_by: string | null;
+  deletion_reason: string | null;
 }
 
 export interface TaskLinkRow {
@@ -147,6 +174,13 @@ export interface CommentRow {
   created_at: string;
 }
 
+/** Gespeicherte @-Erwähnung: referenziert die profile_id, nicht nur den Text. */
+export interface CommentMentionRow {
+  comment_id: string;
+  mentioned_profile_id: string;
+  created_at: string;
+}
+
 export interface AuditEventRow {
   id: string;
   actor_id: string | null;
@@ -171,6 +205,8 @@ export interface WorkspaceInit {
   kpi: KpiDefinitionRow | null;
   dataSource: DataSourceRow | null;
   profiles: ProfileRow[];
+  /** Mitglieder der Organisation, Basis für Owner-Auswahl und Erwähnungen. */
+  members: MemberRow[];
   snapshots: SnapshotRow[];
   targets: TargetRow[];
   pages: PageRow[];
@@ -204,4 +240,14 @@ export const APPROVAL_STATUS_LABEL: Record<ApprovalStatus, string> = {
   approved: "Freigegeben",
   changes_requested: "Änderungen angefordert",
   withdrawn: "Zurückgezogen",
+};
+
+export const COMPANY_LABEL: Record<MemberCompany, string> = {
+  seeszn: "SEESZN",
+  kluehspies: "Klühspies",
+};
+
+export const PAGE_REGION_LABEL: Record<PageRegion, string> = {
+  deutschland: "Deutschland",
+  europa: "Europa",
 };

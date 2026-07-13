@@ -6,11 +6,13 @@
 // Kommentare, Freigaben, Annotationen und Aktivitätsverlauf. Die
 // unveränderlichen Erstellerfelder sind nur lesend dargestellt.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Drawer from "./Drawer";
 import CommentThread from "./CommentThread";
 import ApprovalPanel from "./ApprovalPanel";
 import ActivityTimeline from "./ActivityTimeline";
+import OwnerPicker from "./OwnerPicker";
+import ProductPagePicker from "./ProductPagePicker";
 import {
   TASK_PRIORITY_LABEL,
   TASK_STATUS_LABEL,
@@ -32,13 +34,66 @@ export default function TaskDetailDrawer() {
 }
 
 function TaskDetail({ task }: { task: TaskRow }) {
-  const { setTaskDrawerId, profiles, pages, annotations, updateTask, canWrite, kpi } = useWorkspace();
+  const {
+    setTaskDrawerId,
+    profiles,
+    pages,
+    annotations,
+    updateTask,
+    deleteTask,
+    restoreTask,
+    canWrite,
+    canDeleteTask,
+    isAdmin,
+    kpi,
+  } = useWorkspace();
 
   const [editingText, setEditingText] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Drei-Punkte-Menü + Bestätigungsdialog für das Löschen.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [menuOpen]);
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setError(null);
+    const result = await deleteTask(task.id, deleteReason);
+    setDeleting(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setConfirmOpen(false);
+    // Gelöschte Maßnahmen verschwinden aus den normalen Listen; das
+    // Rückgängig-Angebot erscheint für zehn Sekunden in der Liste.
+    setTaskDrawerId(null);
+  }
 
   const creator = profiles.find((p) => p.id === task.created_by);
   const page = pages.find((p) => p.id === task.page_id);
@@ -77,6 +132,104 @@ function TaskDetail({ task }: { task: TaskRow }) {
     >
       {/* Kopf: Titel und Beschreibung */}
       <section className="kw-dsection kw-dsection--head" aria-label="Beschreibung">
+        {task.deleted_at !== null && (
+          <div className="kw-deleted-note" role="status">
+            <p className="kr-meta">
+              Diese Maßnahme wurde am {formatDateTime(task.deleted_at)} gelöscht
+              {task.deletion_reason ? ` – „${task.deletion_reason}“` : ""}. Kommentare, Freigaben
+              und Verlauf bleiben erhalten.
+            </p>
+            {isAdmin && (
+              <button type="button" className="kw-link" onClick={() => void restoreTask(task.id)}>
+                Wiederherstellen
+              </button>
+            )}
+          </div>
+        )}
+
+        {(canDeleteTask(task) || canWrite) && task.deleted_at === null && (
+          <div className="kw-task-tools" ref={menuRef}>
+            <button
+              type="button"
+              className="kw-menu-trigger"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label="Weitere Aktionen"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <div className="kw-menu" role="menu" aria-label="Aktionen zur Maßnahme">
+                {canWrite && task.status !== "closed" && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="kw-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void patch({ status: "closed" });
+                    }}
+                  >
+                    Maßnahme abschließen
+                    <span className="kw-menu-note">Bleibt sichtbar, Status „Abgeschlossen“</span>
+                  </button>
+                )}
+                {canDeleteTask(task) && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="kw-menu-item kw-menu-item--danger"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setDeleteReason("");
+                      setConfirmOpen(true);
+                    }}
+                  >
+                    Maßnahme löschen
+                    <span className="kw-menu-note">Aus Listen entfernen, nicht endgültig</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {confirmOpen && (
+          <div className="kw-confirm" role="alertdialog" aria-label="Maßnahme löschen">
+            <p className="kr-body kw-confirm-title">Maßnahme löschen?</p>
+            <p className="kr-meta">
+              Die Maßnahme verschwindet aus allen normalen Listen; Kommentare, Freigaben und
+              Verlauf bleiben erhalten, SEESZN kann sie wiederherstellen. Zum bloßen Beenden
+              stattdessen „Maßnahme abschließen“ verwenden, zum Zurückziehen einer Freigabe die
+              Freigabe-Sektion.
+            </p>
+            <label className="kw-field">
+              <span className="kr-eyebrow">Begründung (optional)</span>
+              <textarea
+                className="kw-input kw-textarea"
+                rows={2}
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                data-autofocus
+              />
+            </label>
+            <div className="kw-form-actions kw-form-actions--end">
+              <button type="button" className="kw-link" onClick={() => setConfirmOpen(false)}>
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                className="kr-btn"
+                onClick={() => void confirmDelete()}
+                disabled={deleting}
+              >
+                {deleting ? "Wird gelöscht…" : "Maßnahme löschen"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {editingText ? (
           <div className="kw-form">
             <label className="kw-field">
@@ -158,22 +311,17 @@ function TaskDetail({ task }: { task: TaskRow }) {
               ))}
             </select>
           </label>
-          <label className="kw-field">
-            <span className="kr-eyebrow">Owner</span>
-            <select
-              className="kw-select"
-              value={task.owner_id ?? ""}
+          <div className="kw-field">
+            <label className="kr-eyebrow" htmlFor="kw-detail-owner">
+              Owner
+            </label>
+            <OwnerPicker
+              id="kw-detail-owner"
+              value={task.owner_id}
               disabled={!canWrite || saving}
-              onChange={(e) => void patch({ owner_id: e.target.value || null })}
-            >
-              <option value="">Nicht zugewiesen</option>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {displayName(p)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(next) => void patch({ owner_id: next })}
+            />
+          </div>
           <label className="kw-field">
             <span className="kr-eyebrow">Priorität</span>
             <select
@@ -199,22 +347,17 @@ function TaskDetail({ task }: { task: TaskRow }) {
               onChange={(e) => void patch({ due_date: e.target.value || null })}
             />
           </label>
-          <label className="kw-field">
-            <span className="kr-eyebrow">Produktseite</span>
-            <select
-              className="kw-select"
-              value={task.page_id ?? ""}
+          <div className="kw-field">
+            <label className="kr-eyebrow" htmlFor="kw-detail-page">
+              Produktseite
+            </label>
+            <ProductPagePicker
+              id="kw-detail-page"
+              value={task.page_id}
               disabled={!canWrite || saving}
-              onChange={(e) => void patch({ page_id: e.target.value || null })}
-            >
-              <option value="">Keine Seite</option>
-              {pages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(next) => void patch({ page_id: next })}
+            />
+          </div>
           <div className="kw-field">
             <span className="kr-eyebrow">Einschätzung</span>
             <span className="kw-prop-static">
