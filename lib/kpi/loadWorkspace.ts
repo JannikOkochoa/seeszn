@@ -1,23 +1,28 @@
 // ─── KPI-Workspace: Server-Loader ─────────────────────────────────────────────
 // Lädt den kompletten Initialzustand mit dem Cookie-Session-Client (RLS greift,
 // der Nutzer sieht nur seine Organisation). Läuft ausschließlich serverseitig.
+//
+// Datenwahrheit: Der KPI liest ausschließlich importierte GSC-Exporte über
+// gsc_active_datasets. Die alten Demo-Tabellen (kpi_snapshots,
+// gsc_daily_metrics, data_sources aus dem Demo-Sync) werden bewusst nicht mehr
+// geladen; ohne aktiven Datensatz zeigt die Oberfläche einen Empty State,
+// niemals Demo-Zahlen.
 
 import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
-  GSC_PROVIDER,
   METRIC_KEY,
+  type GscActiveDatasetRow,
+  type GscImportBatchRow,
+  type GscScopeDailyRow,
   type MemberCompany,
   type MemberRow,
   type MemberStatus,
   type Role,
   type WorkspaceInit,
 } from "./types";
-import { addDaysIso } from "./aggregate";
+import { dailyWindowStart } from "./gscData";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-
-/** 90 Tage aktuelle Periode + 90 Tage Vorperiode, mit Puffer. */
-const METRIC_WINDOW_DAYS = 200;
 
 export async function loadWorkspace(
   supabase: SupabaseClient,
@@ -33,6 +38,7 @@ export async function loadWorkspace(
 
   const organizationId = membership.data.organization_id as string;
   const role = membership.data.role as Role;
+  const dailySince = dailyWindowStart(new Date().toISOString().slice(0, 10));
 
   // Eine per Admin-API eingeladene Membership wird beim ersten erfolgreichen
   // Login aktiv. Läuft über den Admin-Client, weil memberships-Updates per
@@ -44,9 +50,7 @@ export async function loadWorkspace(
       .eq("organization_id", organizationId)
       .eq("user_id", user.id);
   }
-  const since = addDaysIso(new Date().toISOString().slice(0, 10), -METRIC_WINDOW_DAYS);
-
-  const [kpi, dataSource, profiles, memberships, pages, tasks, taskLinks, approvals] = await Promise.all([
+  const [kpi, activeDatasets, profiles, memberships, pages, tasks, taskLinks, approvals] = await Promise.all([
     supabase
       .from("kpi_definitions")
       .select("id, organization_id, name, metric_key, owner_id, data_source_id")
@@ -54,13 +58,9 @@ export async function loadWorkspace(
       .eq("metric_key", METRIC_KEY)
       .maybeSingle(),
     supabase
-      .from("data_sources")
-      .select(
-        "id, organization_id, provider, status, last_successful_sync_at, data_available_until, last_error",
-      )
-      .eq("organization_id", organizationId)
-      .eq("provider", GSC_PROVIDER)
-      .maybeSingle(),
+      .from("gsc_active_datasets")
+      .select("id, scope_type, scope_value, import_batch_id, activated_at")
+      .eq("organization_id", organizationId),
     supabase.from("profiles").select("id, email, full_name"),
     supabase
       .from("memberships")
@@ -88,16 +88,11 @@ export async function loadWorkspace(
   ]);
 
   const kpiId = kpi.data?.id as string | undefined;
+  const activeBatchIds = ((activeDatasets.data ?? []) as GscActiveDatasetRow[]).map(
+    (d) => d.import_batch_id,
+  );
 
-  const [snapshots, targets, metrics, annotations] = await Promise.all([
-    kpiId
-      ? supabase
-          .from("kpi_snapshots")
-          .select("id, kpi_definition_id, date, value")
-          .eq("kpi_definition_id", kpiId)
-          .gte("date", since)
-          .order("date", { ascending: true })
-      : Promise.resolve({ data: [], error: null }),
+  const [targets, annotations, batches, daily] = await Promise.all([
     kpiId
       ? supabase
           .from("kpi_targets")
@@ -105,19 +100,31 @@ export async function loadWorkspace(
           .eq("kpi_definition_id", kpiId)
           .order("start_date", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
-    supabase
-      .from("gsc_daily_metrics")
-      .select("id, date, page_id, query, device, clicks, impressions, ctr, position")
-      .eq("organization_id", organizationId)
-      .gte("date", since)
-      .order("date", { ascending: true })
-      .limit(5000),
     kpiId
       ? supabase
           .from("annotations")
           .select("id, kpi_definition_id, date, title, description, linked_task_id, created_by")
           .eq("kpi_definition_id", kpiId)
           .order("date", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    activeBatchIds.length > 0
+      ? supabase
+          .from("gsc_import_batches")
+          .select(
+            "id, scope_type, scope_value, period_start, period_end, imported_at, status, original_file_name",
+          )
+          .in("id", activeBatchIds)
+      : Promise.resolve({ data: [], error: null }),
+    // Nur das Anzeigefenster (90 Tage + Vorperiode + Puffer); der volle
+    // Exportzeitraum bleibt in der Datenbank abrufbar.
+    activeBatchIds.length > 0
+      ? supabase
+          .from("gsc_scope_daily_metrics")
+          .select("import_batch_id, date, clicks, impressions, ctr, position")
+          .in("import_batch_id", activeBatchIds)
+          .gte("date", dailySince)
+          .order("date", { ascending: true })
+          .limit(5000)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -152,16 +159,18 @@ export async function loadWorkspace(
     },
     organizationId,
     kpi: (kpi.data as WorkspaceInit["kpi"]) ?? null,
-    dataSource: (dataSource.data as WorkspaceInit["dataSource"]) ?? null,
     profiles: (profiles.data as WorkspaceInit["profiles"]) ?? [],
     members,
-    snapshots: (snapshots.data as WorkspaceInit["snapshots"]) ?? [],
     targets: (targets.data as WorkspaceInit["targets"]) ?? [],
     pages: (pages.data as WorkspaceInit["pages"]) ?? [],
-    metrics: (metrics.data as WorkspaceInit["metrics"]) ?? [],
     tasks: (tasks.data as WorkspaceInit["tasks"]) ?? [],
     taskLinks: (taskLinks.data as WorkspaceInit["taskLinks"]) ?? [],
     approvals: (approvals.data as WorkspaceInit["approvals"]) ?? [],
     annotations: (annotations.data as WorkspaceInit["annotations"]) ?? [],
+    gsc: {
+      activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
+      batches: (batches.data as GscImportBatchRow[]) ?? [],
+      daily: (daily.data as GscScopeDailyRow[]) ?? [],
+    },
   };
 }

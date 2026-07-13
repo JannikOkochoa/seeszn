@@ -243,14 +243,14 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
             index="03"
             eyebrow="KPI Monitoring"
             title="Der Blick auf die Zahlen."
-            lead="Ein Steuerungswert im Zentrum: organische Klicks auf den Produktseiten, direkt aus der Google Search Console, mit Ziel, Verlauf und den Maßnahmen dahinter."
+            lead="Ein Steuerungswert im Zentrum: organische Klicks auf den Städtereise-Produktseiten, aus importierten Google-Search-Console-Exporten, mit Ziel, Verlauf und den Maßnahmen dahinter."
           />
           <KpiWorkspace init={workspace} />
           <div className="kr-kpi-legacy">
             <p className="kr-eyebrow kr-kpi-legacy-label">
               Weitere Arbeitsstände · redaktionell gepflegt
             </p>
-            <KpiMonitoring reduced={reduced} />
+            <KpiMonitoring />
           </div>
         </Reveal>
 

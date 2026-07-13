@@ -1,8 +1,13 @@
 // ─── POST /api/sync/gsc ───────────────────────────────────────────────────────
-// Stößt den Search-Console-Sync für die Organisation des angemeldeten Nutzers
-// an. Nur seeszn_admin. Auth läuft über die Cookie-Session (RLS-Client),
-// die Schreibarbeit über den Admin-Client im Sync-Service (lib/gsc/sync.ts).
-// Es verlassen keine Secrets den Server; Fehlermeldungen bleiben generisch.
+// LEGACY: Demo-Sync (DemoGscProvider) für die alte KPI-Datenbasis. Seit dem
+// GSC-Export-Import ist der echte KPI vollständig auf importierten
+// Search-Console-Exporten (gsc_active_datasets); dieser Endpoint erzeugt nur
+// noch synthetische Demo-Daten und ist deshalb standardmäßig deaktiviert.
+//
+// Reaktivierung nur bewusst über LEGACY_GSC_DEMO_SYNC_ENABLED=true
+// (serverseitig, kein NEXT_PUBLIC_). Der echte GoogleProvider bleibt als
+// spätere Option in lib/gsc bestehen; die Export-Datenbasis ist von diesem
+// Endpoint unabhängig. Es gibt keine Client-Schaltfläche mehr.
 
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { getGscProvider } from "@/lib/gsc";
@@ -16,6 +21,15 @@ function fail(error: string, status: number): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  // 0) Legacy-Guard: standardmäßig deaktiviert. Ohne explizite Freischaltung
+  //    erzeugt der Demo-Sync keine neuen Daten mehr.
+  if (process.env.LEGACY_GSC_DEMO_SYNC_ENABLED !== "true") {
+    return fail(
+      "Der Demo-Sync ist deaktiviert. Der KPI nutzt importierte Search-Console-Exporte.",
+      410,
+    );
+  }
+
   // 1) Session prüfen (Cookie-basiert, serverseitig validiert).
   const supabase = await createSupabaseServerClient();
   const {

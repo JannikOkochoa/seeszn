@@ -191,6 +191,63 @@ export interface AuditEventRow {
   created_at: string;
 }
 
+/* ── GSC-Export-Import (echte Search-Console-Daten) ─────────────────────────── */
+
+export type GscScopeType = "sitewide" | "path_prefix" | "product_page";
+export type GscDimensionType = "query" | "page" | "device" | "country" | "search_appearance";
+export type GscBatchStatus = "pending" | "validating" | "imported" | "failed" | "archived";
+
+export interface GscImportBatchRow {
+  id: string;
+  scope_type: GscScopeType;
+  scope_value: string | null;
+  period_start: string;
+  period_end: string;
+  imported_at: string | null;
+  status: GscBatchStatus;
+  original_file_name: string;
+}
+
+export interface GscActiveDatasetRow {
+  id: string;
+  scope_type: GscScopeType;
+  scope_value: string | null;
+  import_batch_id: string;
+  activated_at: string;
+}
+
+/** Ein Tageswert aus Chart.csv, gebunden an einen Import-Batch. */
+export interface GscScopeDailyRow {
+  import_batch_id: string;
+  date: string;
+  clicks: number;
+  impressions: number;
+  /** Anteil 0..1, nicht Prozent. */
+  ctr: number;
+  position: number;
+}
+
+/** Aggregat über den gesamten Exportzeitraum (nie als Tageswert darstellen). */
+export interface GscDimensionSnapshotRow {
+  import_batch_id: string;
+  dimension_type: GscDimensionType;
+  dimension_value: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+  period_start: string;
+  period_end: string;
+}
+
+export const GSC_DIMENSION_LABEL: Record<GscDimensionType, string> = {
+  query: "Suchanfragen",
+  page: "Seiten",
+  device: "Geräte",
+  country: "Länder",
+  search_appearance: "Darstellung in der Suche",
+};
+
 export interface WorkspaceViewer {
   id: string;
   email: string;
@@ -203,18 +260,22 @@ export interface WorkspaceInit {
   viewer: WorkspaceViewer;
   organizationId: string;
   kpi: KpiDefinitionRow | null;
-  dataSource: DataSourceRow | null;
   profiles: ProfileRow[];
   /** Mitglieder der Organisation, Basis für Owner-Auswahl und Erwähnungen. */
   members: MemberRow[];
-  snapshots: SnapshotRow[];
   targets: TargetRow[];
   pages: PageRow[];
-  metrics: MetricRow[];
   tasks: TaskRow[];
   taskLinks: TaskLinkRow[];
   approvals: ApprovalRow[];
   annotations: AnnotationRow[];
+  /** Echte GSC-Daten: aktive Batches je Scope + deren tägliche Zeitreihen.
+   *  Einzige Quelle der KPI-Berechnung; Demo-Daten fließen nicht mehr ein. */
+  gsc: {
+    activeDatasets: GscActiveDatasetRow[];
+    batches: GscImportBatchRow[];
+    daily: GscScopeDailyRow[];
+  };
 }
 
 export const METRIC_KEY = "organic_clicks_product_pages";

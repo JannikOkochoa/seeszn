@@ -1,27 +1,27 @@
 "use client";
 
 // ─── Primärer KPI ─────────────────────────────────────────────────────────────
-// „Organische Klicks auf Produktseiten“ als wichtigster Steuerungswert: großer
-// Serif-Wert, feine Meta-Zeilen, keine bunte Dashboard-Karte. Öffnet den
-// Detail-Drawer.
+// „Organische Klicks auf Städtereise-Produktseiten“ als wichtigster
+// Steuerungswert, berechnet ausschließlich aus dem aktiven Search-Console-
+// Export. Prozentveränderung immer zusammen mit den absoluten Werten
+// („6 statt 2 Klicks“); bei sehr kleiner Vorperiode ohne Hervorhebung.
+// Ohne aktiven Datensatz: ehrlicher Empty State statt Demo-Zahlen.
 
-import { displayName, formatDate, formatDelta, formatNumber } from "@/lib/kpi/format";
+import { displayName, formatDate, formatDelta, formatNumber, formatPercent } from "@/lib/kpi/format";
+import SourceProvenance from "./SourceProvenance";
 import { useWorkspace } from "./workspace";
 
 export default function PrimaryKpiPanel() {
   const {
     kpi,
     profiles,
-    latestSnapshot,
-    currentSum,
-    periodDeltaPct,
-    activeTarget,
-    progressPct,
     days,
+    hasRealData,
+    activeScope,
+    gscComparison,
+    gscProvenance,
     activeTaskCount,
-    dataSource,
     setKpiDrawerOpen,
-    checkingFreshness,
   } = useWorkspace();
 
   if (!kpi) {
@@ -34,10 +34,21 @@ export default function PrimaryKpiPanel() {
     );
   }
 
+  if (!hasRealData || !gscComparison) {
+    return (
+      <div className="kw-primary kw-primary--empty">
+        <span className="kr-eyebrow">Primärer KPI</span>
+        <h3 className="kw-primary-name">{kpi.name}</h3>
+        <p className="kr-meta kw-primary-pending">
+          Noch keine Datenquelle verbunden. Sobald SEESZN einen Search-Console-Export importiert
+          hat, erscheinen hier echte Werte – ohne Demo- oder Platzhalterzahlen.
+        </p>
+      </div>
+    );
+  }
+
   const owner = profiles.find((p) => p.id === kpi.owner_id);
-  const loading = checkingFreshness && latestSnapshot === null;
-  const status =
-    progressPct === null ? null : progressPct >= 100 ? "Auf Kurs" : progressPct >= 85 ? "Nah am Ziel" : "Unter Ziel";
+  const { current, previous, clicksDeltaPct, comparisonLabel, lowBase } = gscComparison;
 
   return (
     <button
@@ -45,10 +56,10 @@ export default function PrimaryKpiPanel() {
       className="kw-primary"
       onClick={() => setKpiDrawerOpen(true)}
       aria-haspopup="dialog"
-      aria-label={`${kpi.name} öffnen: Details, Verlauf, Seiten und Maßnahmen`}
+      aria-label={`${kpi.name} öffnen: Details, Verlauf und Maßnahmen`}
     >
       <div className="kw-primary-head">
-        <span className="kr-eyebrow">Primärer KPI · Google Search Console</span>
+        <span className="kr-eyebrow">Primärer KPI · Google Search Console Export</span>
         <span className="kw-primary-open" aria-hidden="true">
           Details öffnen →
         </span>
@@ -58,48 +69,31 @@ export default function PrimaryKpiPanel() {
 
       <div className="kw-primary-grid">
         <div className="kw-primary-value-block">
-          {loading ? (
-            <span className="kw-primary-value kw-skeleton" aria-hidden="true">
-              &nbsp;
-            </span>
-          ) : latestSnapshot ? (
-            <>
-              <span className="kw-primary-value">{formatNumber(latestSnapshot.value)}</span>
-              <span className="kr-meta">
-                Klicks am {formatDate(latestSnapshot.date)} · neuester Tageswert
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="kw-primary-value kw-primary-value--empty">–</span>
-              <span className="kr-meta">Noch keine Werte. Nach dem ersten Sync erscheinen hier Daten.</span>
-            </>
-          )}
+          <span className="kw-primary-value">{formatNumber(current.clicks)}</span>
+          <span className="kr-meta">
+            Klicks in {days} Tagen · {activeScope?.label}
+          </span>
+          <span className="kw-delta" data-dir={lowBase ? undefined : (clicksDeltaPct ?? 0) >= 0 ? "up" : "down"}>
+            {comparisonLabel}
+            {clicksDeltaPct !== null && !lowBase && <> · {formatDelta(clicksDeltaPct)} zur Vorperiode</>}
+            {lowBase && <> · Vorperiode zu klein für belastbare Prozentwerte</>}
+          </span>
         </div>
 
         <dl className="kw-primary-meta">
           <div>
-            <dt className="kr-eyebrow">{days} Tage gesamt</dt>
+            <dt className="kr-eyebrow">Impressionen</dt>
             <dd>
-              {formatNumber(currentSum)} Klicks{" "}
-              <span className="kw-delta" data-dir={periodDeltaPct === null ? undefined : periodDeltaPct >= 0 ? "up" : "down"}>
-                {formatDelta(periodDeltaPct)} zur Vorperiode
-              </span>
+              {formatNumber(current.impressions)}
+              <span className="kw-delta"> · Vorperiode {formatNumber(previous.impressions)}</span>
             </dd>
           </div>
           <div>
-            <dt className="kr-eyebrow">Ziel</dt>
+            <dt className="kr-eyebrow">CTR · Ø Position</dt>
             <dd>
-              {activeTarget ? (
-                <>
-                  {formatNumber(Number(activeTarget.target_value))} Klicks pro Tag
-                  {progressPct !== null && (
-                    <span className="kw-delta"> · {formatNumber(progressPct)} % erreicht</span>
-                  )}
-                </>
-              ) : (
-                <span className="kw-muted">Kein aktives Ziel definiert</span>
-              )}
+              {current.ctr !== null ? formatPercent(current.ctr * 100) : "–"}
+              {" · "}
+              {current.position !== null ? formatNumber(current.position, 1) : "–"}
             </dd>
           </div>
           <div>
@@ -120,16 +114,16 @@ export default function PrimaryKpiPanel() {
       </div>
 
       <div className="kw-primary-foot">
-        {status && (
-          <span className="kr-status" data-state={status === "Auf Kurs" ? "done" : "open"}>
-            <i className="olive-dot" aria-hidden="true" />
-            {status}
-          </span>
-        )}
+        <SourceProvenance
+          source="Google Search Console Export"
+          scope={activeScope?.label}
+          periodStart={gscProvenance?.periodStart}
+          periodEnd={gscProvenance?.periodEnd}
+          dataAsOf={gscProvenance?.dataAsOf}
+          importedAt={gscProvenance?.importedAt}
+        />
         <span className="kr-meta">
-          {dataSource?.data_available_until
-            ? `Datenstand ${formatDate(dataSource.data_available_until)}`
-            : "Datenstand offen"}
+          Zeitraum: letzte {days} Tage bis {gscProvenance?.dataAsOf ? formatDate(gscProvenance.dataAsOf) : "–"}
         </span>
       </div>
     </button>

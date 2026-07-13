@@ -3,9 +3,12 @@
 // ─── KPI-Workspace: Zustand, Realtime, Aktionen ───────────────────────────────
 // Ein Provider für den kompletten KPI-Slice. Serverseitig geladene Initialdaten
 // kommen als Props; alle Mutationen laufen über den Browser-Client (RLS greift),
-// der Sync über POST /api/sync/gsc, Audit-Einträge über POST /api/audit.
-// Realtime hält Tasks, Kommentare, Freigaben, Annotationen, Snapshots und den
-// Sync-Status über alle Sessions einer Organisation synchron.
+// Audit-Einträge über POST /api/audit. Realtime hält Tasks, Kommentare,
+// Freigaben und Annotationen über alle Sessions einer Organisation synchron.
+//
+// Datenwahrheit: Der primäre KPI rechnet ausschließlich auf importierten
+// GSC-Exporten (gsc_active_datasets -> gsc_scope_daily_metrics). Ohne aktiven
+// Datensatz gibt es einen Empty State; Demo-Daten fließen nie ein.
 
 import {
   createContext,
@@ -13,43 +16,39 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   addDaysIso,
-  buildFindings,
-  buildRanges,
-  deltaPct,
-  latestValue,
-  metricSeries,
-  pageStats,
-  queryStats,
-  snapshotSeries,
-  sumSeries,
   targetForDate,
   targetSeries,
-  type DeviceFilter,
-  type Finding,
-  type MetricFilter,
-  type PageStats,
-  type QueryStats,
   type RangeDays,
   type SeriesPoint,
 } from "@/lib/kpi/aggregate";
+import {
+  buildScopeOptions,
+  clicksSeries,
+  comparePeriods,
+  dailyForBatch,
+  dataAsOf,
+  defaultScopeKey,
+  provenanceFor,
+  rangesForBatch,
+  type DatasetProvenance,
+  type PeriodComparison,
+  type ScopeOption,
+} from "@/lib/kpi/gscData";
 import type {
   AnnotationRow,
   ApprovalRow,
   ApprovalStatus,
   AuditEventRow,
   CommentRow,
-  DataSourceRow,
+  GscDimensionSnapshotRow,
   InsightContext,
   LevelDe,
-  MetricRow,
-  SnapshotRow,
   TargetRow,
   TaskPriority,
   TaskRow,
@@ -110,43 +109,38 @@ interface WorkspaceContextValue {
   pages: WorkspaceInit["pages"];
   productPages: WorkspaceInit["pages"];
   // Live-Zustand
-  dataSource: DataSourceRow | null;
-  snapshots: SnapshotRow[];
   targets: TargetRow[];
-  metrics: MetricRow[];
   tasks: TaskRow[];
   approvals: ApprovalRow[];
   annotations: AnnotationRow[];
   commentsByTask: Map<string, CommentRow[]>;
   activityByTask: Map<string, AuditEventRow[]>;
   realtime: RealtimeState;
-  checkingFreshness: boolean;
-  syncing: boolean;
-  syncMessage: string | null;
   // Filter
   days: RangeDays;
-  device: DeviceFilter;
-  pageFilter: string;
   setDays: (d: RangeDays) => void;
-  setDevice: (d: DeviceFilter) => void;
-  setPageFilter: (p: string) => void;
+  /** Scope des primären KPI: alle Städtereisen oder eine Produktseite. */
+  scopeKey: string | null;
+  setScopeKey: (key: string) => void;
+  scopeOptions: ScopeOption[];
+  // Echte GSC-Daten (einzige KPI-Quelle)
+  hasRealData: boolean;
+  activeScope: ScopeOption | null;
+  gscComparison: PeriodComparison | null;
+  gscProvenance: DatasetProvenance | null;
+  /** Vergleich aller Scopes (Städtereisen gesamt, Berlin, Hamburg, München). */
+  scopeBreakdown: Array<{ option: ScopeOption; comparison: PeriodComparison }>;
+  /** Aggregierte Dimensions-Snapshots je Batch, lazy geladen. */
+  dimensionsByBatch: Map<string, GscDimensionSnapshotRow[]>;
+  loadDimensions: (batchId: string) => Promise<void>;
   // Abgeleitet
   anchor: string;
   currentRange: { from: string; to: string };
   previousRange: { from: string; to: string };
-  isFiltered: boolean;
   series: SeriesPoint[];
   previousSeries: SeriesPoint[];
   targetLine: SeriesPoint[];
-  currentSum: number;
-  previousSum: number;
-  periodDeltaPct: number | null;
-  latestSnapshot: { date: string; value: number } | null;
   activeTarget: TargetRow | null;
-  progressPct: number | null;
-  stats: PageStats[];
-  findings: Finding[];
-  queries: QueryStats[];
   kpiTasks: TaskRow[];
   activeTaskCount: number;
   latestApprovalByTask: Map<string, ApprovalRow>;
@@ -156,7 +150,6 @@ interface WorkspaceContextValue {
   pendingUndo: { taskId: string; title: string } | null;
   // Rechte (nur UX; Sicherheit bleibt RLS)
   canWrite: boolean;
-  canSync: boolean;
   canEditTarget: boolean;
   isAdmin: boolean;
   canDeleteTask: (task: TaskRow) => boolean;
@@ -171,7 +164,6 @@ interface WorkspaceContextValue {
   openCreate: (draft: TaskDraft) => void;
   closeCreate: () => void;
   // Aktionen
-  runSync: () => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<ActionResult>;
   updateTask: (
     id: string,
@@ -227,10 +219,7 @@ export function WorkspaceProvider({
   const supabase = getSupabaseBrowserClient();
   const { viewer, organizationId, kpi } = init;
 
-  const [dataSource, setDataSource] = useState(init.dataSource);
-  const [snapshots, setSnapshots] = useState(init.snapshots);
   const [targets, setTargets] = useState(init.targets);
-  const [metrics, setMetrics] = useState(init.metrics);
   const [tasks, setTasks] = useState(init.tasks);
   const [taskLinks, setTaskLinks] = useState(init.taskLinks);
   const [approvals, setApprovals] = useState(init.approvals);
@@ -238,13 +227,18 @@ export function WorkspaceProvider({
   const [commentsByTask, setCommentsByTask] = useState<Map<string, CommentRow[]>>(new Map());
   const [activityByTask, setActivityByTask] = useState<Map<string, AuditEventRow[]>>(new Map());
   const [realtime, setRealtime] = useState<RealtimeState>("connecting");
-  const [checkingFreshness, setCheckingFreshness] = useState(true);
-  const [syncing, setSyncing] = useState(init.dataSource?.status === "syncing");
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [dimensionsByBatch, setDimensionsByBatch] = useState<Map<string, GscDimensionSnapshotRow[]>>(
+    new Map(),
+  );
 
   const [days, setDays] = useState<RangeDays>(28);
-  const [device, setDevice] = useState<DeviceFilter>("all");
-  const [pageFilter, setPageFilter] = useState<string>("all");
+
+  // Scope-Auswahl über den aktiven GSC-Datensätzen; Standard: alle Städtereisen.
+  const scopeOptions = useMemo(
+    () => buildScopeOptions(init.gsc.activeDatasets, init.gsc.batches),
+    [init.gsc.activeDatasets, init.gsc.batches],
+  );
+  const [scopeKey, setScopeKey] = useState<string | null>(() => defaultScopeKey(scopeOptions));
 
   const [kpiDrawerOpen, setKpiDrawerOpen] = useState(false);
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
@@ -253,7 +247,6 @@ export function WorkspaceProvider({
   const [pendingUndo, setPendingUndo] = useState<{ taskId: string; title: string } | null>(null);
 
   const canWrite = viewer.role === "seeszn_admin" || viewer.role === "kluehspies_editor";
-  const canSync = viewer.role === "seeszn_admin";
   const canEditTarget = viewer.role === "seeszn_admin";
   const isAdmin = viewer.role === "seeszn_admin";
 
@@ -289,61 +282,29 @@ export function WorkspaceProvider({
     [],
   );
 
-  /* ── Datenfrische: sofort letzten Stand zeigen, im Hintergrund prüfen ────── */
-  const refetchFreshness = useCallback(async () => {
-    setCheckingFreshness(true);
-    const { data } = await supabase
-      .from("data_sources")
-      .select(
-        "id, organization_id, provider, status, last_successful_sync_at, data_available_until, last_error",
-      )
-      .eq("organization_id", organizationId)
-      .eq("provider", "google_search_console")
-      .maybeSingle();
-    if (data) {
-      setDataSource(data as DataSourceRow);
-      setSyncing((data as DataSourceRow).status === "syncing");
-    }
-    setCheckingFreshness(false);
-  }, [supabase, organizationId]);
-
-  const refetchAfterSync = useCallback(async () => {
-    const since = addDaysIso(new Date().toISOString().slice(0, 10), -200);
-    const [snap, met] = await Promise.all([
-      kpi
-        ? supabase
-            .from("kpi_snapshots")
-            .select("id, kpi_definition_id, date, value")
-            .eq("kpi_definition_id", kpi.id)
-            .gte("date", since)
-            .order("date", { ascending: true })
-        : Promise.resolve({ data: null }),
-      supabase
-        .from("gsc_daily_metrics")
-        .select("id, date, page_id, query, device, clicks, impressions, ctr, position")
-        .eq("organization_id", organizationId)
-        .gte("date", since)
-        .order("date", { ascending: true })
-        .limit(5000),
-    ]);
-    if (snap.data) setSnapshots(snap.data as SnapshotRow[]);
-    if (met.data) setMetrics(met.data as MetricRow[]);
-    await refetchFreshness();
-  }, [supabase, kpi, organizationId, refetchFreshness]);
-
-  useEffect(() => {
-    // Hintergrundprüfung nach dem ersten Paint; der letzte gespeicherte
-    // Stand ist zu diesem Zeitpunkt bereits sichtbar.
-    const t = setTimeout(() => void refetchFreshness(), 0);
-    return () => clearTimeout(t);
-  }, [refetchFreshness]);
+  /* ── Dimensions-Snapshots: aggregierte Exportwerte, lazy je Batch ────────── */
+  const loadDimensions = useCallback(
+    async (batchId: string) => {
+      if (dimensionsByBatch.has(batchId)) return;
+      const { data } = await supabase
+        .from("gsc_dimension_snapshots")
+        .select(
+          "import_batch_id, dimension_type, dimension_value, clicks, impressions, ctr, position, period_start, period_end",
+        )
+        .eq("import_batch_id", batchId)
+        .order("clicks", { ascending: false })
+        .limit(3000);
+      setDimensionsByBatch((prev) => {
+        if (prev.has(batchId)) return prev;
+        const next = new Map(prev);
+        next.set(batchId, (data as GscDimensionSnapshotRow[]) ?? []);
+        return next;
+      });
+    },
+    [supabase, dimensionsByBatch],
+  );
 
   /* ── Realtime: eine Subscription pro Organisation ────────────────────────── */
-  const refetchAfterSyncRef = useRef(refetchAfterSync);
-  useEffect(() => {
-    refetchAfterSyncRef.current = refetchAfterSync;
-  }, [refetchAfterSync]);
-
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
@@ -404,30 +365,6 @@ export function WorkspaceProvider({
             setAnnotations((prev) => upsertById(prev, payload.new as AnnotationRow));
           },
         )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "data_sources", filter: orgFilter },
-          (payload) => {
-            const row = payload.new as DataSourceRow;
-            const before = payload.old as Partial<DataSourceRow>;
-            setDataSource(row);
-            setSyncing(row.status === "syncing");
-            // Ein anderer Nutzer hat erfolgreich synchronisiert: Werte nachladen.
-            if (row.status === "idle" && before.status !== undefined && before.status !== "idle") {
-              void refetchAfterSyncRef.current();
-            }
-          },
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "kpi_snapshots", filter: orgFilter },
-          (payload) => {
-            if (payload.eventType === "DELETE") return;
-            setSnapshots((prev) =>
-              upsertById(prev, payload.new as SnapshotRow).sort((a, b) => a.date.localeCompare(b.date)),
-            );
-          },
-        )
         .subscribe((status) => {
           if (cancelled) return;
           if (status === "SUBSCRIBED") setRealtime("live");
@@ -445,32 +382,6 @@ export function WorkspaceProvider({
   }, [supabase, organizationId]);
 
   /* ── Aktionen ────────────────────────────────────────────────────────────── */
-
-  const runSync = useCallback(async () => {
-    setSyncMessage(null);
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/sync/gsc", { method: "POST" });
-      if (res.status === 409) {
-        setSyncMessage("Es läuft bereits eine Aktualisierung.");
-        return;
-      }
-      if (res.status === 403) {
-        setSyncMessage("Die Aktualisierung kann nur SEESZN anstoßen.");
-        return;
-      }
-      if (!res.ok) {
-        setSyncMessage("Die Aktualisierung ist fehlgeschlagen. Der letzte Datenstand bleibt erhalten.");
-        return;
-      }
-      await refetchAfterSync();
-    } catch {
-      setSyncMessage("Die Aktualisierung ist fehlgeschlagen. Der letzte Datenstand bleibt erhalten.");
-    } finally {
-      setSyncing(false);
-      void refetchFreshness();
-    }
-  }, [refetchAfterSync, refetchFreshness]);
 
   const createTask = useCallback(
     async (input: CreateTaskInput): Promise<ActionResult> => {
@@ -896,58 +807,62 @@ export function WorkspaceProvider({
 
   const productPages = useMemo(() => init.pages.filter((p) => p.segment === "product"), [init.pages]);
 
-  const anchor = useMemo(() => {
-    if (dataSource?.data_available_until) return dataSource.data_available_until;
-    if (snapshots.length > 0) return snapshots[snapshots.length - 1].date;
-    return addDaysIso(new Date().toISOString().slice(0, 10), -1);
-  }, [dataSource, snapshots]);
-
+  // Alles Folgende rechnet ausschließlich auf importierten GSC-Exporten.
   const derived = useMemo(() => {
-    const { current, previous } = buildRanges(days, anchor);
-    const productPageIds = new Set(productPages.map((p) => p.id));
-    const filter: MetricFilter = { device, pageId: pageFilter, productPageIds };
-    const isFiltered = device !== "all" || pageFilter !== "all";
+    const activeScope = scopeOptions.find((o) => o.key === scopeKey) ?? null;
+    const rows = activeScope ? dailyForBatch(init.gsc.daily, activeScope.batchId) : [];
+    const ranges = rangesForBatch(rows, days);
+    const anchor =
+      dataAsOf(rows) ?? addDaysIso(new Date().toISOString().slice(0, 10), -1);
 
-    const series = isFiltered
-      ? metricSeries(metrics, current, filter)
-      : snapshotSeries(snapshots, current);
-    const previousSeries = isFiltered
-      ? metricSeries(metrics, previous, filter)
-      : snapshotSeries(snapshots, previous);
-    const targetLine = targetSeries(targets, current);
+    // Vergleich über alle Scopes, jeweils am eigenen Datenstand verankert.
+    const scopeBreakdown = scopeOptions.flatMap((option) => {
+      const optionRows = dailyForBatch(init.gsc.daily, option.batchId);
+      const optionRanges = rangesForBatch(optionRows, days);
+      if (!optionRanges) return [];
+      return [
+        {
+          option,
+          comparison: comparePeriods(optionRows, optionRanges.current, optionRanges.previous),
+        },
+      ];
+    });
 
-    const currentSum = sumSeries(series);
-    const previousSum = sumSeries(previousSeries);
-    const stats = pageStats(metrics, init.pages, current, previous, device);
-    const findings = buildFindings(stats, days);
-    const queries = queryStats(metrics, init.pages, current, previous, filter);
+    if (!activeScope || !ranges) {
+      // Kein aktiver Datensatz: Empty State, niemals Demo-Zahlen.
+      const empty = { from: anchor, to: anchor };
+      return {
+        hasRealData: false,
+        activeScope: null,
+        anchor,
+        currentRange: empty,
+        previousRange: empty,
+        series: [] as SeriesPoint[],
+        previousSeries: [] as SeriesPoint[],
+        targetLine: [] as SeriesPoint[],
+        gscComparison: null,
+        gscProvenance: null,
+        scopeBreakdown,
+        activeTarget: targetForDate(targets, anchor),
+      };
+    }
 
-    const latestSnapshot = latestValue(snapshotSeries(snapshots, current));
-    const activeTarget = targetForDate(targets, anchor);
-    const avgDaily = currentSum / days;
-    const progressPct =
-      activeTarget && Number(activeTarget.target_value) > 0
-        ? (avgDaily / Number(activeTarget.target_value)) * 100
-        : null;
-
+    const { current, previous } = ranges;
     return {
+      hasRealData: true,
+      activeScope,
+      anchor,
       currentRange: current,
       previousRange: previous,
-      isFiltered,
-      series,
-      previousSeries,
-      targetLine,
-      currentSum,
-      previousSum,
-      periodDeltaPct: deltaPct(currentSum, previousSum),
-      latestSnapshot,
-      activeTarget,
-      progressPct,
-      stats,
-      findings,
-      queries,
+      series: clicksSeries(rows, current),
+      previousSeries: clicksSeries(rows, previous),
+      targetLine: targetSeries(targets, current),
+      gscComparison: comparePeriods(rows, current, previous),
+      gscProvenance: provenanceFor(activeScope, init.gsc.batches, rows),
+      scopeBreakdown,
+      activeTarget: targetForDate(targets, anchor),
     };
-  }, [days, anchor, device, pageFilter, metrics, snapshots, targets, productPages, init.pages]);
+  }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, days, targets]);
 
   const kpiTasks = useMemo(() => {
     if (!kpi) return [];
@@ -994,26 +909,20 @@ export function WorkspaceProvider({
     members: init.members,
     pages: init.pages,
     productPages,
-    dataSource,
-    snapshots,
     targets,
-    metrics,
     tasks,
     approvals,
     annotations,
     commentsByTask,
     activityByTask,
     realtime,
-    checkingFreshness,
-    syncing,
-    syncMessage,
     days,
-    device,
-    pageFilter,
     setDays,
-    setDevice,
-    setPageFilter,
-    anchor,
+    scopeKey,
+    setScopeKey,
+    scopeOptions,
+    dimensionsByBatch,
+    loadDimensions,
     ...derived,
     kpiTasks,
     activeTaskCount,
@@ -1021,7 +930,6 @@ export function WorkspaceProvider({
     deletedTasks,
     pendingUndo,
     canWrite,
-    canSync,
     canEditTarget,
     isAdmin,
     canDeleteTask,
@@ -1033,7 +941,6 @@ export function WorkspaceProvider({
     createNonce,
     openCreate,
     closeCreate,
-    runSync,
     createTask,
     updateTask,
     loadComments,

@@ -420,6 +420,14 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-task-desc { max-width: 640px; margin-bottom: 14px; white-space: pre-wrap; }
         .kw-task-created { margin-top: 16px; }
 
+        /* ── Quellenkennzeichnung & Dimensionstabellen ──────────────────── */
+        .kw-provenance { margin: 0; font-size: 12px; line-height: 1.6; letter-spacing: 0.01em; }
+        .kw-dim-period {
+          margin: 0 0 14px; padding: 8px 0 10px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .kw-primary-pending { max-width: 560px; margin-top: 14px; }
+
         /* ── Gruppierte Auswahl (Owner, Produktseiten) ──────────────────── */
         .kw-picker { position: relative; display: flex; flex-direction: column; gap: 6px; }
         .kw-picker-trigger { text-align: left; width: 100%; }
