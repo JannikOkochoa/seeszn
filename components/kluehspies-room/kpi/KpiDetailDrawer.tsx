@@ -13,7 +13,6 @@ import KpiTimeSeries from "./KpiTimeSeries";
 import AnnotationsPanel from "./AnnotationsPanel";
 import DimensionTable from "./DimensionTable";
 import SourceProvenance from "./SourceProvenance";
-import { DataStatus } from "./KpiControlBar";
 import {
   APPROVAL_STATUS_LABEL,
   GSC_DIMENSION_LABEL,
@@ -21,6 +20,7 @@ import {
   TASK_STATUS_LABEL,
   type GscDimensionType,
 } from "@/lib/kpi/types";
+import { COCKPIT_RANGES, cockpitRangeLabel } from "@/lib/kpi/gscData";
 import { displayName, formatDate, formatDelta, formatNumber, formatPercent } from "@/lib/kpi/format";
 import { useWorkspace } from "./workspace";
 
@@ -38,10 +38,11 @@ export default function KpiDetailDrawer() {
     kpiDrawerOpen,
     setKpiDrawerOpen,
     profiles,
-    days,
-    setDays,
+    range,
+    setRange,
     hasRealData,
     activeScope,
+    gscTotals,
     gscComparison,
     gscProvenance,
     scopeBreakdown,
@@ -114,7 +115,7 @@ export default function KpiDetailDrawer() {
         </div>
       }
     >
-      {!hasRealData || !gscComparison ? (
+      {!hasRealData || !gscTotals ? (
         <section className="kw-dsection kw-dsection--head" aria-label="Kein Datensatz">
           <p className="kr-meta kw-empty-block">
             Noch keine Datenquelle verbunden. Sobald SEESZN einen Search-Console-Export importiert
@@ -127,41 +128,45 @@ export default function KpiDetailDrawer() {
           <section className="kw-dsection kw-dsection--head" aria-label="Kernwerte">
             <div className="kw-dhead-grid">
               <div>
-                <span className="kr-eyebrow">Klicks · {days} Tage</span>
-                <span className="kw-dhead-value">{formatNumber(gscComparison.current.clicks)}</span>
+                <span className="kr-eyebrow">Klicks · {cockpitRangeLabel(range)}</span>
+                <span className="kw-dhead-value">{formatNumber(gscTotals.clicks)}</span>
                 <span className="kr-meta">
-                  {gscComparison.comparisonLabel}
-                  {gscComparison.clicksDeltaPct !== null && !gscComparison.lowBase && (
+                  {gscComparison ? (
                     <>
-                      {" "}
-                      <span
-                        className="kw-delta"
-                        data-dir={(gscComparison.clicksDeltaPct ?? 0) >= 0 ? "up" : "down"}
-                      >
-                        ({formatDelta(gscComparison.clicksDeltaPct)})
-                      </span>
+                      {gscComparison.comparisonLabel}
+                      {gscComparison.clicksDeltaPct !== null && !gscComparison.lowBase && (
+                        <>
+                          {" "}
+                          <span
+                            className="kw-delta"
+                            data-dir={(gscComparison.clicksDeltaPct ?? 0) >= 0 ? "up" : "down"}
+                          >
+                            ({formatDelta(gscComparison.clicksDeltaPct)})
+                          </span>
+                        </>
+                      )}
+                      {gscComparison.lowBase && " · Vorperiode zu klein für belastbare Prozentwerte"}
                     </>
+                  ) : (
+                    "Gesamter verfügbarer Zeitraum, ohne Vorperiodenvergleich"
                   )}
-                  {gscComparison.lowBase && " · Vorperiode zu klein für belastbare Prozentwerte"}
                 </span>
               </div>
               <div>
                 <span className="kr-eyebrow">Impressionen</span>
-                <span className="kw-dhead-mid">{formatNumber(gscComparison.current.impressions)}</span>
+                <span className="kw-dhead-mid">{formatNumber(gscTotals.impressions)}</span>
                 <span className="kr-meta">
-                  Vorperiode {formatNumber(gscComparison.previous.impressions)}
+                  {gscComparison
+                    ? `Vorperiode ${formatNumber(gscComparison.previous.impressions)}`
+                    : "Summe über den Gesamtzeitraum"}
                 </span>
               </div>
               <div>
                 <span className="kr-eyebrow">CTR · Ø Position</span>
                 <span className="kw-dhead-mid">
-                  {gscComparison.current.ctr !== null
-                    ? formatPercent(gscComparison.current.ctr * 100)
-                    : "–"}
+                  {gscTotals.ctr !== null ? formatPercent(gscTotals.ctr * 100) : "–"}
                   {" · "}
-                  {gscComparison.current.position !== null
-                    ? formatNumber(gscComparison.current.position, 1)
-                    : "–"}
+                  {gscTotals.position !== null ? formatNumber(gscTotals.position, 1) : "–"}
                 </span>
                 <span className="kr-meta">Position mit Impressionen gewichtet, aus Tageswerten</span>
               </div>
@@ -226,7 +231,6 @@ export default function KpiDetailDrawer() {
               </div>
             </div>
             <div className="kw-dhead-foot">
-              <DataStatus />
               <SourceProvenance
                 source="Google Search Console Export"
                 scope={activeScope?.label}
@@ -252,16 +256,16 @@ export default function KpiDetailDrawer() {
             <div className="kw-dsection-head">
               <h3 className="kw-dsection-title">Zeitverlauf</h3>
               <div className="kw-bar-group" role="group" aria-label="Zeitraum im Diagramm">
-                {([7, 28, 90] as const).map((r) => (
+                {COCKPIT_RANGES.map((r) => (
                   <button
-                    key={r}
+                    key={String(r)}
                     type="button"
                     className="kw-chip"
-                    data-active={days === r || undefined}
-                    aria-pressed={days === r}
-                    onClick={() => setDays(r)}
+                    data-active={range === r || undefined}
+                    aria-pressed={range === r}
+                    onClick={() => setRange(r)}
                   >
-                    {r} Tage
+                    {cockpitRangeLabel(r)}
                   </button>
                 ))}
               </div>
@@ -281,7 +285,7 @@ export default function KpiDetailDrawer() {
           {scopeBreakdown.length > 1 && (
             <section className="kw-dsection" aria-label="Scope-Vergleich">
               <div className="kw-dsection-head">
-                <h3 className="kw-dsection-title">Scopes im Vergleich · {days} Tage</h3>
+                <h3 className="kw-dsection-title">Scopes im Vergleich · {cockpitRangeLabel(range)}</h3>
               </div>
               <div className="kw-table-wrap">
                 <table className="kw-table">
@@ -297,28 +301,26 @@ export default function KpiDetailDrawer() {
                     </tr>
                   </thead>
                   <tbody>
-                    {scopeBreakdown.map(({ option, comparison }) => (
+                    {scopeBreakdown.map(({ option, totals, comparison }) => (
                       <tr key={option.key} className="kw-tr">
                         <td className="kw-td kw-td--name">{option.label}</td>
-                        <td className="kw-td kw-td--num">{formatNumber(comparison.current.clicks)}</td>
-                        <td className="kw-td kw-td--num">{formatNumber(comparison.previous.clicks)}</td>
+                        <td className="kw-td kw-td--num">{formatNumber(totals.clicks)}</td>
                         <td className="kw-td kw-td--num">
-                          {comparison.lowBase
-                            ? `${comparison.comparisonLabel}`
-                            : formatDelta(comparison.clicksDeltaPct)}
+                          {comparison ? formatNumber(comparison.previous.clicks) : "–"}
                         </td>
                         <td className="kw-td kw-td--num">
-                          {formatNumber(comparison.current.impressions)}
-                        </td>
-                        <td className="kw-td kw-td--num">
-                          {comparison.current.ctr !== null
-                            ? formatPercent(comparison.current.ctr * 100)
+                          {comparison
+                            ? comparison.lowBase
+                              ? comparison.comparisonLabel
+                              : formatDelta(comparison.clicksDeltaPct)
                             : "–"}
                         </td>
+                        <td className="kw-td kw-td--num">{formatNumber(totals.impressions)}</td>
                         <td className="kw-td kw-td--num">
-                          {comparison.current.position !== null
-                            ? formatNumber(comparison.current.position, 1)
-                            : "–"}
+                          {totals.ctr !== null ? formatPercent(totals.ctr * 100) : "–"}
+                        </td>
+                        <td className="kw-td kw-td--num">
+                          {totals.position !== null ? formatNumber(totals.position, 1) : "–"}
                         </td>
                       </tr>
                     ))}

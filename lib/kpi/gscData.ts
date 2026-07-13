@@ -198,3 +198,71 @@ export const DAILY_WINDOW_DAYS = 200;
 export function dailyWindowStart(todayIso: string): string {
   return addDaysIso(todayIso, -DAILY_WINDOW_DAYS);
 }
+
+/* ── Executive Cockpit: Zeiträume inkl. "Gesamter Zeitraum" ─────────────────── */
+
+/** 7/28/90 Tage oder der komplette verfügbare Exportzeitraum. */
+export type CockpitRange = RangeDays | "all";
+
+export const COCKPIT_RANGES: CockpitRange[] = [7, 28, 90, "all"];
+
+export function cockpitRangeLabel(range: CockpitRange): string {
+  return range === "all" ? "Gesamter Zeitraum" : `${range} Tage`;
+}
+
+export interface RangeComputation {
+  current: PeriodRange;
+  /** Null beim Gesamtzeitraum: es gibt keine Vorperiode gleicher Länge. */
+  previous: PeriodRange | null;
+  /** Kennwerte der aktuellen Periode, immer vorhanden. */
+  totals: PeriodTotals;
+  /** Vergleich zur Vorperiode; null beim Gesamtzeitraum. */
+  comparison: PeriodComparison | null;
+}
+
+/**
+ * Einzige Zeitraumrechnung des Cockpits: 7/28/90 Tage laufen über
+ * buildRanges + comparePeriods; "all" umfasst alle vorhandenen Tage ohne
+ * Vorperiodenvergleich (ehrlich statt einer erfundenen Vergleichsbasis).
+ */
+export function computeRange(rows: GscScopeDailyRow[], range: CockpitRange): RangeComputation | null {
+  if (rows.length === 0) return null;
+  if (range === "all") {
+    const current: PeriodRange = { from: rows[0].date, to: rows[rows.length - 1].date };
+    return { current, previous: null, totals: periodTotals(rows, current), comparison: null };
+  }
+  const ranges = rangesForBatch(rows, range);
+  if (!ranges) return null;
+  const comparison = comparePeriods(rows, ranges.current, ranges.previous);
+  return {
+    current: ranges.current,
+    previous: ranges.previous,
+    totals: comparison.current,
+    comparison,
+  };
+}
+
+/* ── Metrik-Serien für den Performance Canvas ───────────────────────────────── */
+
+export type CanvasMetric = "clicks" | "impressions" | "ctr" | "position";
+
+/**
+ * Tagesserie einer Metrik. Tage ohne Datenzeile bleiben null (keine
+ * erfundenen Nullwerte); CTR wird als Prozent geliefert, Position unverändert
+ * (niedriger ist besser – die Interpretation übernimmt die Oberfläche).
+ */
+export function metricDailySeries(
+  rows: GscScopeDailyRow[],
+  range: PeriodRange,
+  metric: CanvasMetric,
+): SeriesPoint[] {
+  const byDate = new Map(rows.map((r) => [r.date, r]));
+  return listDays(range).map((date) => {
+    const row = byDate.get(date);
+    if (!row) return { date, value: null };
+    if (metric === "clicks") return { date, value: Number(row.clicks) };
+    if (metric === "impressions") return { date, value: Number(row.impressions) };
+    if (metric === "ctr") return { date, value: Number(row.ctr) * 100 };
+    return { date, value: Number(row.position) };
+  });
+}

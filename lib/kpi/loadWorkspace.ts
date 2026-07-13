@@ -21,7 +21,6 @@ import {
   type Role,
   type WorkspaceInit,
 } from "./types";
-import { dailyWindowStart } from "./gscData";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function loadWorkspace(
@@ -38,7 +37,6 @@ export async function loadWorkspace(
 
   const organizationId = membership.data.organization_id as string;
   const role = membership.data.role as Role;
-  const dailySince = dailyWindowStart(new Date().toISOString().slice(0, 10));
 
   // Eine per Admin-API eingeladene Membership wird beim ersten erfolgreichen
   // Login aktiv. Läuft über den Admin-Client, weil memberships-Updates per
@@ -115,17 +113,18 @@ export async function loadWorkspace(
           )
           .in("id", activeBatchIds)
       : Promise.resolve({ data: [], error: null }),
-    // Nur das Anzeigefenster (90 Tage + Vorperiode + Puffer); der volle
-    // Exportzeitraum bleibt in der Datenbank abrufbar.
-    activeBatchIds.length > 0
-      ? supabase
+    // Volle Historie je Batch, parallel und einzeln abgefragt: der
+    // Gesamtzeitraum-Filter des Cockpits braucht alle Tage, und pro Batch
+    // bleiben die Zeilen (~487) sicher unter dem PostgREST-Zeilenlimit.
+    Promise.all(
+      activeBatchIds.map((batchId) =>
+        supabase
           .from("gsc_scope_daily_metrics")
           .select("import_batch_id, date, clicks, impressions, ctr, position")
-          .in("import_batch_id", activeBatchIds)
-          .gte("date", dailySince)
-          .order("date", { ascending: true })
-          .limit(5000)
-      : Promise.resolve({ data: [], error: null }),
+          .eq("import_batch_id", batchId)
+          .order("date", { ascending: true }),
+      ),
+    ),
   ]);
 
   const me = (profiles.data ?? []).find((p) => p.id === user.id);
@@ -170,7 +169,7 @@ export async function loadWorkspace(
     gsc: {
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
       batches: (batches.data as GscImportBatchRow[]) ?? [],
-      daily: (daily.data as GscScopeDailyRow[]) ?? [],
+      daily: daily.flatMap((result) => (result.data as GscScopeDailyRow[]) ?? []),
     },
   };
 }

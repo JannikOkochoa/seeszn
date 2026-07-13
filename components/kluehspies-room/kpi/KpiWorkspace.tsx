@@ -1,27 +1,56 @@
 "use client";
 
-// ─── KPI-Workspace: Einstieg ──────────────────────────────────────────────────
-// Komposition des KPI-Slice innerhalb der Sektion „KPI Monitoring“:
-// Steuerleiste, primärer KPI, Maßnahmenliste und die drei Drawer. Alle
-// kw-Styles leben hier zentral; die Sprache bleibt die des Raums: ein Serif,
-// ein Sans, Hairlines, warmes Papier, Gelb nur als Marker.
+// ─── KPI-Workspace: Executive Cockpit ─────────────────────────────────────────
+// Komposition des KPI-Slice innerhalb der Sektion „KPI Monitoring“ als ruhiges
+// Executive Cockpit: Intro, Data-Freshness-Zeile, vier zentrale KPIs, ein
+// großer Performance Canvas, Aufmerksamkeit + nächste Handlung, darunter die
+// Maßnahmen. Alle kw-Styles leben hier zentral; die Sprache bleibt die des
+// Raums: ein Serif, ein Sans, Hairlines, warmes Papier, Gelb nur als Marker.
 
 import type { WorkspaceInit } from "@/lib/kpi/types";
-import { WorkspaceProvider } from "./workspace";
-import KpiControlBar from "./KpiControlBar";
-import PrimaryKpiPanel from "./PrimaryKpiPanel";
+import { useWorkspace, WorkspaceProvider } from "./workspace";
+import ExecutiveIntro from "./executive/ExecutiveIntro";
+import DataFreshnessBar from "./executive/DataFreshnessBar";
+import ExecutiveKpiGrid from "./executive/ExecutiveKpiGrid";
+import PerformanceCanvas from "./executive/PerformanceCanvas";
+import AttentionPanel from "./executive/AttentionPanel";
+import NextActionPanel from "./executive/NextActionPanel";
+import DataSourceDrawer from "./executive/DataSourceDrawer";
+import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
 import KpiDetailDrawer from "./KpiDetailDrawer";
 import TaskDetailDrawer from "./TaskDetailDrawer";
 import TaskCreateDrawer from "./TaskCreateDrawer";
 import UndoToast from "./UndoToast";
 
+function ExecutiveCockpit() {
+  const { hasRealData } = useWorkspace();
+
+  return (
+    <>
+      <ExecutiveIntro />
+      <DataFreshnessBar />
+      {hasRealData ? (
+        <>
+          <ExecutiveKpiGrid />
+          <PerformanceCanvas />
+          <div className="kw-ex-row">
+            <AttentionPanel />
+            <NextActionPanel />
+          </div>
+        </>
+      ) : (
+        <ExecutiveEmptyState />
+      )}
+    </>
+  );
+}
+
 export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
   return (
     <WorkspaceProvider init={init}>
       <div className="kw">
-        <KpiControlBar />
-        <PrimaryKpiPanel />
+        <ExecutiveCockpit />
         <div className="kw-tasks-block">
           <p className="kr-eyebrow kw-block-label">Maßnahmen zum KPI</p>
           <TaskList />
@@ -29,6 +58,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       </div>
 
       <KpiDetailDrawer />
+      <DataSourceDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
       <UndoToast />
@@ -159,7 +189,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           border-left: 1px solid var(--line-strong);
           display: flex; flex-direction: column;
           font-family: var(--sans); color: var(--text-body);
-          animation: kw-slide 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: kw-slide 0.26s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .kw-drawer[data-wide] { width: min(980px, 96vw); }
         .kw-drawer-root[data-layer="2"] .kw-drawer { width: min(640px, 92vw); }
@@ -420,6 +450,111 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-task-desc { max-width: 640px; margin-bottom: 14px; white-space: pre-wrap; }
         .kw-task-created { margin-top: 16px; }
 
+        /* ── Executive Cockpit ──────────────────────────────────────────────
+           Typografie in fünf Ebenen: Seitenaussage (Serif groß), KPI-Zahl
+           (Serif sehr groß), Überschrift (Serif 19px), Fließtext (Sans 14-15px),
+           Metadaten (Sans 12-13px). Papier, Hairlines, Gelb nur als Marker. */
+
+        /* A · Intro */
+        .kw-ex-intro { margin-bottom: 18px; }
+        .kw-ex-greeting {
+          font-family: var(--serif); font-weight: 400;
+          font-size: clamp(28px, 3.4vw, 40px); line-height: 1.15;
+          color: var(--ink-strong); margin: 0 0 10px;
+        }
+        .kw-ex-summary {
+          font-family: var(--serif); font-size: clamp(17px, 1.9vw, 21px);
+          line-height: 1.5; color: var(--text-body); margin: 0; max-width: 640px;
+        }
+
+        /* B · Data Freshness Bar */
+        .kw-ex-freshness {
+          display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px;
+          border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+          padding: 10px 0 11px; margin-bottom: clamp(28px, 4vw, 48px);
+          font-size: 12px; color: var(--text-muted); letter-spacing: 0.01em;
+        }
+        .kw-ex-freshness-text { flex: 1; min-width: 260px; line-height: 1.7; }
+        .kw-ex-dot { color: var(--text-faint); }
+        .kw-ex-freshness-link { font-size: 12px; white-space: nowrap; }
+
+        /* C · Vier zentrale KPIs */
+        .kw-ex-kpis {
+          display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+          border-top: 1px solid var(--line);
+          margin-bottom: clamp(36px, 5vw, 64px);
+        }
+        .kw-ex-kpis > div + div .kw-ex-kpi { border-left: 1px solid var(--line); padding-left: 26px; }
+        .kw-ex-kpi { display: flex; flex-direction: column; padding: 22px 26px 24px 0; }
+        .kw-ex-kpi > div { display: flex; flex-direction: column; }
+        .kw-ex-kpi-value {
+          font-family: var(--serif); font-size: clamp(38px, 4.4vw, 56px);
+          line-height: 1.02; color: var(--ink-strong); letter-spacing: -0.01em;
+          font-variant-numeric: tabular-nums;
+        }
+        .kw-ex-kpi-label { font-size: 14px; color: var(--text-body); margin-top: 8px; }
+        .kw-ex-kpi-delta { font-size: 13px; margin-top: 12px; color: var(--text-secondary); }
+        .kw-ex-kpi-dir { color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+        .kw-ex-kpi[data-assess="worse"] .kw-ex-kpi-dir { color: var(--clay); }
+        .kw-ex-kpi-note { color: var(--text-muted); }
+        .kw-ex-kpi-source {
+          margin-top: 14px; font-size: 11px; letter-spacing: 0.1em;
+          text-transform: uppercase; color: var(--text-faint);
+        }
+
+        /* D · Performance Canvas */
+        .kw-ex-canvas { margin-bottom: clamp(36px, 5vw, 60px); }
+        .kw-ex-canvas-head {
+          display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+          gap: 14px 28px; border-top: 1px solid var(--line); padding-top: 16px; margin-bottom: 20px;
+        }
+        .kw-ex-canvas-title {
+          font-family: var(--serif); font-weight: 400; font-size: 19px;
+          line-height: 1.3; color: var(--ink-strong); margin: 0;
+        }
+        .kw-ex-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+        .kw-ex-chart svg:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 4px; }
+        .kw-ex-tip { top: 12px; }
+        .kw-ex-tip-prev span:last-child { color: var(--text-muted); }
+
+        /* E · Aufmerksamkeit + nächste Handlung */
+        .kw-ex-row {
+          display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+          gap: clamp(28px, 4vw, 64px); align-items: start;
+        }
+        .kw-ex-panel-label { border-top: 1px solid var(--line); padding-top: 16px; margin-bottom: 16px; }
+        .kw-ex-attention-list { list-style: none; margin: 0; padding: 0; }
+        .kw-ex-attention-item {
+          display: flex; flex-direction: column; gap: 5px;
+          border-top: 1px solid var(--line-soft); padding: 13px 0 15px;
+        }
+        .kw-ex-attention-item:first-child { border-top: none; padding-top: 0; }
+        .kw-ex-attention-item:last-child { border-bottom: 1px solid var(--line-soft); margin-bottom: 12px; }
+        .kw-ex-attention-obs { font-size: 15px; line-height: 1.5; color: var(--ink-strong); }
+        .kw-ex-attention-int { font-style: italic; }
+        .kw-ex-action-buttons { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+
+        /* Datenquellen-Drawer */
+        .kw-ex-source-list { margin: 0; display: flex; flex-direction: column; }
+        .kw-ex-source-list > div {
+          display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 6px 24px;
+          border-top: 1px solid var(--line-soft); padding: 12px 0;
+        }
+        .kw-ex-source-list > div:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-ex-source-list dd { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-strong); }
+        .kw-ex-note-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; }
+        .kw-ex-status-list { list-style: none; margin: 0; padding: 0; }
+        .kw-ex-status-row {
+          display: flex; justify-content: space-between; align-items: baseline; gap: 20px;
+          border-top: 1px solid var(--line-soft); padding: 11px 0;
+        }
+        .kw-ex-status-row:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-ex-status-label { font-size: 14px; color: var(--ink-strong); }
+
+        /* Empty State */
+        .kw-ex-empty { display: flex; flex-direction: column; gap: 10px; }
+        .kw-ex-empty-lead { font-family: var(--serif); font-size: 21px; color: var(--ink-strong); margin: 0; }
+
         /* ── Quellenkennzeichnung & Dimensionstabellen ──────────────────── */
         .kw-provenance { margin: 0; font-size: 12px; line-height: 1.6; letter-spacing: 0.01em; }
         .kw-dim-period {
@@ -535,12 +670,26 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
 
         /* ── Responsiv ──────────────────────────────────────────────────── */
         @media (max-width: 1100px) {
+          /* Tablet: zwei KPI-Spalten, Chart volle Breite, Panels untereinander. */
+          .kw-ex-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .kw-ex-kpis > div:nth-child(odd) .kw-ex-kpi { border-left: none; padding-left: 0; }
+          .kw-ex-kpis > div:nth-child(n + 3) .kw-ex-kpi { border-top: 1px solid var(--line); }
+          .kw-ex-row { grid-template-columns: 1fr; }
           .kw-primary-grid { grid-template-columns: 1fr; }
           .kw-dhead-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .kw-props { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 720px) {
+          /* Mobil: KPIs in zwei schmalen Spalten, Drawer als Full-Screen Sheet,
+             Chart horizontal scrollbar statt verkleinerter Desktop-Ansicht. */
           .kw-drawer, .kw-drawer[data-wide], .kw-drawer-root[data-layer="2"] .kw-drawer { width: 100vw; border-left: none; }
+          .kw-ex-kpi-value { font-size: 34px; }
+          .kw-ex-kpi { padding-right: 14px; }
+          .kw-ex-kpis > div + div .kw-ex-kpi { padding-left: 14px; }
+          .kw-ex-freshness { gap: 6px 16px; }
+          .kw-ex-chart .kw-chart-frame { overflow-x: auto; }
+          .kw-ex-chart .kw-chart-frame svg { min-width: 640px; }
+          .kw-ex-controls { gap: 10px 18px; }
           .kw-primary-meta { grid-template-columns: 1fr; }
           .kw-dhead-grid { grid-template-columns: 1fr; }
           .kw-props { grid-template-columns: 1fr; }

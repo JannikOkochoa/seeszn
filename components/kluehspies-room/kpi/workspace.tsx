@@ -24,20 +24,20 @@ import {
   addDaysIso,
   targetForDate,
   targetSeries,
-  type RangeDays,
   type SeriesPoint,
 } from "@/lib/kpi/aggregate";
 import {
   buildScopeOptions,
   clicksSeries,
-  comparePeriods,
+  computeRange,
   dailyForBatch,
   dataAsOf,
   defaultScopeKey,
   provenanceFor,
-  rangesForBatch,
+  type CockpitRange,
   type DatasetProvenance,
   type PeriodComparison,
+  type PeriodTotals,
   type ScopeOption,
 } from "@/lib/kpi/gscData";
 import type {
@@ -47,6 +47,7 @@ import type {
   AuditEventRow,
   CommentRow,
   GscDimensionSnapshotRow,
+  GscScopeDailyRow,
   InsightContext,
   LevelDe,
   TargetRow,
@@ -117,8 +118,8 @@ interface WorkspaceContextValue {
   activityByTask: Map<string, AuditEventRow[]>;
   realtime: RealtimeState;
   // Filter
-  days: RangeDays;
-  setDays: (d: RangeDays) => void;
+  range: CockpitRange;
+  setRange: (r: CockpitRange) => void;
   /** Scope des primären KPI: alle Städtereisen oder eine Produktseite. */
   scopeKey: string | null;
   setScopeKey: (key: string) => void;
@@ -126,10 +127,24 @@ interface WorkspaceContextValue {
   // Echte GSC-Daten (einzige KPI-Quelle)
   hasRealData: boolean;
   activeScope: ScopeOption | null;
+  /** Tageszeilen des aktiven Scopes (volle Historie) für den Canvas. */
+  scopeDailyRows: GscScopeDailyRow[];
+  /** Kennwerte der aktuellen Periode; immer vorhanden, wenn Daten da sind. */
+  gscTotals: PeriodTotals | null;
+  /** Vorperiodenvergleich; null beim Gesamtzeitraum. */
   gscComparison: PeriodComparison | null;
   gscProvenance: DatasetProvenance | null;
+  /**
+   * Stabile Basis des Executive Intro: 28-Tage-Vergleich des Standard-Scopes
+   * (alle Städtereisen), unabhängig von den gewählten Filtern.
+   */
+  executiveBase: PeriodComparison | null;
   /** Vergleich aller Scopes (Städtereisen gesamt, Berlin, Hamburg, München). */
-  scopeBreakdown: Array<{ option: ScopeOption; comparison: PeriodComparison }>;
+  scopeBreakdown: Array<{
+    option: ScopeOption;
+    totals: PeriodTotals;
+    comparison: PeriodComparison | null;
+  }>;
   /** Aggregierte Dimensions-Snapshots je Batch, lazy geladen. */
   dimensionsByBatch: Map<string, GscDimensionSnapshotRow[]>;
   loadDimensions: (batchId: string) => Promise<void>;
@@ -156,6 +171,8 @@ interface WorkspaceContextValue {
   // Drawer
   kpiDrawerOpen: boolean;
   setKpiDrawerOpen: (open: boolean) => void;
+  dataSourceDrawerOpen: boolean;
+  setDataSourceDrawerOpen: (open: boolean) => void;
   taskDrawerId: string | null;
   setTaskDrawerId: (id: string | null) => void;
   createDraft: TaskDraft | null;
@@ -231,7 +248,8 @@ export function WorkspaceProvider({
     new Map(),
   );
 
-  const [days, setDays] = useState<RangeDays>(28);
+  // Standard: 28 Tage, wie im Executive Cockpit vorgesehen.
+  const [range, setRange] = useState<CockpitRange>(28);
 
   // Scope-Auswahl über den aktiven GSC-Datensätzen; Standard: alle Städtereisen.
   const scopeOptions = useMemo(
@@ -239,6 +257,7 @@ export function WorkspaceProvider({
     [init.gsc.activeDatasets, init.gsc.batches],
   );
   const [scopeKey, setScopeKey] = useState<string | null>(() => defaultScopeKey(scopeOptions));
+  const [dataSourceDrawerOpen, setDataSourceDrawerOpen] = useState(false);
 
   const [kpiDrawerOpen, setKpiDrawerOpen] = useState(false);
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
@@ -811,58 +830,71 @@ export function WorkspaceProvider({
   const derived = useMemo(() => {
     const activeScope = scopeOptions.find((o) => o.key === scopeKey) ?? null;
     const rows = activeScope ? dailyForBatch(init.gsc.daily, activeScope.batchId) : [];
-    const ranges = rangesForBatch(rows, days);
+    const computed = computeRange(rows, range);
     const anchor =
       dataAsOf(rows) ?? addDaysIso(new Date().toISOString().slice(0, 10), -1);
+
+    // Stabile Intro-Basis: 28 Tage auf dem Standard-Scope (path_prefix).
+    const baseOption = scopeOptions.find((o) => o.scopeType === "path_prefix") ?? null;
+    const executiveBase = baseOption
+      ? computeRange(dailyForBatch(init.gsc.daily, baseOption.batchId), 28)?.comparison ?? null
+      : null;
 
     // Vergleich über alle Scopes, jeweils am eigenen Datenstand verankert.
     const scopeBreakdown = scopeOptions.flatMap((option) => {
       const optionRows = dailyForBatch(init.gsc.daily, option.batchId);
-      const optionRanges = rangesForBatch(optionRows, days);
-      if (!optionRanges) return [];
+      const optionComputed = computeRange(optionRows, range);
+      if (!optionComputed) return [];
       return [
         {
           option,
-          comparison: comparePeriods(optionRows, optionRanges.current, optionRanges.previous),
+          totals: optionComputed.totals,
+          comparison: optionComputed.comparison,
         },
       ];
     });
 
-    if (!activeScope || !ranges) {
+    if (!activeScope || !computed) {
       // Kein aktiver Datensatz: Empty State, niemals Demo-Zahlen.
       const empty = { from: anchor, to: anchor };
       return {
         hasRealData: false,
         activeScope: null,
+        scopeDailyRows: [] as GscScopeDailyRow[],
         anchor,
         currentRange: empty,
         previousRange: empty,
         series: [] as SeriesPoint[],
         previousSeries: [] as SeriesPoint[],
         targetLine: [] as SeriesPoint[],
+        gscTotals: null,
         gscComparison: null,
         gscProvenance: null,
+        executiveBase,
         scopeBreakdown,
         activeTarget: targetForDate(targets, anchor),
       };
     }
 
-    const { current, previous } = ranges;
+    const { current, previous } = computed;
     return {
       hasRealData: true,
       activeScope,
+      scopeDailyRows: rows,
       anchor,
       currentRange: current,
-      previousRange: previous,
+      previousRange: previous ?? current,
       series: clicksSeries(rows, current),
-      previousSeries: clicksSeries(rows, previous),
+      previousSeries: previous ? clicksSeries(rows, previous) : ([] as SeriesPoint[]),
       targetLine: targetSeries(targets, current),
-      gscComparison: comparePeriods(rows, current, previous),
+      gscTotals: computed.totals,
+      gscComparison: computed.comparison,
       gscProvenance: provenanceFor(activeScope, init.gsc.batches, rows),
+      executiveBase,
       scopeBreakdown,
       activeTarget: targetForDate(targets, anchor),
     };
-  }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, days, targets]);
+  }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, range, targets]);
 
   const kpiTasks = useMemo(() => {
     if (!kpi) return [];
@@ -916,8 +948,8 @@ export function WorkspaceProvider({
     commentsByTask,
     activityByTask,
     realtime,
-    days,
-    setDays,
+    range,
+    setRange,
     scopeKey,
     setScopeKey,
     scopeOptions,
@@ -935,6 +967,8 @@ export function WorkspaceProvider({
     canDeleteTask,
     kpiDrawerOpen,
     setKpiDrawerOpen,
+    dataSourceDrawerOpen,
+    setDataSourceDrawerOpen,
     taskDrawerId,
     setTaskDrawerId,
     createDraft,
