@@ -21,6 +21,7 @@ import ContentAuthority from "./executive/ContentAuthority";
 import WeitereKpis from "./executive/WeitereKpis";
 import KpiCreateDrawer from "./KpiCreateDrawer";
 import MemberAdminDrawer from "./MemberAdminDrawer";
+import PasswordChangeDrawer from "./PasswordChangeDrawer";
 import DataSourceDrawer from "./executive/DataSourceDrawer";
 import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
@@ -38,8 +39,8 @@ function KpiToolbar() {
     setMemberAdminOpen,
   } = useWorkspace();
 
-  if (!canCreateKpi && !isAdmin) return null;
-
+  // „Passwort ändern" ist für alle eingeloggten Nutzer sichtbar; die übrigen
+  // Aktionen bleiben rollenabhängig. Die Leiste rendert daher immer.
   return (
     <div className="kw-ex-toolbar kw-member-toolbar">
       {canCreateKpi && (
@@ -60,6 +61,7 @@ function KpiToolbar() {
           Mitglieder verwalten
         </button>
       )}
+      <PasswordChangeDrawer />
     </div>
   );
 }
