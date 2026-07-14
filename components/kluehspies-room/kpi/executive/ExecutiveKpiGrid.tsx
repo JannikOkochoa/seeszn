@@ -27,7 +27,7 @@ export default function ExecutiveKpiGrid() {
     profiles,
     activeScope,
     canEditTarget,
-    setGoalDrawerOpen,
+    openGoalDrawer,
   } = useWorkspace();
 
   if (!hasRealData || !gscTotals) return null;
@@ -75,7 +75,7 @@ export default function ExecutiveKpiGrid() {
             model={model}
             goal={model.key === "clicks" ? clicksGoal : undefined}
             canEditGoal={model.key === "clicks" && canEditTarget && !!isAggregate}
-            onEditGoal={() => setGoalDrawerOpen(true)}
+            onEditGoal={() => kpi && openGoalDrawer(kpi.id)}
           />
         </div>
       ))}

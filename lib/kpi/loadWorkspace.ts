@@ -63,7 +63,7 @@ export async function loadWorkspace(
   ] = await Promise.all([
       supabase
         .from("kpi_definitions")
-        .select("id, organization_id, name, metric_key, owner_id, data_source_id")
+        .select("id, organization_id, name, metric_key, owner_id, data_source_id, kind, created_by, unit, direction, description, archived_at")
         .eq("organization_id", organizationId)
         .eq("metric_key", METRIC_KEY)
         .maybeSingle(),
@@ -114,7 +114,7 @@ export async function loadWorkspace(
       // Bootstrap-Script (scripts/bootstrap-review-kpis.mjs).
       supabase
         .from("kpi_definitions")
-        .select("id, organization_id, name, metric_key, owner_id, data_source_id")
+        .select("id, organization_id, name, metric_key, owner_id, data_source_id, kind, created_by, unit, direction, description, archived_at")
         .eq("organization_id", organizationId)
         .neq("metric_key", METRIC_KEY),
       // Append-only Check-ins der manuellen KPIs. Fehlt die Tabelle noch

@@ -6,7 +6,7 @@
 // nie in Komponenten. Nur Typ-Importe, damit die Datei ohne Laufzeitabhängig-
 // keiten (und ohne Pfad-Alias) direkt in einem Node-Harness geprüft werden kann.
 
-import type { GoalVersionRow } from "./types";
+import type { GoalVersionRow, KpiDefinitionRow } from "./types";
 
 const roundPct = (pct: number) => Math.round(pct);
 
@@ -39,7 +39,11 @@ export interface KpiSpec {
     | "reviews"
     | "views"
     | "interactions"
-    | "posts";
+    | "posts"
+    | "count"
+    | "days"
+    | "hours"
+    | "euro";
   unitLabel: string;
   /** Substantiv für „X … fehlen" bzw. „X … über dem Ziel". */
   remainingNoun: string;
@@ -423,3 +427,81 @@ export function buildGoalDisplay(args: {
 
   return empty;
 }
+
+/* ── Custom (nutzererstellte) KPIs ───────────────────────────────────────────── */
+
+/** Kontrollierte Einheiten für eigene KPIs (Auswahl im Erstellungsflow). */
+export const CUSTOM_UNITS: Array<{ value: string; label: string }> = [
+  { value: "count", label: "Anzahl" },
+  { value: "percent", label: "Prozent" },
+  { value: "stars", label: "Sterne" },
+  { value: "days", label: "Tage" },
+  { value: "hours", label: "Stunden" },
+  { value: "euro", label: "Euro" },
+];
+
+/** Kontrollierte Zeiträume für eigene KPIs (Auswahl im Erstellungsflow). */
+export const CUSTOM_PERIODS: AllowedPeriod[] = [
+  { periodType: "current_state", periodDays: null, label: "Aktueller Stand" },
+  { periodType: "calendar_week", periodDays: null, label: "Pro Kalenderwoche" },
+  { periodType: "calendar_month", periodDays: null, label: "Pro Kalendermonat" },
+  { periodType: "rolling_days", periodDays: 7, label: "Rollierende 7 Tage" },
+  { periodType: "rolling_days", periodDays: 28, label: "Rollierende 28 Tage" },
+  { periodType: "rolling_days", periodDays: 90, label: "Rollierende 90 Tage" },
+];
+
+interface UnitMeta {
+  unit: KpiSpec["unit"];
+  unitLabel: string;
+  remainingNoun: string;
+  formatValue: (n: number) => string;
+}
+
+const CUSTOM_UNIT_META: Record<string, UnitMeta> = {
+  count: { unit: "count", unitLabel: "", remainingNoun: "", formatValue: (n) => de(n) },
+  percent: { unit: "percent", unitLabel: "%", remainingNoun: "Prozentpunkte", formatValue: (n) => `${de(n, 2)}` },
+  stars: { unit: "stars", unitLabel: "★", remainingNoun: "Sterne", formatValue: (n) => de(n, 1) },
+  days: { unit: "days", unitLabel: "Tage", remainingNoun: "Tage", formatValue: (n) => de(n) },
+  hours: { unit: "hours", unitLabel: "Std.", remainingNoun: "Stunden", formatValue: (n) => de(n, 1) },
+  euro: { unit: "euro", unitLabel: "€", remainingNoun: "Euro", formatValue: (n) => de(n, 2) },
+};
+
+export function customUnitLabel(unit: string | null): string {
+  return CUSTOM_UNITS.find((u) => u.value === unit)?.label ?? unit ?? "";
+}
+
+/**
+ * Fachliche Spezifikation zu einer KPI-Definition: System-KPIs über KPI_SPECS,
+ * eigene KPIs aus den Zeilenfeldern (Einheit/Richtung). So teilen sich beide
+ * Arten dieselbe Ziel-/Statuslogik, ohne zweite Wahrheit.
+ */
+export function resolveKpiSpec(def: {
+  kind: string;
+  metric_key: string;
+  name: string;
+  unit: string | null;
+  direction: MetricDirection | null;
+}): KpiSpec | null {
+  if (def.kind !== "custom_manual") return specForMetricKey(def.metric_key);
+  if (!def.unit || !def.direction) return null;
+  const meta = CUSTOM_UNIT_META[def.unit] ?? CUSTOM_UNIT_META.count;
+  return {
+    metricKey: def.metric_key,
+    label: def.name,
+    unit: meta.unit,
+    unitLabel: meta.unitLabel,
+    remainingNoun: meta.remainingNoun || def.name,
+    direction: def.direction,
+    comparator: comparatorForDirection(def.direction),
+    allowedPeriods: CUSTOM_PERIODS,
+    formatValue: meta.formatValue,
+  };
+}
+
+/** Ist ein KPI nutzererstellt (manuell)? */
+export function isCustomKpi(def: { kind: string }): boolean {
+  return def.kind === "custom_manual";
+}
+
+// Referenziert, damit der KpiDefinitionRow-Import typseitig genutzt wird.
+export type KpiDefinitionForSpec = Pick<KpiDefinitionRow, "kind" | "metric_key" | "name" | "unit" | "direction">;

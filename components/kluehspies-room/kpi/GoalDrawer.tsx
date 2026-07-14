@@ -16,7 +16,7 @@ import {
   directionExplanation,
   formatGoalPeriod,
   resolveActiveGoal,
-  specForMetricKey,
+  resolveKpiSpec,
   type AllowedPeriod,
 } from "@/lib/kpi/goals";
 import { displayName, formatDate } from "@/lib/kpi/format";
@@ -36,14 +36,20 @@ export default function GoalDrawer() {
 }
 
 function GoalForm() {
-  const { kpi, goalVersions, setGoalDrawerOpen, profiles, setGoal, canEditTarget } = useWorkspace();
+  const { kpi, manualKpis, goalDrawerKpiId, viewer, goalVersions, setGoalDrawerOpen, profiles, setGoal, canEditTarget } =
+    useWorkspace();
 
-  const spec = kpi ? specForMetricKey(kpi.metric_key) : null;
+  // Ziel-Drawer adressiert entweder den primären KPI (goalDrawerKpiId null) oder
+  // einen ausgewählten (eigenen/manuellen) KPI.
+  const targetDef = goalDrawerKpiId
+    ? [kpi, ...manualKpis].find((d) => d && d.id === goalDrawerKpiId) ?? null
+    : kpi;
+  const spec = targetDef ? resolveKpiSpec(targetDef) : null;
   const today = new Date().toISOString().slice(0, 10);
   const allowed = spec?.allowedPeriods ?? [];
 
   // Aktives Ziel (irgendeine Periode) als Vorlage für das Formular.
-  const active = kpi ? resolveActiveGoal(goalVersions, { kpiDefinitionId: kpi.id }) : null;
+  const active = targetDef ? resolveActiveGoal(goalVersions, { kpiDefinitionId: targetDef.id }) : null;
 
   const [value, setValue] = useState(active ? String(active.target_value) : "");
   const [periodSel, setPeriodSel] = useState(
@@ -60,20 +66,24 @@ function GoalForm() {
   // Zielverlauf: alle Versionen dieser KPI, neueste zuerst.
   const history = useMemo(
     () =>
-      kpi
+      targetDef
         ? goalVersions
-            .filter((g) => g.kpi_definition_id === kpi.id)
+            .filter((g) => g.kpi_definition_id === targetDef.id)
             .sort((a, b) => b.created_at.localeCompare(a.created_at))
         : [],
-    [goalVersions, kpi],
+    [goalVersions, targetDef],
   );
 
-  if (!kpi || !spec || !canEditTarget) return null;
+  // Bearbeiten darf: Admin, Ersteller oder Owner des KPI (RLS erzwingt es serverseitig).
+  const canEdit =
+    !!targetDef &&
+    (canEditTarget || targetDef.created_by === viewer.id || targetDef.owner_id === viewer.id);
+  if (!targetDef || !spec || !canEdit) return null;
 
   const selectedPeriod = allowed.find((p) => periodKey(p) === periodSel) ?? allowed[0];
 
   async function submit() {
-    if (!kpi || !spec || !selectedPeriod) return;
+    if (!targetDef || !spec || !selectedPeriod) return;
     const num = Number(value.replace(",", "."));
     if (!Number.isFinite(num) || num <= 0) {
       setError("Bitte einen Zielwert größer 0 angeben.");
@@ -86,7 +96,7 @@ function GoalForm() {
     setSaving(true);
     setError(null);
     const result = await setGoal({
-      kpiDefinitionId: kpi.id,
+      kpiDefinitionId: targetDef.id,
       targetValue: num,
       periodType: selectedPeriod.periodType,
       periodDays: selectedPeriod.periodDays,

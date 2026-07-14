@@ -38,6 +38,8 @@ export interface MemberRow {
   status: MemberStatus;
 }
 
+export type KpiKind = "system" | "custom_manual";
+
 export interface KpiDefinitionRow {
   id: string;
   organization_id: string;
@@ -45,6 +47,15 @@ export interface KpiDefinitionRow {
   metric_key: string;
   owner_id: string | null;
   data_source_id: string | null;
+  /** "system" = feste fachliche Definition; "custom_manual" = nutzererstellt. */
+  kind: KpiKind;
+  /** Ersteller (nur bei custom_manual gesetzt). */
+  created_by: string | null;
+  /** Einheit/Richtung/Beschreibung nur bei custom_manual auf der Zeile; System-KPIs über KPI_SPECS. */
+  unit: string | null;
+  direction: "higher_is_better" | "lower_is_better" | null;
+  description: string | null;
+  archived_at: string | null;
 }
 
 export interface DataSourceRow {

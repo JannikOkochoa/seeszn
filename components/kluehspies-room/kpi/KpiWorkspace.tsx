@@ -18,6 +18,8 @@ import NextActionPanel from "./executive/NextActionPanel";
 import ReviewQuickWin from "./executive/ReviewQuickWin";
 import GooglePresence from "./executive/GooglePresence";
 import ContentAuthority from "./executive/ContentAuthority";
+import WeitereKpis from "./executive/WeitereKpis";
+import KpiCreateDrawer from "./KpiCreateDrawer";
 import DataSourceDrawer from "./executive/DataSourceDrawer";
 import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
@@ -27,6 +29,18 @@ import TaskDetailDrawer from "./TaskDetailDrawer";
 import TaskCreateDrawer from "./TaskCreateDrawer";
 import UndoToast from "./UndoToast";
 
+function KpiToolbar() {
+  const { canCreateKpi, setKpiCreateOpen } = useWorkspace();
+  if (!canCreateKpi) return null;
+  return (
+    <div className="kw-ex-toolbar">
+      <button type="button" className="kw-link kw-ex-add-kpi" onClick={() => setKpiCreateOpen(true)}>
+        + KPI hinzufügen
+      </button>
+    </div>
+  );
+}
+
 function ExecutiveCockpit() {
   const { hasRealData } = useWorkspace();
 
@@ -34,6 +48,7 @@ function ExecutiveCockpit() {
     <>
       <ExecutiveIntro />
       <DataFreshnessBar />
+      <KpiToolbar />
       {hasRealData ? (
         <>
           <ExecutiveKpiGrid />
@@ -45,6 +60,7 @@ function ExecutiveCockpit() {
           <ReviewQuickWin />
           <GooglePresence />
           <ContentAuthority />
+          <WeitereKpis />
         </>
       ) : (
         <ExecutiveEmptyState />
@@ -67,6 +83,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <KpiDetailDrawer />
       <DataSourceDrawer />
       <GoalDrawer />
+      <KpiCreateDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
       <UndoToast />
@@ -701,6 +718,29 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-content-name { font-family: var(--serif); font-size: 17px; color: var(--ink-strong); }
         .kw-ex-content-line { color: var(--text-secondary); }
         .kw-ex-content-hint { color: var(--text-muted); font-style: italic; }
+
+        /* + KPI hinzufügen (dezente, gut auffindbare Aktion) */
+        .kw-ex-toolbar { display: flex; justify-content: flex-end; margin-bottom: clamp(20px, 3vw, 32px); }
+        .kw-ex-add-kpi { font-size: 13px; color: var(--ink-strong); }
+        .kw-create-form { margin-top: 20px; }
+
+        /* Weitere KPIs (eigene, nutzererstellte) */
+        .kw-ex-more { margin-top: clamp(32px, 4.5vw, 52px); max-width: 720px; }
+        .kw-ex-more-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-soft); }
+        .kw-ex-more-item { border-bottom: 1px solid var(--line-soft); padding: 16px 0 18px; }
+        .kw-ex-more-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .kw-ex-more-value {
+          font-family: var(--serif); font-size: clamp(20px, 2.4vw, 26px); line-height: 1;
+          color: var(--ink-strong); font-variant-numeric: tabular-nums;
+        }
+        .kw-ex-more-name { font-size: 15px; color: var(--ink-strong); }
+        .kw-ex-more-tag {
+          font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+          color: var(--text-muted); border: 1px solid var(--line-strong); padding: 1px 7px 2px;
+        }
+        .kw-ex-more-meta { margin-top: 8px; }
+        .kw-ex-more-meta [data-status="needs_attention"] { color: var(--clay); }
+        .kw-ex-more-actions { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-top: 12px; }
 
         /* Bewertungen anfragen */
         .kw-review-link-text {

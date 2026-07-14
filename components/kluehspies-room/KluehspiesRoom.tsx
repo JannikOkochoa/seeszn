@@ -243,11 +243,11 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
           </>
         )}
 
-        {/* ── 03 · KPI Dashboard ─────────────────────────────── */}
+        {/* ── 01 · KPI Dashboard (einzige sichtbare Sektion im Launch) ──── */}
         <Reveal id="kpi-monitoring" className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
-            index="03"
+            index="01"
             eyebrow="KPI Dashboard"
             title="Der Blick auf die Zahlen."
             lead="Ein Steuerungswert im Zentrum: organische Klicks auf den Städtereise-Produktseiten, aus importierten Google-Search-Console-Exporten, mit Ziel, Verlauf und den Maßnahmen dahinter."

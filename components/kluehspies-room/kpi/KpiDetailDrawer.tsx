@@ -61,7 +61,7 @@ export default function KpiDetailDrawer() {
     kpiTasks,
     latestApprovalByTask,
     setTaskDrawerId,
-    setGoalDrawerOpen,
+    openGoalDrawer,
   } = useWorkspace();
 
   const [annotationFocus, setAnnotationFocus] = useState<string | null>(null);
@@ -176,7 +176,7 @@ export default function KpiDetailDrawer() {
                       <button
                         type="button"
                         className="kw-link"
-                        onClick={() => setGoalDrawerOpen(true)}
+                        onClick={() => openGoalDrawer(kpi.id)}
                       >
                         {activeGoal ? "Ziel bearbeiten" : "Ziel festlegen"}
                       </button>

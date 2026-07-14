@@ -56,6 +56,7 @@ import type {
   WorkspaceInit,
 } from "@/lib/kpi/types";
 import { REVIEW_NEW_METRIC_KEY, REVIEW_RATING_METRIC_KEY } from "@/lib/kpi/reviews";
+import { comparatorForDirection, resolveActiveGoal } from "@/lib/kpi/goals";
 import {
   BLOG_POSTS_KEY,
   GOOGLE_INTERACTIONS_KEY,
@@ -250,6 +251,20 @@ interface WorkspaceContextValue {
   updateGooglePresence: (input: GooglePresenceInput) => Promise<ActionResult>;
   /** Content & Authority aktualisieren: neue manuelle Check-ins (append-only). */
   updateContentAuthority: (input: ContentAuthorityInput) => Promise<ActionResult>;
+  /** Neuen KPI anlegen (vorhandene Kennzahl mit Ziel ODER eigener manueller KPI). */
+  createKpi: (input: CreateKpiInput) => Promise<ActionResult>;
+  /** Manuellen Ist-Wert eines eigenen KPI erfassen (append-only Check-in). */
+  recordCustomCheckIn: (kpiDefinitionId: string, value: number, note: string | null) => Promise<ActionResult>;
+  /** Eigenen KPI archivieren (kein Hard-Delete). */
+  archiveKpi: (kpiDefinitionId: string) => Promise<ActionResult>;
+  /** Darf dieses Mitglied einen KPI erstellen? (alle aktiven Mitglieder). */
+  canCreateKpi: boolean;
+  /** Ziel-Drawer für einen bestimmten KPI öffnen (null = primärer KPI). */
+  goalDrawerKpiId: string | null;
+  openGoalDrawer: (kpiDefinitionId: string | null) => void;
+  /** „+ KPI hinzufügen"-Drawer. */
+  kpiCreateOpen: boolean;
+  setKpiCreateOpen: (open: boolean) => void;
 }
 
 export interface GoalInput {
@@ -289,6 +304,26 @@ export interface ContentAuthorityInput {
   note: string | null;
 }
 
+export interface CreateKpiInput {
+  mode: "existing" | "custom";
+  /** mode "existing": metric_key einer vorhandenen kpi_definition. */
+  metricKey?: string;
+  /** mode "custom": */
+  name?: string;
+  description?: string | null;
+  unit?: string;
+  direction?: "higher_is_better" | "lower_is_better";
+  /** optionaler erster Ist-Wert (nur custom). */
+  firstValue?: number | null;
+  // Ziel (beide Modi):
+  targetValue: number;
+  periodType: GoalPeriodType;
+  periodDays: number | null;
+  ownerId: string | null;
+  effectiveFrom: string;
+  rationale: string | null;
+}
+
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function useWorkspace(): WorkspaceContextValue {
@@ -311,6 +346,7 @@ export function WorkspaceProvider({
 
   const [goalVersions, setGoalVersions] = useState(init.goalVersions);
   const [manualCheckIns, setManualCheckIns] = useState(init.manualCheckIns);
+  const [manualKpis, setManualKpis] = useState(init.manualKpis);
   const [tasks, setTasks] = useState(init.tasks);
   const [taskLinks, setTaskLinks] = useState(init.taskLinks);
   const [approvals, setApprovals] = useState(init.approvals);
@@ -335,6 +371,9 @@ export function WorkspaceProvider({
 
   const [kpiDrawerOpen, setKpiDrawerOpen] = useState(false);
   const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
+  // Ziel-Drawer kann jeden KPI adressieren (primär oder eigener); null = primärer KPI.
+  const [goalDrawerKpiId, setGoalDrawerKpiId] = useState<string | null>(null);
+  const [kpiCreateOpen, setKpiCreateOpen] = useState(false);
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<TaskDraft | null>(null);
   const [createNonce, setCreateNonce] = useState(0);
@@ -343,6 +382,12 @@ export function WorkspaceProvider({
   const canWrite = viewer.role === "seeszn_admin" || viewer.role === "kluehspies_editor";
   const canEditTarget = viewer.role === "seeszn_admin";
   const isAdmin = viewer.role === "seeszn_admin";
+  // KPIs darf jedes aktive Organisationsmitglied erstellen (auch Viewer). Die
+  // eigentliche Absicherung liegt in der RLS (20260714120000_collaborative_kpi).
+  const canCreateKpi =
+    viewer.role === "seeszn_admin" ||
+    viewer.role === "kluehspies_editor" ||
+    viewer.role === "viewer";
 
   // Löschrechte spiegeln den Soft-Delete-Trigger: Admin alles, Editor nur
   // eigene oder ihm zugewiesene Maßnahmen, Viewer nie.
@@ -1169,6 +1214,139 @@ export function WorkspaceProvider({
     [insertCheckIn, init.manualKpis, logAudit],
   );
 
+  // Periodenschlüssel für einen Check-in aus dem Periodentyp ableiten.
+  const periodKeyForType = useCallback((periodType: GoalPeriodType, todayIso: string): string | null => {
+    if (periodType === "calendar_week") return isoWeekKey(todayIso);
+    if (periodType === "calendar_month") return todayIso.slice(0, 7);
+    return null;
+  }, []);
+
+  // Neuen KPI anlegen: entweder ein Ziel an eine vorhandene Kennzahl hängen
+  // (mode "existing") oder eine eigene manuelle Definition + Ziel + optionalen
+  // ersten Ist-Wert (mode "custom"). Automatisch gemessene Ist-Werte laufen NIE
+  // über einen manuellen Check-in.
+  const createKpi = useCallback(
+    async (input: CreateKpiInput): Promise<ActionResult> => {
+      const today = new Date().toISOString().slice(0, 10);
+
+      if (input.mode === "existing") {
+        const def = [kpi, ...manualKpis].find((d) => d && d.metric_key === input.metricKey);
+        if (!def) return { ok: false, message: "Diese Kennzahl ist nicht verfügbar." };
+        return setGoal({
+          kpiDefinitionId: def.id,
+          targetValue: input.targetValue,
+          periodType: input.periodType,
+          periodDays: input.periodDays,
+          comparator: comparatorForDirection(def.direction ?? "higher_is_better"),
+          effectiveFrom: input.effectiveFrom,
+          ownerId: input.ownerId,
+          rationale: input.rationale,
+          kpiLabel: def.name,
+        });
+      }
+
+      // mode "custom"
+      if (!input.name?.trim() || !input.unit || !input.direction) {
+        return { ok: false, message: "Bitte Name, Einheit und Richtung angeben." };
+      }
+      const metricKey = `custom_${crypto.randomUUID()}`;
+      const inserted = await supabase
+        .from("kpi_definitions")
+        .insert({
+          organization_id: organizationId,
+          name: input.name.trim(),
+          metric_key: metricKey,
+          kind: "custom_manual",
+          created_by: viewer.id,
+          owner_id: input.ownerId,
+          unit: input.unit,
+          direction: input.direction,
+          description: input.description?.trim() || null,
+        })
+        .select(
+          "id, organization_id, name, metric_key, owner_id, data_source_id, kind, created_by, unit, direction, description, archived_at",
+        )
+        .single();
+      if (inserted.error || !inserted.data) {
+        return { ok: false, message: "Der KPI konnte nicht angelegt werden." };
+      }
+      const def = inserted.data as KpiDefinitionRow;
+      setManualKpis((prev) => [def, ...prev]);
+      logAudit("kpi.created", "kpi_definition", def.id, {
+        name: def.name,
+        unit: input.unit,
+        direction: input.direction,
+      });
+
+      const goal = await setGoal({
+        kpiDefinitionId: def.id,
+        targetValue: input.targetValue,
+        periodType: input.periodType,
+        periodDays: input.periodDays,
+        comparator: comparatorForDirection(input.direction),
+        effectiveFrom: input.effectiveFrom,
+        ownerId: input.ownerId,
+        rationale: input.rationale,
+        kpiLabel: def.name,
+      });
+      if (!goal.ok) return goal;
+
+      if (input.firstValue !== null && input.firstValue !== undefined) {
+        const row = await insertCheckIn(def.id, {
+          value: input.firstValue,
+          periodKey: periodKeyForType(input.periodType, today),
+          measuredAt: today,
+          note: null,
+        });
+        if (row) logAudit("kpi.check_in_created", "manual_check_in", row.id, { value: input.firstValue });
+      }
+      return { ok: true };
+    },
+    [supabase, kpi, manualKpis, organizationId, viewer.id, setGoal, insertCheckIn, periodKeyForType, logAudit],
+  );
+
+  const recordCustomCheckIn = useCallback(
+    async (kpiDefinitionId: string, value: number, note: string | null): Promise<ActionResult> => {
+      const def = manualKpis.find((d) => d.id === kpiDefinitionId);
+      if (!def) return { ok: false, message: "KPI nicht gefunden." };
+      const today = new Date().toISOString().slice(0, 10);
+      const activeGoal = resolveActiveGoal(goalVersions, { kpiDefinitionId });
+      const periodKey = activeGoal ? periodKeyForType(activeGoal.period_type, today) : null;
+      const row = await insertCheckIn(kpiDefinitionId, { value, periodKey, measuredAt: today, note });
+      if (!row) return { ok: false, message: "Der Wert konnte nicht gespeichert werden." };
+      logAudit("kpi.check_in_created", "manual_check_in", row.id, { kpi: def.name, value });
+      return { ok: true };
+    },
+    [manualKpis, goalVersions, insertCheckIn, periodKeyForType, logAudit],
+  );
+
+  const archiveKpi = useCallback(
+    async (kpiDefinitionId: string): Promise<ActionResult> => {
+      const def = manualKpis.find((d) => d.id === kpiDefinitionId);
+      if (!def) return { ok: false, message: "KPI nicht gefunden." };
+      const updated = await supabase
+        .from("kpi_definitions")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", kpiDefinitionId)
+        .select(
+          "id, organization_id, name, metric_key, owner_id, data_source_id, kind, created_by, unit, direction, description, archived_at",
+        )
+        .single();
+      if (updated.error || !updated.data) {
+        return { ok: false, message: "Der KPI konnte nicht archiviert werden." };
+      }
+      setManualKpis((prev) => upsertById(prev, updated.data as KpiDefinitionRow));
+      logAudit("kpi.archived", "kpi_definition", kpiDefinitionId, { name: def.name });
+      return { ok: true };
+    },
+    [supabase, manualKpis, logAudit],
+  );
+
+  const openGoalDrawer = useCallback((kpiDefinitionId: string | null) => {
+    setGoalDrawerKpiId(kpiDefinitionId);
+    setGoalDrawerOpen(true);
+  }, []);
+
   /* ── Abgeleitete Werte ───────────────────────────────────────────────────── */
 
   const productPages = useMemo(() => init.pages.filter((p) => p.segment === "product"), [init.pages]);
@@ -1297,7 +1475,7 @@ export function WorkspaceProvider({
     pages: init.pages,
     productPages,
     goalVersions,
-    manualKpis: init.manualKpis,
+    manualKpis,
     manualCheckIns,
     tasks,
     approvals,
@@ -1321,6 +1499,7 @@ export function WorkspaceProvider({
     canWrite,
     canEditTarget,
     isAdmin,
+    canCreateKpi,
     canDeleteTask,
     kpiDrawerOpen,
     setKpiDrawerOpen,
@@ -1328,6 +1507,10 @@ export function WorkspaceProvider({
     setDataSourceDrawerOpen,
     goalDrawerOpen,
     setGoalDrawerOpen,
+    goalDrawerKpiId,
+    openGoalDrawer,
+    kpiCreateOpen,
+    setKpiCreateOpen,
     taskDrawerId,
     setTaskDrawerId,
     createDraft,
@@ -1350,6 +1533,9 @@ export function WorkspaceProvider({
     updateReviewValues,
     updateGooglePresence,
     updateContentAuthority,
+    createKpi,
+    recordCustomCheckIn,
+    archiveKpi,
   };
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
