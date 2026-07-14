@@ -1,7 +1,7 @@
 "use client";
 
 // ─── KPI-Workspace: Executive Cockpit ─────────────────────────────────────────
-// Komposition des KPI-Slice innerhalb der Sektion „KPI Monitoring“ als ruhiges
+// Komposition des KPI-Slice innerhalb der Sektion „KPI Dashboard“ als ruhiges
 // Executive Cockpit: Intro, Data-Freshness-Zeile, vier zentrale KPIs, ein
 // großer Performance Canvas, Aufmerksamkeit + nächste Handlung, darunter die
 // Maßnahmen. Alle kw-Styles leben hier zentral; die Sprache bleibt die des
@@ -15,10 +15,12 @@ import ExecutiveKpiGrid from "./executive/ExecutiveKpiGrid";
 import PerformanceCanvas from "./executive/PerformanceCanvas";
 import AttentionPanel from "./executive/AttentionPanel";
 import NextActionPanel from "./executive/NextActionPanel";
+import ReviewQuickWin from "./executive/ReviewQuickWin";
 import DataSourceDrawer from "./executive/DataSourceDrawer";
 import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
 import KpiDetailDrawer from "./KpiDetailDrawer";
+import GoalDrawer from "./GoalDrawer";
 import TaskDetailDrawer from "./TaskDetailDrawer";
 import TaskCreateDrawer from "./TaskCreateDrawer";
 import UndoToast from "./UndoToast";
@@ -38,6 +40,7 @@ function ExecutiveCockpit() {
             <AttentionPanel />
             <NextActionPanel />
           </div>
+          <ReviewQuickWin />
         </>
       ) : (
         <ExecutiveEmptyState />
@@ -52,13 +55,14 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <div className="kw">
         <ExecutiveCockpit />
         <div className="kw-tasks-block">
-          <p className="kr-eyebrow kw-block-label">Maßnahmen zum KPI</p>
+          <p className="kr-eyebrow kw-block-label">Maßnahmen · priorisiert</p>
           <TaskList />
         </div>
       </div>
 
       <KpiDetailDrawer />
       <DataSourceDrawer />
+      <GoalDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
       <UndoToast />
@@ -273,25 +277,41 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ann-mark { fill: var(--signal); stroke: var(--warm-black); stroke-width: 0.75; }
         .kw-tip {
           position: absolute; top: 8px; transform: translateX(-50%);
-          background: var(--surface-raised); border: 1px solid var(--line);
-          padding: 10px 14px; min-width: 170px; max-width: 240px; pointer-events: none;
-          display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-body);
+          background: var(--surface-raised); border: 1px solid var(--line-strong);
+          box-shadow: 0 18px 40px -30px color-mix(in srgb, var(--warm-black) 55%, transparent);
+          padding: 12px 16px 13px; min-width: 190px; max-width: 260px; pointer-events: none;
+          display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-body);
         }
-        .kw-tip-date { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
-        .kw-tip-row { display: flex; align-items: baseline; gap: 8px; }
-        .kw-tip-row strong { font-weight: 600; color: var(--ink-strong); min-width: 34px; }
-        .kw-tip-row span:last-child { color: var(--text-muted); }
+        .kw-tip-metric {
+          font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+          color: var(--text-muted);
+        }
+        .kw-tip-date { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        .kw-tip-row { display: flex; align-items: baseline; gap: 10px; }
+        .kw-tip-row + .kw-tip-row { margin-top: 6px; }
+        .kw-tip-value {
+          font-family: var(--serif); font-variant-numeric: tabular-nums; line-height: 1;
+          color: var(--ink-strong); min-width: 42px;
+        }
+        .kw-tip-row--cur .kw-tip-value { font-size: 22px; }
+        .kw-tip-row--prev .kw-tip-value { font-size: 16px; color: var(--text-muted); }
+        .kw-tip-period { font-size: 12px; color: var(--text-muted); }
+        .kw-tip-row--cur .kw-tip-period { color: var(--text-secondary); }
+        .kw-tip-hint {
+          border-top: 1px solid var(--line-soft); margin-top: 9px; padding-top: 8px;
+          font-size: 11px; line-height: 1.45; color: var(--text-secondary);
+        }
         .kw-tip-ann { border-top: 1px solid var(--line-soft); padding-top: 5px; color: var(--text-secondary); }
         .kw-key { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--ink); align-self: center; }
         .kw-key--prev { border-top: 2px dashed var(--text-muted); }
         .kw-key--target { border-top: 1px dashed var(--line-strong); }
         .kw-key--ann { width: 8px; height: 8px; border: none; background: var(--signal); box-shadow: inset 0 0 0 1px var(--warm-black); }
         .kw-legend {
-          display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 10px;
+          display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 14px;
           font-size: 12px; color: var(--text-muted);
         }
-        .kw-legend span { display: inline-flex; align-items: center; gap: 8px; }
-        .kw-chart-note { margin-top: 10px; }
+        .kw-legend span { display: inline-flex; align-items: center; gap: 9px; }
+        .kw-chart-note { margin-top: 12px; }
         .kw-chart-empty { border: 1px solid var(--line); padding: 40px 24px; text-align: center; }
 
         /* ── Tabellen ───────────────────────────────────────────────────── */
@@ -386,11 +406,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ann-actions { display: flex; gap: 18px; flex-wrap: wrap; }
         .kw-ann-inline-desc { padding: 0 6px 12px calc(82px + 24px); margin: -4px 0 0; }
 
-        /* ── Maßnahmenliste ─────────────────────────────────────────────── */
-        .kw-task-filters { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-end; margin-bottom: 18px; }
-        .kw-task-rows { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
-        .kw-task-row { border-top: 1px solid var(--line); }
-        .kw-task-row[data-overdue] { box-shadow: inset 2px 0 0 var(--signal); }
+        /* ── Verknüpfte Maßnahmen im Drawer (kompakte Zeilen) ───────────── */
         .kw-task-open {
           display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left;
           background: none; border: none; padding: 16px 10px; cursor: pointer;
@@ -403,10 +419,71 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-task-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 13px; color: var(--text-muted); align-items: baseline; }
         .kw-task-meta [data-priority="high"] { color: var(--ink-strong); font-weight: 500; }
         .kw-task-sep { color: var(--text-faint); }
-        .kw-task-due[data-overdue] { color: var(--ink-strong); font-weight: 500; }
-        .kw-task-foot { margin-top: 14px; }
         .kw-linked-tasks { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line-soft); }
         .kw-linked-tasks li { border-top: 1px solid var(--line-soft); }
+
+        /* ── Maßnahmen: priorisierte Handlungskarten ────────────────────── */
+        .kw-tasks-bar {
+          display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
+          margin-bottom: clamp(20px, 3vw, 30px);
+        }
+        .kw-tasks-filter { display: inline-flex; align-items: center; gap: 4px; }
+        .kw-cards {
+          list-style: none; margin: 0; padding: 0;
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: clamp(16px, 2vw, 22px);
+        }
+        .kw-card {
+          position: relative; display: flex; flex-direction: column;
+          border: 1px solid var(--line); background: var(--paper-soft);
+          padding: clamp(20px, 2.4vw, 28px);
+          transition: border-color 0.25s ease, background-color 0.25s ease;
+        }
+        .kw-card:hover { border-color: var(--line-strong); background: var(--surface-raised); }
+        .kw-card[data-overdue] { box-shadow: inset 3px 0 0 var(--signal); }
+        .kw-card[data-pending] { opacity: 0.65; }
+        .kw-card-head { display: flex; flex-direction: column; gap: 10px; }
+        .kw-card-open {
+          text-align: left; background: none; border: none; padding: 0; cursor: pointer;
+        }
+        /* Stretched link: die ganze Karte öffnet den Drawer, ohne verschachtelte Buttons. */
+        .kw-card-open::after { content: ""; position: absolute; inset: 0; }
+        .kw-card-open:disabled { cursor: default; }
+        .kw-card-open:disabled::after { content: none; }
+        .kw-card-open:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 4px; }
+        .kw-card-title {
+          font-family: var(--serif); font-size: clamp(18px, 2vw, 21px);
+          line-height: 1.28; color: var(--ink-strong);
+        }
+        .kw-card-flags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .kw-card-flag {
+          font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+          color: var(--text-secondary); border: 1px solid var(--line-strong);
+          padding: 2px 9px 3px; white-space: nowrap;
+        }
+        .kw-card-flag--overdue { color: var(--ink-strong); border-color: var(--ink-strong); }
+        .kw-card-context {
+          font-size: 14px; line-height: 1.6; color: var(--text-body);
+          margin: 14px 0 0; max-width: 46ch;
+          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .kw-card-meta {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px;
+          margin: clamp(18px, 2.2vw, 24px) 0 0; padding-top: 16px;
+          border-top: 1px solid var(--line-soft);
+        }
+        .kw-card-meta > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .kw-card-meta .kr-eyebrow { font-size: 10px; }
+        .kw-card-meta dd { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-strong); }
+        .kw-card-meta dd .kr-status { font-size: 14px; }
+        .kw-tasks-foot { margin-top: clamp(22px, 3vw, 32px); }
+
+        /* Gelöschte Maßnahmen (nur Admin) */
+        .kw-deleted-list {
+          list-style: none; margin: 14px 0 0; padding: 0;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .kw-deleted-list .kw-deleted-row { border-top: 1px solid var(--line-soft); }
 
         /* ── Kommentare ─────────────────────────────────────────────────── */
         .kw-comment-list { list-style: none; margin: 0 0 20px; padding: 0; }
@@ -493,10 +570,45 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           font-variant-numeric: tabular-nums;
         }
         .kw-ex-kpi-label { font-size: 14px; color: var(--text-body); margin-top: 8px; }
-        .kw-ex-kpi-delta { font-size: 13px; margin-top: 12px; color: var(--text-secondary); }
+        .kw-ex-kpi-hint {
+          font-size: 12px; line-height: 1.5; color: var(--text-muted);
+          margin-top: 6px; max-width: 24ch;
+        }
+        .kw-ex-kpi-delta { font-size: 13px; margin-top: 14px; color: var(--text-secondary); }
         .kw-ex-kpi-dir { color: var(--ink-strong); font-variant-numeric: tabular-nums; }
         .kw-ex-kpi[data-assess="worse"] .kw-ex-kpi-dir { color: var(--clay); }
         .kw-ex-kpi-note { color: var(--text-muted); }
+        /* Zielanzeige der primären Kennzahl (Klicks) */
+        .kw-ex-kpi-goal {
+          display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+          margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft);
+          font-size: 12px; color: var(--text-secondary);
+        }
+        .kw-ex-kpi-goal-target { color: var(--ink-strong); }
+        .kw-ex-kpi-goal-line { color: var(--text-secondary); }
+        .kw-ex-kpi-goal-status { color: var(--text-muted); }
+        .kw-ex-kpi-goal-status[data-status="needs_attention"] { color: var(--clay); }
+        .kw-ex-kpi-goal-none { color: var(--text-muted); font-style: italic; }
+        .kw-ex-kpi-goal-note { color: var(--text-muted); }
+        .kw-ex-kpi-goal-owner { color: var(--text-muted); }
+        .kw-ex-kpi-goal-edit { margin-top: 4px; font-size: 12px; }
+
+        /* Zielverlauf im Ziel-Drawer */
+        .kw-goal-history { list-style: none; margin: 0; padding: 0; }
+        .kw-goal-hist {
+          display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 6px 20px;
+          border-top: 1px solid var(--line-soft); padding: 14px 0 16px;
+        }
+        .kw-goal-hist:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-goal-hist[data-status="active"] { box-shadow: inset 2px 0 0 var(--signal); padding-left: 12px; }
+        .kw-goal-hist-date { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .kw-goal-hist-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .kw-goal-hist-value { font-family: var(--serif); font-size: 16px; color: var(--ink-strong); }
+        .kw-goal-hist-tag {
+          margin-left: 10px; font-family: var(--sans); font-size: 10px; font-weight: 500;
+          letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+        }
+        .kw-goal-hist-note { font-style: normal; }
         .kw-ex-kpi-source {
           margin-top: 14px; font-size: 11px; letter-spacing: 0.1em;
           text-transform: uppercase; color: var(--text-faint);
@@ -506,11 +618,15 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-canvas { margin-bottom: clamp(36px, 5vw, 60px); }
         .kw-ex-canvas-head {
           display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
-          gap: 14px 28px; border-top: 1px solid var(--line); padding-top: 16px; margin-bottom: 20px;
+          gap: 14px 28px; border-top: 1px solid var(--line); padding-top: 16px; margin-bottom: 12px;
         }
         .kw-ex-canvas-title {
           font-family: var(--serif); font-weight: 400; font-size: 19px;
           line-height: 1.3; color: var(--ink-strong); margin: 0;
+        }
+        .kw-ex-canvas-explain {
+          font-family: var(--sans); font-size: 13px; line-height: 1.6;
+          color: var(--text-muted); margin: 0 0 22px; max-width: 640px;
         }
         .kw-ex-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
         .kw-ex-chart svg:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 4px; }
@@ -532,7 +648,39 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-attention-item:last-child { border-bottom: 1px solid var(--line-soft); margin-bottom: 12px; }
         .kw-ex-attention-obs { font-size: 15px; line-height: 1.5; color: var(--ink-strong); }
         .kw-ex-attention-int { font-style: italic; }
-        .kw-ex-action-buttons { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+        .kw-ex-action-headline {
+          font-family: var(--serif); font-weight: 400; font-size: clamp(19px, 2.1vw, 23px);
+          line-height: 1.32; color: var(--ink-strong); margin: 0 0 10px;
+        }
+        .kw-ex-action-rationale { max-width: 42ch; margin: 0 0 22px; }
+        .kw-ex-action-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+        .kw-ex-action-secondary { color: var(--text-secondary); }
+
+        /* F · Google-Bewertungen (Quick-Win) */
+        .kw-ex-reviews { margin-top: clamp(36px, 5vw, 60px); max-width: 640px; }
+        .kw-ex-review-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+        .kw-ex-review-rating {
+          font-family: var(--serif); font-size: clamp(34px, 4vw, 44px); line-height: 1;
+          color: var(--ink-strong); letter-spacing: -0.01em;
+        }
+        .kw-ex-review-count { font-size: 14px; color: var(--text-secondary); }
+        .kw-ex-review-meta { margin-top: 10px; }
+        .kw-ex-review-source { margin-top: 8px; }
+        .kw-ex-review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 20px; }
+        .kw-ex-review-edit { color: var(--text-secondary); }
+        .kw-ex-review-empty { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+
+        /* Bewertungen anfragen */
+        .kw-review-link-text {
+          font-family: var(--sans); font-size: 14px; color: var(--ink-strong);
+          word-break: break-all; max-width: 480px; margin-bottom: 4px;
+        }
+        .kw-review-copy-text {
+          font-size: 14px; line-height: 1.65; white-space: pre-wrap;
+          max-width: 520px; margin-bottom: 4px;
+        }
+        .kw-qr { display: block; max-width: 100%; height: auto; background: var(--paper); }
+        .kw-qr-note { margin-top: 12px; max-width: 420px; }
 
         /* Datenquellen-Drawer */
         .kw-ex-source-list { margin: 0; display: flex; flex-direction: column; }
@@ -678,6 +826,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           .kw-primary-grid { grid-template-columns: 1fr; }
           .kw-dhead-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .kw-props { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .kw-cards { grid-template-columns: 1fr; }
         }
         @media (max-width: 720px) {
           /* Mobil: KPIs in zwei schmalen Spalten, Drawer als Full-Screen Sheet,
@@ -696,6 +845,8 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           .kw-activity-row { grid-template-columns: 1fr; }
           .kw-ann-detail, .kw-ann-inline-desc { padding-left: 6px; }
           .kw-bar-row { align-items: flex-start; }
+          .kw-card-meta { grid-template-columns: 1fr; gap: 14px; }
+          .kw-deleted-row { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
       `}</style>
     </WorkspaceProvider>

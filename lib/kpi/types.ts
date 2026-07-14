@@ -64,6 +64,7 @@ export interface SnapshotRow {
   value: number;
 }
 
+/** DEPRECATED: nur noch für die (ungenutzte) Ziellinien-Hilfe in aggregate.ts. */
 export interface TargetRow {
   id: string;
   kpi_definition_id: string;
@@ -71,6 +72,52 @@ export interface TargetRow {
   start_date: string;
   end_date: string | null;
 }
+
+export type GoalPeriodType = "rolling_days" | "calendar_month" | "current_state";
+export type GoalComparator = "at_least" | "at_most";
+export type GoalSourceType = "manual_confirmed" | "imported_legacy" | "demo" | "system";
+export type GoalStatusValue = "active" | "superseded" | "archived" | "draft";
+
+/**
+ * Versionierte Zielzeile (kpi_targets, additiv erweitert). start_date/end_date
+ * sind effective_from/effective_until. Eine Zielversion wird nie überschrieben:
+ * Änderungen erzeugen eine neue Version, die alte wird superseded.
+ */
+export interface GoalVersionRow {
+  id: string;
+  kpi_definition_id: string;
+  target_value: number;
+  period_type: GoalPeriodType;
+  period_days: number | null;
+  comparator: GoalComparator;
+  start_date: string;
+  end_date: string | null;
+  owner_id: string | null;
+  rationale: string | null;
+  source_type: GoalSourceType;
+  status: GoalStatusValue;
+  supersedes_target_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  archived_at: string | null;
+}
+
+/** Append-only Check-in eines manuell gepflegten KPI (z. B. Google-Bewertungen). */
+export interface ManualCheckInRow {
+  id: string;
+  kpi_definition_id: string;
+  value: number;
+  secondary_value: number | null;
+  period_key: string | null;
+  measured_at: string;
+  note: string | null;
+  source_type: string;
+  entered_by: string | null;
+  supersedes_check_in_id: string | null;
+  archived_at: string | null;
+  created_at: string;
+}
+
 
 export type PageRegion = "deutschland" | "europa";
 
@@ -255,6 +302,7 @@ export interface WorkspaceViewer {
   role: Role;
 }
 
+
 /** Serverseitig geladener Initialzustand des KPI-Workspace. */
 export interface WorkspaceInit {
   viewer: WorkspaceViewer;
@@ -263,12 +311,17 @@ export interface WorkspaceInit {
   profiles: ProfileRow[];
   /** Mitglieder der Organisation, Basis für Owner-Auswahl und Erwähnungen. */
   members: MemberRow[];
-  targets: TargetRow[];
+  /** Versionierte Ziele aller KPIs der Organisation (kanonische Zielwahrheit). */
+  goalVersions: GoalVersionRow[];
   pages: PageRow[];
   tasks: TaskRow[];
   taskLinks: TaskLinkRow[];
   approvals: ApprovalRow[];
   annotations: AnnotationRow[];
+  /** Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis zum Bootstrap. */
+  reviewKpis: KpiDefinitionRow[];
+  /** Append-only Check-ins der manuellen KPIs (Ist-Werte der Bewertungen). */
+  manualCheckIns: ManualCheckInRow[];
   /** Echte GSC-Daten: aktive Batches je Scope + deren tägliche Zeitreihen.
    *  Einzige Quelle der KPI-Berechnung; Demo-Daten fließen nicht mehr ein. */
   gsc: {

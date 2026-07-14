@@ -9,7 +9,7 @@ import { buildExecutiveSummary, greetingForHour } from "@/lib/kpi/executive";
 import { useWorkspace } from "../workspace";
 
 export default function ExecutiveIntro() {
-  const { executiveBase } = useWorkspace();
+  const { executiveBase, executiveScopeBreakdown } = useWorkspace();
 
   return (
     <header className="kw-ex-intro">
@@ -18,7 +18,9 @@ export default function ExecutiveIntro() {
       <h3 className="kw-ex-greeting" suppressHydrationWarning>
         {greetingForHour(new Date().getHours())}
       </h3>
-      <p className="kw-ex-summary">{buildExecutiveSummary(executiveBase)}</p>
+      <p className="kw-ex-summary">
+        {buildExecutiveSummary(executiveBase, executiveScopeBreakdown)}
+      </p>
     </header>
   );
 }

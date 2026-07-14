@@ -13,7 +13,8 @@ import { useWorkspace } from "../workspace";
 export default function AttentionPanel() {
   const { gscComparison, scopeBreakdown, hasRealData } = useWorkspace();
 
-  const items = hasRealData ? buildAttentionItems(gscComparison, scopeBreakdown) : [];
+  // Höchstens zwei Beobachtungen: das Panel soll führen, nicht auflisten.
+  const items = hasRealData ? buildAttentionItems(gscComparison, scopeBreakdown).slice(0, 2) : [];
 
   return (
     <section className="kw-ex-attention" aria-label="Benötigt Aufmerksamkeit">

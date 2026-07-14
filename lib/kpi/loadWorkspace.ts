@@ -21,6 +21,7 @@ import {
   type Role,
   type WorkspaceInit,
 } from "./types";
+import { REVIEW_NEW_METRIC_KEY, REVIEW_RATING_METRIC_KEY } from "./reviews";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function loadWorkspace(
@@ -48,56 +49,91 @@ export async function loadWorkspace(
       .eq("organization_id", organizationId)
       .eq("user_id", user.id);
   }
-  const [kpi, activeDatasets, profiles, memberships, pages, tasks, taskLinks, approvals] = await Promise.all([
-    supabase
-      .from("kpi_definitions")
-      .select("id, organization_id, name, metric_key, owner_id, data_source_id")
-      .eq("organization_id", organizationId)
-      .eq("metric_key", METRIC_KEY)
-      .maybeSingle(),
-    supabase
-      .from("gsc_active_datasets")
-      .select("id, scope_type, scope_value, import_batch_id, activated_at")
-      .eq("organization_id", organizationId),
-    supabase.from("profiles").select("id, email, full_name"),
-    supabase
-      .from("memberships")
-      .select("user_id, role, company, status")
-      .eq("organization_id", organizationId),
-    supabase
-      .from("pages")
-      .select(
-        "id, name, url, segment, city, country, region, active, source, last_synced_at, archived_at",
-      )
-      .eq("organization_id", organizationId),
-    supabase
-      .from("tasks")
-      .select(
-        "id, organization_id, kpi_definition_id, page_id, title, description, insight_context, owner_id, priority, status, due_date, created_by, created_at, updated_at, deleted_at, deleted_by, deletion_reason",
-      )
-      .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false }),
-    supabase.from("task_kpi_links").select("task_id, kpi_definition_id").eq("organization_id", organizationId),
-    supabase
-      .from("approvals")
-      .select("id, task_id, requested_by, decided_by, status, note, requested_at, decided_at")
-      .eq("organization_id", organizationId)
-      .order("requested_at", { ascending: false }),
-  ]);
+  const [
+    kpi,
+    activeDatasets,
+    profiles,
+    memberships,
+    pages,
+    tasks,
+    taskLinks,
+    approvals,
+    goalVersions,
+    reviewKpis,
+    manualCheckIns,
+  ] = await Promise.all([
+      supabase
+        .from("kpi_definitions")
+        .select("id, organization_id, name, metric_key, owner_id, data_source_id")
+        .eq("organization_id", organizationId)
+        .eq("metric_key", METRIC_KEY)
+        .maybeSingle(),
+      supabase
+        .from("gsc_active_datasets")
+        .select("id, scope_type, scope_value, import_batch_id, activated_at")
+        .eq("organization_id", organizationId),
+      supabase.from("profiles").select("id, email, full_name"),
+      supabase
+        .from("memberships")
+        .select("user_id, role, company, status")
+        .eq("organization_id", organizationId),
+      supabase
+        .from("pages")
+        .select(
+          "id, name, url, segment, city, country, region, active, source, last_synced_at, archived_at",
+        )
+        .eq("organization_id", organizationId),
+      supabase
+        .from("tasks")
+        .select(
+          "id, organization_id, kpi_definition_id, page_id, title, description, insight_context, owner_id, priority, status, due_date, created_by, created_at, updated_at, deleted_at, deleted_by, deletion_reason",
+        )
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("task_kpi_links")
+        .select("task_id, kpi_definition_id")
+        .eq("organization_id", organizationId),
+      supabase
+        .from("approvals")
+        .select("id, task_id, requested_by, decided_by, status, note, requested_at, decided_at")
+        .eq("organization_id", organizationId)
+        .order("requested_at", { ascending: false }),
+      // Versionierte Ziele aller KPIs (kpi_targets, additiv erweitert). Vor der
+      // Migration 20260714100000 fehlen die neuen Spalten: die Abfrage liefert
+      // dann einen Fehler und data bleibt null → [] statt Crash (ehrlicher
+      // „Noch kein Ziel"-Zustand).
+      supabase
+        .from("kpi_targets")
+        .select(
+          "id, kpi_definition_id, target_value, period_type, period_days, comparator, start_date, end_date, owner_id, rationale, source_type, status, supersedes_target_id, created_by, created_at, archived_at",
+        )
+        .eq("organization_id", organizationId)
+        .order("created_at", { ascending: false }),
+      // Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis zum
+      // Bootstrap-Script (scripts/bootstrap-review-kpis.mjs).
+      supabase
+        .from("kpi_definitions")
+        .select("id, organization_id, name, metric_key, owner_id, data_source_id")
+        .eq("organization_id", organizationId)
+        .in("metric_key", [REVIEW_RATING_METRIC_KEY, REVIEW_NEW_METRIC_KEY]),
+      // Append-only Check-ins der manuellen KPIs. Fehlt die Tabelle noch
+      // (vor der Migration), bleibt data null → [].
+      supabase
+        .from("kpi_manual_check_ins")
+        .select(
+          "id, kpi_definition_id, value, secondary_value, period_key, measured_at, note, source_type, entered_by, supersedes_check_in_id, archived_at, created_at",
+        )
+        .eq("organization_id", organizationId)
+        .order("measured_at", { ascending: false }),
+    ]);
 
   const kpiId = kpi.data?.id as string | undefined;
   const activeBatchIds = ((activeDatasets.data ?? []) as GscActiveDatasetRow[]).map(
     (d) => d.import_batch_id,
   );
 
-  const [targets, annotations, batches, daily] = await Promise.all([
-    kpiId
-      ? supabase
-          .from("kpi_targets")
-          .select("id, kpi_definition_id, target_value, start_date, end_date")
-          .eq("kpi_definition_id", kpiId)
-          .order("start_date", { ascending: true })
-      : Promise.resolve({ data: [], error: null }),
+  const [annotations, batches, daily] = await Promise.all([
     kpiId
       ? supabase
           .from("annotations")
@@ -160,12 +196,14 @@ export async function loadWorkspace(
     kpi: (kpi.data as WorkspaceInit["kpi"]) ?? null,
     profiles: (profiles.data as WorkspaceInit["profiles"]) ?? [],
     members,
-    targets: (targets.data as WorkspaceInit["targets"]) ?? [],
+    goalVersions: (goalVersions.data as WorkspaceInit["goalVersions"]) ?? [],
     pages: (pages.data as WorkspaceInit["pages"]) ?? [],
     tasks: (tasks.data as WorkspaceInit["tasks"]) ?? [],
     taskLinks: (taskLinks.data as WorkspaceInit["taskLinks"]) ?? [],
     approvals: (approvals.data as WorkspaceInit["approvals"]) ?? [],
     annotations: (annotations.data as WorkspaceInit["annotations"]) ?? [],
+    reviewKpis: (reviewKpis.data as WorkspaceInit["reviewKpis"]) ?? [],
+    manualCheckIns: (manualCheckIns.data as WorkspaceInit["manualCheckIns"]) ?? [],
     gsc: {
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
       batches: (batches.data as GscImportBatchRow[]) ?? [],

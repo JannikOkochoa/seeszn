@@ -35,43 +35,69 @@ export function greetingForHour(hour: number): string {
 }
 
 /**
- * Deterministische Zusammenfassung aus dem 28-Tage-Vergleich des
- * Standard-Scopes. Regeln entsprechen der Auftragslogik; ohne Vergleich
- * (Gesamtzeitraum oder keine Daten) gibt es eine ehrliche Standardaussage.
+ * Ein Scope-Vergleich für die Executive-Zusammenfassung: Pilotseite plus ihr
+ * eigener 28-Tage-Vergleich, unabhängig von der Nutzerauswahl im Cockpit.
  */
-export function buildExecutiveSummary(comparison: PeriodComparison | null): string {
+export interface ExecutiveScopeComparison {
+  option: ScopeOption;
+  comparison: PeriodComparison | null;
+}
+
+/**
+ * Deterministische Zusammenfassung aus dem stabilen 28-Tage-Vergleich des
+ * Standard-Scopes (nie aus der Nutzerauswahl im Cockpit, damit "Gesamter
+ * Zeitraum" die Aussage nicht künstlich dramatisiert). Feste Satzreihenfolge:
+ * zuerst ein echter positiver oder stabiler Befund, danach der wichtigste
+ * Hebel. Keine Schönfärberei, keine erfundenen Wins, keine
+ * Kausalitätsbehauptung – jede Regel liest ausschließlich aus den echten
+ * Vergleichswerten. Maximal zwei kurze Sätze.
+ */
+export function buildExecutiveSummary(
+  comparison: PeriodComparison | null,
+  productScopes: ExecutiveScopeComparison[] = [],
+): string {
   if (!comparison) {
     return "Sobald ein Search-Console-Export importiert ist, erscheint hier die Entwicklung.";
   }
   const { current, previous } = comparison;
-  const clicksPct = pctChange(current.clicks, previous.clicks);
-  const imprPct = pctChange(current.impressions, previous.impressions);
-  const clicksDir = direction(clicksPct);
-  const imprDir = direction(imprPct);
-  const positionWorse =
-    current.position !== null &&
-    previous.position !== null &&
-    current.position - previous.position > POSITION_SHIFT_THRESHOLD;
+  const clicksDir = direction(pctChange(current.clicks, previous.clicks));
+  const imprDir = direction(pctChange(current.impressions, previous.impressions));
+  const ctrDir =
+    current.ctr !== null && previous.ctr !== null
+      ? direction(pctChange(current.ctr, previous.ctr))
+      : "flat";
+
+  const pilots = productScopes.filter(
+    (s) => s.comparison !== null && s.comparison.current.clicks > 0,
+  );
+  const topPilot =
+    pilots.length > 0
+      ? [...pilots].sort((a, b) => b.comparison!.current.clicks - a.comparison!.current.clicks)[0]
+      : null;
 
   if (imprDir === "up" && clicksDir === "down") {
-    return "Die Reichweite steigt, aber sie führt aktuell zu weniger Klicks.";
+    return (
+      "Klühspies wird häufiger in Google eingeblendet. Der nächste Hebel liegt darin, " +
+      "aus dieser wachsenden Reichweite mehr Klicks zu gewinnen."
+    );
   }
-  if (imprDir === "up" && clicksDir === "up") {
-    return "Organische Nachfrage und Reichweite entwickeln sich positiv.";
+  if (topPilot && ctrDir !== "up") {
+    const pilotPhrase =
+      pilots.length === 1
+        ? `${topPilot.option.label} bleibt die stärkste Pilotseite.`
+        : `${topPilot.option.label} bleibt die stärkste der ${pilots.length} Pilotseiten.`;
+    return `${pilotPhrase} Gleichzeitig bietet die Klickrate noch Potenzial.`;
   }
-  if (clicksDir === "down" && positionWorse) {
-    return "Die organische Sichtbarkeit hat sich in der aktuellen Periode abgeschwächt.";
+  if (clicksDir === "up" && imprDir === "up") {
+    return "Organische Nachfrage und Reichweite entwickeln sich positiv. Der Fokus liegt jetzt auf der weiteren Stabilisierung.";
   }
   if (clicksDir === "flat" && imprDir === "flat") {
-    return "Die organische Entwicklung ist weitgehend stabil.";
+    return "Die organische Entwicklung bleibt stabil. Einzelne Seiten bieten weiterhin gezieltes Optimierungspotenzial.";
   }
-  if (clicksDir === "down") {
-    return "Die organischen Klicks liegen unter der Vorperiode.";
-  }
-  if (clicksDir === "up") {
-    return "Die organischen Klicks liegen über der Vorperiode.";
-  }
-  return "Die organische Entwicklung ist weitgehend stabil.";
+  return (
+    "Die vorhandene Reichweite bietet eine gute Grundlage. Klickrate und Position benötigen " +
+    "in der aktuellen Periode besondere Aufmerksamkeit."
+  );
 }
 
 /* ── Vier zentrale KPI-Werte, datengetrieben und austauschbar ───────────────── */
@@ -91,9 +117,22 @@ export interface ExecutiveKpiModel {
   lowBase: boolean;
   /** Vollständiger Screenreader-Satz inkl. absoluter Werte. */
   srText: string;
-  /** Dezente Quellenangabe. */
+  /** Dezente Quellenangabe, inklusive Zeitraum und Datenstand. */
   source: string;
+  /** Sehr kurze Erklärung für Nicht-SEOs, direkt unter dem Wert. */
+  hint: string;
 }
+
+/**
+ * Ruhige Ein-Satz-Erklärungen je Kennzahl, verständlich ohne SEO-Wissen.
+ * Zentral gepflegt, damit KPI-Grid und Chart dieselbe Sprache sprechen.
+ */
+export const KPI_HINT: Record<ExecutiveKpiModel["key"], string> = {
+  clicks: "Besuche, die tatsächlich aus Google auf die Seite kamen.",
+  impressions: "Wie oft Seiten von Klühspies in Google eingeblendet wurden.",
+  ctr: "Wie attraktiv das Ergebnis war. Höher heißt: mehr Menschen klicken.",
+  position: "Durchschnittliche Google-Position. Kleinere Zahl ist besser.",
+};
 
 const de = (n: number, digits = 0) =>
   n.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: digits });
@@ -106,17 +145,31 @@ function srDelta(pct: number | null, currentText: string, previousText: string):
   return `${rounded} Prozent ${dir} in der vorherigen Periode, aktuell ${currentText}, zuvor ${previousText}.`;
 }
 
+/** Kontext für die Quellzeile (Zeitraum, Datenstand); nie hart codiert. */
+export interface ExecutiveKpiContext {
+  /** "28 Tage" / "Gesamter Zeitraum" – aus cockpitRangeLabel(range). */
+  rangeLabel: string;
+  /** Letzter Tag mit Daten (gscProvenance.dataAsOf), formatiert. */
+  dataAsOfLabel: string | null;
+}
+
 /**
  * Baut die vier Standard-KPIs aus echten Zahlen. Die Slots sind austauschbar:
  * ein späterer GA4-Wert ("Organische Anfragen") ersetzt einen Eintrag dieser
- * Liste, ohne die Grid-Komponente zu ändern.
+ * Liste, ohne die Grid-Komponente zu ändern. Ziel/Zielerreichung/Owner leben
+ * NICHT hier, sondern im eigenständigen Zielmodell (lib/kpi/goals.ts) und
+ * werden nur an der primären Kennzahl (Klicks) angezeigt.
  */
 export function buildExecutiveKpis(
   totals: PeriodTotals,
   comparison: PeriodComparison | null,
+  context: ExecutiveKpiContext,
   source = "GSC Export",
 ): ExecutiveKpiModel[] {
   const prev = comparison?.previous ?? null;
+  const sourceLine = `${source} · ${context.rangeLabel}${
+    context.dataAsOfLabel ? ` · Stand ${context.dataAsOfLabel}` : ""
+  }`;
 
   function model(
     key: ExecutiveKpiModel["key"],
@@ -135,6 +188,7 @@ export function buildExecutiveKpis(
       const improved = betterWhen === "up" ? pct > 0 : pct < 0;
       assessment = improved ? "better" : "worse";
     }
+
     return {
       key,
       label,
@@ -144,7 +198,8 @@ export function buildExecutiveKpis(
       assessment,
       lowBase,
       srText: `${label}: ${srDelta(pct, valueText, previousText)}`,
-      source,
+      source: sourceLine,
+      hint: KPI_HINT[key],
     };
   }
 
@@ -256,6 +311,71 @@ export function buildAttentionItems(
   }
 
   return items.slice(0, 3);
+}
+
+/* ── Nächster Schritt: eine konkrete, deterministische Empfehlung ───────────── */
+
+export interface NextStepModel {
+  /** Ein Satz Lageeinschätzung, verständlich ohne SEO-Wissen. */
+  headline: string;
+  /** Warum dieser Schritt jetzt sinnvoll ist; ohne Kausalitätsbehauptung. */
+  rationale: string;
+}
+
+/**
+ * Leitet aus dem echten Vorperiodenvergleich genau eine Empfehlung ab. Kein
+ * Linkblock, keine erfundene Maßnahme: nur eine ruhige Handlungsaussage, die
+ * sich an der tatsächlichen Entwicklung orientiert.
+ */
+export function buildNextStep(comparison: PeriodComparison | null): NextStepModel {
+  if (!comparison) {
+    return {
+      headline: "Empfehlung folgt, sobald ein Vergleich vorliegt.",
+      rationale:
+        "Für den Gesamtzeitraum gibt es keine Vorperiode. Wählen Sie oben einen 28- oder 90-Tage-Zeitraum für eine konkrete Empfehlung.",
+    };
+  }
+  const { current, previous } = comparison;
+  const clicksDir = direction(pctChange(current.clicks, previous.clicks));
+  const imprDir = direction(pctChange(current.impressions, previous.impressions));
+  const positionWorse =
+    current.position !== null &&
+    previous.position !== null &&
+    current.position - previous.position > POSITION_SHIFT_THRESHOLD;
+
+  if (imprDir === "up" && clicksDir === "down") {
+    return {
+      headline: "Sichtbarkeit in Klicks übersetzen.",
+      rationale:
+        "Seiten von Klühspies werden häufiger eingeblendet, aber seltener geklickt. Eine Maßnahme an Titel und Beschreibung der wichtigsten Seiten wirkt hier am schnellsten.",
+    };
+  }
+  if (clicksDir === "down" && positionWorse) {
+    return {
+      headline: "Die schwächste Seite gezielt stützen.",
+      rationale:
+        "Klicks und Google-Position geben nach. Legen Sie eine Maßnahme für die Seite mit dem stärksten Rückgang an.",
+    };
+  }
+  if (clicksDir === "down") {
+    return {
+      headline: "Rückgang bei den Klicks aufgreifen.",
+      rationale:
+        "Die organischen Klicks liegen unter der Vorperiode. Eine gezielte Maßnahme hält die Entwicklung nach.",
+    };
+  }
+  if (clicksDir === "up") {
+    return {
+      headline: "Den Aufwärtstrend absichern.",
+      rationale:
+        "Die Klicks liegen über der Vorperiode. Halten Sie fest, was gewirkt hat, und planen Sie den nächsten Schritt.",
+    };
+  }
+  return {
+    headline: "Die stabile Lage für eine geplante Verbesserung nutzen.",
+    rationale:
+      "Die Entwicklung ist ruhig. Eine bewusst gewählte Maßnahme bringt jetzt am meisten, ohne Druck.",
+  };
 }
 
 /* ── Live-Quellen: ehrliche Zustände, vorbereitet für spätere Anbindung ──────── */

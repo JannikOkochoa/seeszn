@@ -9,6 +9,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import type { ExecutiveKpiModel } from "@/lib/kpi/executive";
+import type { KpiGoalDisplay } from "@/lib/kpi/goals";
 
 const ARROW: Record<"up" | "down" | "flat", string> = { up: "↗", down: "↘", flat: "→" };
 
@@ -18,7 +19,17 @@ function deltaText(model: ExecutiveKpiModel): string | null {
   return `${sign}${Math.abs(model.deltaPct).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %`;
 }
 
-export default function ExecutiveKpi({ model }: { model: ExecutiveKpiModel }) {
+export default function ExecutiveKpi({
+  model,
+  goal,
+  canEditGoal = false,
+  onEditGoal,
+}: {
+  model: ExecutiveKpiModel;
+  goal?: KpiGoalDisplay;
+  canEditGoal?: boolean;
+  onEditGoal?: () => void;
+}) {
   const reduced = useReducedMotion();
   const delta = deltaText(model);
   const direction: "up" | "down" | "flat" =
@@ -45,6 +56,7 @@ export default function ExecutiveKpi({ model }: { model: ExecutiveKpiModel }) {
           {model.value}
         </motion.span>
         <span className="kw-ex-kpi-label">{model.label}</span>
+        <span className="kw-ex-kpi-hint">{model.hint}</span>
 
         <span className="kw-ex-kpi-delta">
           {delta === null ? (
@@ -67,6 +79,51 @@ export default function ExecutiveKpi({ model }: { model: ExecutiveKpiModel }) {
 
         <span className="kw-ex-kpi-source">{model.source}</span>
       </div>
+
+      {/* Zielanzeige nur bei der primären Kennzahl (Klicks), aus dem Zielmodell. */}
+      {goal && (
+        <div className="kw-ex-kpi-goal">
+          {goal.state === "scope_no_goal" ? (
+            <span className="kw-ex-kpi-goal-none">
+              Für diesen Bereich ist noch kein Ziel festgelegt
+            </span>
+          ) : goal.state === "no_goal" ? (
+            <>
+              <span className="kw-ex-kpi-goal-none">Noch kein Ziel festgelegt</span>
+              {canEditGoal && onEditGoal && (
+                <button type="button" className="kw-link kw-ex-kpi-goal-edit" onClick={onEditGoal}>
+                  Ziel festlegen
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="kw-ex-kpi-goal-target">{goal.targetText}</span>
+              {(goal.achievedText || goal.remainingText) && (
+                <span className="kw-ex-kpi-goal-line">
+                  {goal.achievedText}
+                  {goal.achievedText && goal.remainingText ? " · " : ""}
+                  {goal.remainingText}
+                </span>
+              )}
+              {goal.statusLabel && (
+                <span className="kw-ex-kpi-goal-status" data-status={goal.statusKey ?? undefined}>
+                  {goal.statusLabel}
+                </span>
+              )}
+              {goal.mismatchNote && <span className="kw-ex-kpi-goal-note">{goal.mismatchNote}</span>}
+              <span className="kw-ex-kpi-goal-owner">
+                Owner {goal.ownerName ?? "Noch nicht zugewiesen"}
+              </span>
+              {canEditGoal && onEditGoal && (
+                <button type="button" className="kw-link kw-ex-kpi-goal-edit" onClick={onEditGoal}>
+                  Ziel bearbeiten
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </article>
   );
 }

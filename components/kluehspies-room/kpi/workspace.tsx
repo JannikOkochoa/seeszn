@@ -20,12 +20,7 @@ import {
 } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import {
-  addDaysIso,
-  targetForDate,
-  targetSeries,
-  type SeriesPoint,
-} from "@/lib/kpi/aggregate";
+import { addDaysIso, type SeriesPoint } from "@/lib/kpi/aggregate";
 import {
   buildScopeOptions,
   clicksSeries,
@@ -46,16 +41,21 @@ import type {
   ApprovalStatus,
   AuditEventRow,
   CommentRow,
+  GoalComparator,
+  GoalPeriodType,
+  GoalVersionRow,
   GscDimensionSnapshotRow,
   GscScopeDailyRow,
   InsightContext,
+  KpiDefinitionRow,
   LevelDe,
-  TargetRow,
+  ManualCheckInRow,
   TaskPriority,
   TaskRow,
   TaskStatus,
   WorkspaceInit,
 } from "@/lib/kpi/types";
+import { REVIEW_NEW_METRIC_KEY, REVIEW_RATING_METRIC_KEY } from "@/lib/kpi/reviews";
 
 /* ── Hilfen ─────────────────────────────────────────────────────────────────── */
 
@@ -65,6 +65,13 @@ function upsertById<T extends { id: string }>(list: T[], row: T): T[] {
   const next = list.slice();
   next[idx] = { ...next[idx], ...row };
   return next;
+}
+
+/** Kurzer Zeitraumtext für Audit-Metadaten (keine UUIDs in der Kundenansicht). */
+function periodShort(periodType: GoalPeriodType, periodDays: number | null): string {
+  if (periodType === "rolling_days") return `${periodDays} Tage`;
+  if (periodType === "calendar_month") return "Monat";
+  return "Aktueller Stand";
 }
 
 function removeById<T extends { id: string }>(list: T[], id: string): T[] {
@@ -110,7 +117,12 @@ interface WorkspaceContextValue {
   pages: WorkspaceInit["pages"];
   productPages: WorkspaceInit["pages"];
   // Live-Zustand
-  targets: TargetRow[];
+  /** Versionierte Ziele aller KPIs (append-only Historie). */
+  goalVersions: GoalVersionRow[];
+  /** Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis Bootstrap. */
+  reviewKpis: KpiDefinitionRow[];
+  /** Append-only Check-ins der manuellen KPIs. */
+  manualCheckIns: ManualCheckInRow[];
   tasks: TaskRow[];
   approvals: ApprovalRow[];
   annotations: AnnotationRow[];
@@ -139,6 +151,11 @@ interface WorkspaceContextValue {
    * (alle Städtereisen), unabhängig von den gewählten Filtern.
    */
   executiveBase: PeriodComparison | null;
+  /**
+   * Stabile 28-Tage-Basis je Pilotseite für die Executive-Zusammenfassung;
+   * unabhängig vom Zeitraum-/Scope-Filter des Cockpits.
+   */
+  executiveScopeBreakdown: Array<{ option: ScopeOption; comparison: PeriodComparison | null }>;
   /** Vergleich aller Scopes (Städtereisen gesamt, Berlin, Hamburg, München). */
   scopeBreakdown: Array<{
     option: ScopeOption;
@@ -154,8 +171,6 @@ interface WorkspaceContextValue {
   previousRange: { from: string; to: string };
   series: SeriesPoint[];
   previousSeries: SeriesPoint[];
-  targetLine: SeriesPoint[];
-  activeTarget: TargetRow | null;
   kpiTasks: TaskRow[];
   activeTaskCount: number;
   latestApprovalByTask: Map<string, ApprovalRow>;
@@ -173,6 +188,9 @@ interface WorkspaceContextValue {
   setKpiDrawerOpen: (open: boolean) => void;
   dataSourceDrawerOpen: boolean;
   setDataSourceDrawerOpen: (open: boolean) => void;
+  /** Ziel-Drawer der primären Kennzahl (Klicks). */
+  goalDrawerOpen: boolean;
+  setGoalDrawerOpen: (open: boolean) => void;
   taskDrawerId: string | null;
   setTaskDrawerId: (id: string | null) => void;
   createDraft: TaskDraft | null;
@@ -213,7 +231,34 @@ interface WorkspaceContextValue {
     id: string,
     patch: { date?: string; title?: string; description?: string | null; linked_task_id?: string | null },
   ) => Promise<ActionResult>;
-  setNewTarget: (value: number, startDate: string) => Promise<ActionResult>;
+  /** Neue Zielversion setzen (supersedet das bisherige aktive Ziel derselben Periode). */
+  setGoal: (input: GoalInput) => Promise<ActionResult>;
+  /** Aktives Ziel archivieren (kein Hard-Delete; Historie bleibt erhalten). */
+  archiveGoal: (goalId: string) => Promise<ActionResult>;
+  /** Google-Bewertungen aktualisieren: neue Check-ins + ggf. neue Zielversionen. */
+  updateReviewValues: (input: ReviewValuesInput) => Promise<ActionResult>;
+}
+
+export interface GoalInput {
+  kpiDefinitionId: string;
+  targetValue: number;
+  periodType: GoalPeriodType;
+  periodDays: number | null;
+  comparator: GoalComparator;
+  effectiveFrom: string;
+  ownerId: string | null;
+  rationale: string | null;
+  /** Audit-Kontext (KPI-Name, keine UUIDs in der Kundenansicht). */
+  kpiLabel: string;
+}
+
+export interface ReviewValuesInput {
+  rating: number;
+  reviewCount: number;
+  targetRating: number;
+  newThisMonth: number | null;
+  monthlyGoal: number;
+  note: string | null;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -236,7 +281,8 @@ export function WorkspaceProvider({
   const supabase = getSupabaseBrowserClient();
   const { viewer, organizationId, kpi } = init;
 
-  const [targets, setTargets] = useState(init.targets);
+  const [goalVersions, setGoalVersions] = useState(init.goalVersions);
+  const [manualCheckIns, setManualCheckIns] = useState(init.manualCheckIns);
   const [tasks, setTasks] = useState(init.tasks);
   const [taskLinks, setTaskLinks] = useState(init.taskLinks);
   const [approvals, setApprovals] = useState(init.approvals);
@@ -260,6 +306,7 @@ export function WorkspaceProvider({
   const [dataSourceDrawerOpen, setDataSourceDrawerOpen] = useState(false);
 
   const [kpiDrawerOpen, setKpiDrawerOpen] = useState(false);
+  const [goalDrawerOpen, setGoalDrawerOpen] = useState(false);
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<TaskDraft | null>(null);
   const [createNonce, setCreateNonce] = useState(0);
@@ -382,6 +429,21 @@ export function WorkspaceProvider({
               return;
             }
             setAnnotations((prev) => upsertById(prev, payload.new as AnnotationRow));
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "kpi_targets", filter: orgFilter },
+          (payload) => {
+            if (payload.eventType === "DELETE") return;
+            setGoalVersions((prev) => upsertById(prev, payload.new as GoalVersionRow));
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "kpi_manual_check_ins", filter: orgFilter },
+          (payload) => {
+            setManualCheckIns((prev) => upsertById(prev, payload.new as ManualCheckInRow));
           },
         )
         .subscribe((status) => {
@@ -762,64 +824,206 @@ export function WorkspaceProvider({
     [supabase, logAudit],
   );
 
-  const setNewTarget = useCallback(
-    async (value: number, startDate: string): Promise<ActionResult> => {
-      if (!kpi) return { ok: false, message: "Kein KPI vorhanden." };
-      const open = targets.find((t) => t.end_date === null);
+  // Neue Zielversion setzen: identische Ziele werden nicht dupliziert; sonst
+  // wird das bisherige aktive Ziel derselben Periode superseded (nie
+  // überschrieben) und eine neue aktive Version angelegt.
+  const setGoal = useCallback(
+    async (input: GoalInput): Promise<ActionResult> => {
+      const active =
+        goalVersions.find(
+          (g) =>
+            g.status === "active" &&
+            g.kpi_definition_id === input.kpiDefinitionId &&
+            g.period_type === input.periodType &&
+            g.period_days === input.periodDays,
+        ) ?? null;
 
-      // Gleiches Startdatum: Wert des offenen Ziels anpassen statt neue Zeile.
-      if (open && open.start_date === startDate) {
-        const updated = await supabase
-          .from("kpi_targets")
-          .update({ target_value: value })
-          .eq("id", open.id)
-          .select()
-          .single();
-        if (updated.error || !updated.data) {
-          return { ok: false, message: "Das Ziel konnte nicht angepasst werden." };
-        }
-        setTargets((prev) => upsertById(prev, updated.data as TargetRow));
+      // Unverändert: kein neuer Datensatz (verhindert Versions-Spam). Eine leere
+      // Begründung (z. B. beim Review-Speichern) zählt nicht als Änderung; nur
+      // eine tatsächlich neue Begründung erzeugt eine Version.
+      const rationaleChanged = input.rationale !== null && input.rationale !== (active?.rationale ?? null);
+      if (
+        active &&
+        Number(active.target_value) === input.targetValue &&
+        active.owner_id === input.ownerId &&
+        !rationaleChanged
+      ) {
         return { ok: true };
       }
 
-      // Offenes Ziel zum Vortag schließen, danach neues offenes Ziel anlegen.
-      if (open) {
-        if (startDate <= open.start_date) {
-          return { ok: false, message: "Das neue Ziel muss nach dem Beginn des aktuellen Ziels starten." };
-        }
+      if (active) {
         const closed = await supabase
           .from("kpi_targets")
-          .update({ end_date: addDaysIso(startDate, -1) })
-          .eq("id", open.id)
+          .update({ status: "superseded", end_date: addDaysIso(input.effectiveFrom, -1) })
+          .eq("id", active.id)
           .select()
           .single();
         if (closed.error || !closed.data) {
-          return { ok: false, message: "Das bisherige Ziel konnte nicht abgegrenzt werden." };
+          return { ok: false, message: "Das bisherige Ziel konnte nicht abgelöst werden." };
         }
-        setTargets((prev) => upsertById(prev, closed.data as TargetRow));
+        setGoalVersions((prev) => upsertById(prev, closed.data as GoalVersionRow));
       }
 
       const inserted = await supabase
         .from("kpi_targets")
         .insert({
           organization_id: organizationId,
-          kpi_definition_id: kpi.id,
-          target_value: value,
-          start_date: startDate,
+          kpi_definition_id: input.kpiDefinitionId,
+          target_value: input.targetValue,
+          period_type: input.periodType,
+          period_days: input.periodDays,
+          comparator: input.comparator,
+          start_date: input.effectiveFrom,
           end_date: null,
+          owner_id: input.ownerId,
+          rationale: input.rationale,
+          source_type: "manual_confirmed",
+          status: "active",
+          supersedes_target_id: active?.id ?? null,
           created_by: viewer.id,
         })
         .select()
         .single();
-      if (inserted.error) {
-        return { ok: false, message: "Das neue Ziel überschneidet sich mit einem bestehenden Zeitraum." };
+      if (inserted.error || !inserted.data) {
+        return { ok: false, message: "Das Ziel konnte nicht gespeichert werden." };
       }
-      setTargets((prev) =>
-        upsertById(prev, inserted.data as TargetRow).sort((a, b) => a.start_date.localeCompare(b.start_date)),
-      );
+      const row = inserted.data as GoalVersionRow;
+      setGoalVersions((prev) => upsertById(prev, row));
+
+      const ownerProfile = init.profiles.find((p) => p.id === input.ownerId);
+      const ownerName = input.ownerId
+        ? ownerProfile?.full_name?.trim() || ownerProfile?.email || "SEESZN"
+        : "Nicht zugewiesen";
+      const onlyOwnerChanged =
+        active !== null &&
+        Number(active.target_value) === input.targetValue &&
+        active.period_type === input.periodType &&
+        active.period_days === input.periodDays &&
+        active.owner_id !== input.ownerId;
+      const action = !active
+        ? "kpi.goal_created"
+        : onlyOwnerChanged
+          ? "kpi.goal_owner_changed"
+          : "kpi.goal_changed";
+      logAudit(action, "kpi_goal", row.id, {
+        kpi: input.kpiLabel,
+        oldValue: active ? Number(active.target_value) : "",
+        newValue: input.targetValue,
+        oldPeriod: active ? periodShort(active.period_type, active.period_days) : "",
+        newPeriod: periodShort(input.periodType, input.periodDays),
+        owner: ownerName,
+        effectiveFrom: input.effectiveFrom,
+      });
       return { ok: true };
     },
-    [supabase, kpi, targets, organizationId, viewer.id],
+    [supabase, goalVersions, organizationId, viewer.id, init.profiles, logAudit],
+  );
+
+  const archiveGoal = useCallback(
+    async (goalId: string): Promise<ActionResult> => {
+      const g = goalVersions.find((x) => x.id === goalId);
+      if (!g) return { ok: false, message: "Ziel nicht gefunden." };
+      const today = new Date().toISOString().slice(0, 10);
+      const updated = await supabase
+        .from("kpi_targets")
+        .update({ status: "archived", archived_at: new Date().toISOString(), end_date: g.end_date ?? today })
+        .eq("id", goalId)
+        .select()
+        .single();
+      if (updated.error || !updated.data) {
+        return { ok: false, message: "Das Ziel konnte nicht archiviert werden." };
+      }
+      setGoalVersions((prev) => upsertById(prev, updated.data as GoalVersionRow));
+      logAudit("kpi.goal_archived", "kpi_goal", goalId, {});
+      return { ok: true };
+    },
+    [supabase, goalVersions, logAudit],
+  );
+
+  // Google-Bewertungen: neue Check-ins (Ist) + ggf. neue Zielversionen. GSC-Ist-
+  // Werte laufen NIE hierüber. Ohne eingerichtete Review-KPIs (vor Bootstrap)
+  // ehrliche Fehlermeldung statt stiller No-op.
+  const updateReviewValues = useCallback(
+    async (input: ReviewValuesInput): Promise<ActionResult> => {
+      const ratingKpi = init.reviewKpis.find((k) => k.metric_key === REVIEW_RATING_METRIC_KEY);
+      const newKpi = init.reviewKpis.find((k) => k.metric_key === REVIEW_NEW_METRIC_KEY);
+      if (!ratingKpi || !newKpi) {
+        return { ok: false, message: "Die Bewertungs-KPIs sind noch nicht eingerichtet." };
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const monthKey = today.slice(0, 7);
+
+      const ratingCheckIn = await supabase
+        .from("kpi_manual_check_ins")
+        .insert({
+          organization_id: organizationId,
+          kpi_definition_id: ratingKpi.id,
+          value: input.rating,
+          secondary_value: input.reviewCount,
+          period_key: null,
+          measured_at: today,
+          note: input.note,
+          source_type: "manually_entered",
+          entered_by: viewer.id,
+        })
+        .select()
+        .single();
+      if (ratingCheckIn.error || !ratingCheckIn.data) {
+        return { ok: false, message: "Die Bewertungswerte konnten nicht gespeichert werden." };
+      }
+      setManualCheckIns((prev) => [ratingCheckIn.data as ManualCheckInRow, ...prev]);
+      logAudit("review.checked_in", "review_check_in", (ratingCheckIn.data as ManualCheckInRow).id, {
+        rating: input.rating,
+        count: input.reviewCount,
+      });
+
+      if (input.newThisMonth !== null) {
+        const newCheckIn = await supabase
+          .from("kpi_manual_check_ins")
+          .insert({
+            organization_id: organizationId,
+            kpi_definition_id: newKpi.id,
+            value: input.newThisMonth,
+            secondary_value: null,
+            period_key: monthKey,
+            measured_at: today,
+            note: input.note,
+            source_type: "manually_entered",
+            entered_by: viewer.id,
+          })
+          .select()
+          .single();
+        if (!newCheckIn.error && newCheckIn.data) {
+          setManualCheckIns((prev) => [newCheckIn.data as ManualCheckInRow, ...prev]);
+        }
+      }
+
+      // Ziele mitschreiben (nur bei Änderung entsteht eine neue Version).
+      await setGoal({
+        kpiDefinitionId: ratingKpi.id,
+        targetValue: input.targetRating,
+        periodType: "current_state",
+        periodDays: null,
+        comparator: "at_least",
+        effectiveFrom: today,
+        ownerId: null,
+        rationale: null,
+        kpiLabel: "Google-Bewertung",
+      });
+      await setGoal({
+        kpiDefinitionId: newKpi.id,
+        targetValue: input.monthlyGoal,
+        periodType: "calendar_month",
+        periodDays: null,
+        comparator: "at_least",
+        effectiveFrom: today,
+        ownerId: null,
+        rationale: null,
+        kpiLabel: "Neue Google-Bewertungen",
+      });
+      return { ok: true };
+    },
+    [supabase, init.reviewKpis, organizationId, viewer.id, logAudit, setGoal],
   );
 
   /* ── Abgeleitete Werte ───────────────────────────────────────────────────── */
@@ -839,6 +1043,16 @@ export function WorkspaceProvider({
     const executiveBase = baseOption
       ? computeRange(dailyForBatch(init.gsc.daily, baseOption.batchId), 28)?.comparison ?? null
       : null;
+
+    // Stabile 28-Tage-Basis je Pilotseite für die Executive-Zusammenfassung:
+    // unabhängig vom Zeitraum-/Scope-Filter des Cockpits, damit z. B. "Gesamter
+    // Zeitraum" die Aussage nicht künstlich verändert.
+    const executiveScopeBreakdown = scopeOptions
+      .filter((option) => option.scopeType === "product_page")
+      .map((option) => ({
+        option,
+        comparison: computeRange(dailyForBatch(init.gsc.daily, option.batchId), 28)?.comparison ?? null,
+      }));
 
     // Vergleich über alle Scopes, jeweils am eigenen Datenstand verankert.
     const scopeBreakdown = scopeOptions.flatMap((option) => {
@@ -866,13 +1080,12 @@ export function WorkspaceProvider({
         previousRange: empty,
         series: [] as SeriesPoint[],
         previousSeries: [] as SeriesPoint[],
-        targetLine: [] as SeriesPoint[],
         gscTotals: null,
         gscComparison: null,
         gscProvenance: null,
         executiveBase,
+        executiveScopeBreakdown,
         scopeBreakdown,
-        activeTarget: targetForDate(targets, anchor),
       };
     }
 
@@ -886,15 +1099,14 @@ export function WorkspaceProvider({
       previousRange: previous ?? current,
       series: clicksSeries(rows, current),
       previousSeries: previous ? clicksSeries(rows, previous) : ([] as SeriesPoint[]),
-      targetLine: targetSeries(targets, current),
       gscTotals: computed.totals,
       gscComparison: computed.comparison,
       gscProvenance: provenanceFor(activeScope, init.gsc.batches, rows),
       executiveBase,
+      executiveScopeBreakdown,
       scopeBreakdown,
-      activeTarget: targetForDate(targets, anchor),
     };
-  }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, range, targets]);
+  }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, range]);
 
   const kpiTasks = useMemo(() => {
     if (!kpi) return [];
@@ -941,7 +1153,9 @@ export function WorkspaceProvider({
     members: init.members,
     pages: init.pages,
     productPages,
-    targets,
+    goalVersions,
+    reviewKpis: init.reviewKpis,
+    manualCheckIns,
     tasks,
     approvals,
     annotations,
@@ -969,6 +1183,8 @@ export function WorkspaceProvider({
     setKpiDrawerOpen,
     dataSourceDrawerOpen,
     setDataSourceDrawerOpen,
+    goalDrawerOpen,
+    setGoalDrawerOpen,
     taskDrawerId,
     setTaskDrawerId,
     createDraft,
@@ -986,7 +1202,9 @@ export function WorkspaceProvider({
     decideApproval,
     createAnnotation,
     updateAnnotation,
-    setNewTarget,
+    setGoal,
+    archiveGoal,
+    updateReviewValues,
   };
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

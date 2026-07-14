@@ -15,6 +15,17 @@ export const METRIC_LABEL: Record<CanvasMetric, string> = {
   position: "Position",
 };
 
+/**
+ * Eine ruhige Erklärzeile je Metrik, direkt am Chart. Verständlich für
+ * Nicht-SEOs; bei Position wird die visuelle Umkehrung des Charts benannt.
+ */
+export const METRIC_EXPLAIN: Record<CanvasMetric, string> = {
+  clicks: "Besuche aus Google, die tatsächlich auf der Seite ankamen.",
+  impressions: "Wie oft Seiten von Klühspies in Google eingeblendet wurden.",
+  ctr: "Anteil der Einblendungen, aus denen ein Klick wurde. Höher ist besser.",
+  position: "Durchschnittliche Google-Position. Eine höhere Linie bedeutet bessere Sichtbarkeit.",
+};
+
 export default function PerformanceControls({
   metric,
   onMetricChange,

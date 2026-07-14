@@ -108,6 +108,10 @@ export default function DataSourceDrawer() {
           <li className="kr-meta">
             Bei der durchschnittlichen Position ist eine kleinere Zahl besser.
           </li>
+          <li className="kr-meta">
+            Die automatische Aktualisierung über das Google Business Profile ist noch nicht
+            verbunden; die Google-Bewertungen werden manuell gepflegt.
+          </li>
         </ul>
       </section>
 

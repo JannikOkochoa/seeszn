@@ -5,7 +5,9 @@
 // Impressionen, CTR oder Position) über 7/28/90 Tage oder den Gesamtzeitraum,
 // mit dünner, klar beschrifteter Vergleichslinie der Vorperiode. Bei Position
 // gilt: eine kleinere Zahl ist besser – die Beschriftung sagt das explizit.
-// Ziellinie nur, wenn ein echtes editierbares KPI-Ziel existiert (nur Klicks).
+// Bewusst keine Ziellinie: rollierende Periodenziele (z. B. 100 Klicks je 28
+// Tage) gehören als Zielerreichung auf die KPI-Karte, nicht als flache
+// Tageslinie in den Chart.
 // Annotationen zeigen ausschließlich echte, von Nutzern angelegte Ereignisse;
 // ohne Ereignisse bleibt der Chart ehrlich leer.
 //
@@ -23,7 +25,7 @@ import {
 } from "@/lib/kpi/gscData";
 import type { SeriesPoint } from "@/lib/kpi/aggregate";
 import { formatDate, formatDateShort, formatNumber } from "@/lib/kpi/format";
-import PerformanceControls, { METRIC_LABEL } from "./PerformanceControls";
+import PerformanceControls, { METRIC_EXPLAIN, METRIC_LABEL } from "./PerformanceControls";
 import PerformanceTooltip from "./PerformanceTooltip";
 import { useWorkspace } from "../workspace";
 
@@ -61,8 +63,6 @@ export default function PerformanceCanvas() {
     activeScope,
     range,
     annotations,
-    activeTarget,
-    targetLine,
     setKpiDrawerOpen,
   } = useWorkspace();
 
@@ -83,7 +83,9 @@ export default function PerformanceCanvas() {
     return { series: current, previousSeries: previous };
   }, [scopeDailyRows, currentRange, previousRange, metric, hasPrevious]);
 
-  const showTarget = metric === "clicks" && activeTarget !== null;
+  // Keine Ziellinie im Tageschart: ein rollierendes Periodenziel (z. B. 100
+  // Klicks je 28 Tage) darf nicht als flache Tageslinie dargestellt werden.
+  // Die Zielerreichung steht klar auf der KPI-Karte.
 
   const chart = useMemo(() => {
     const n = series.length;
@@ -92,7 +94,6 @@ export default function PerformanceCanvas() {
     const values = [
       ...series.map((p) => p.value),
       ...previousSeries.map((p) => p.value),
-      ...(showTarget ? targetLine.map((p) => p.value) : []),
     ].filter((v): v is number => v !== null);
 
     let yMin = 0;
@@ -105,8 +106,15 @@ export default function PerformanceCanvas() {
       yMax = yMax * 1.08;
     }
 
+    // Position wird visuell umgekehrt: eine bessere (kleinere) Position liegt
+    // höher im Chart. Die Zahlen bleiben numerisch korrekt – nur die Zuordnung
+    // Wert → Pixel dreht sich, damit „weiter oben = besser“ intuitiv stimmt.
+    const invert = metric === "position";
     const x = (i: number) => PAD.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
-    const y = (v: number) => PAD.t + innerH - ((v - yMin) / (yMax - yMin || 1)) * innerH;
+    const y = (v: number) => {
+      const frac = (v - yMin) / (yMax - yMin || 1);
+      return invert ? PAD.t + frac * innerH : PAD.t + innerH - frac * innerH;
+    };
 
     const toPoints = (list: SeriesPoint[]) =>
       list.map((p, i) => (p.value === null ? null : { x: x(i), y: y(p.value) }));
@@ -126,12 +134,11 @@ export default function PerformanceCanvas() {
       y,
       curPts: toPoints(series),
       prevPts: toPoints(previousSeries),
-      targetPts: showTarget ? toPoints(targetLine) : [],
       gridValues,
       annotationsInRange,
       dateIndex,
     };
-  }, [series, previousSeries, targetLine, showTarget, metric, annotations, currentRange]);
+  }, [series, previousSeries, metric, annotations, currentRange]);
 
   const activePoint = active !== null ? series[active] : null;
   const activePrev = active !== null && hasPrevious ? previousSeries[active] : null;
@@ -175,6 +182,8 @@ export default function PerformanceCanvas() {
         <h3 className="kw-ex-canvas-title">Organische Entwicklung</h3>
         <PerformanceControls metric={metric} onMetricChange={setMetric} />
       </div>
+
+      <p className="kw-ex-canvas-explain">{METRIC_EXPLAIN[metric]}</p>
 
       <figure className="kw-chart kw-ex-chart">
         <div className="kw-chart-frame">
@@ -225,11 +234,6 @@ export default function PerformanceCanvas() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
             >
-              {/* Ziellinie: nur echtes, editierbares Ziel (Klicks pro Tag). */}
-              {chart.targetPts.length > 0 && (
-                <path d={buildPath(chart.targetPts)} fill="none" className="kw-line-target" />
-              )}
-
               {/* Vorperiode: dünner, gedeckt, gestrichelt. */}
               {hasPrevious && (
                 <path d={buildPath(chart.prevPts)} fill="none" className="kw-line-prev" />
@@ -320,6 +324,7 @@ export default function PerformanceCanvas() {
                   ? formatMetric(metric, activePrev.value)
                   : null
               }
+              hint={metric === "position" ? "Kleinere Zahl = bessere Position" : null}
               left={Math.min(Math.max(tooltipLeft, 12), 88)}
             />
           )}
@@ -364,11 +369,6 @@ export default function PerformanceCanvas() {
             <i className="kw-key kw-key--prev" /> Vorperiode
           </span>
         )}
-        {chart.targetPts.length > 0 && (
-          <span>
-            <i className="kw-key kw-key--target" /> Ziel (manuell gepflegt)
-          </span>
-        )}
         {chart.annotationsInRange.length > 0 && (
           <span>
             <i className="kw-key kw-key--ann" /> Ereignis
@@ -380,7 +380,7 @@ export default function PerformanceCanvas() {
         {cockpitRangeLabel(range)} · {formatDate(currentRange.from)} bis{" "}
         {formatDate(currentRange.to)}
         {gscProvenance?.dataAsOf && <> · Datenstand {formatDate(gscProvenance.dataAsOf)}</>}
-        {metric === "position" && <> · Position: niedriger ist besser</>}
+        {metric === "position" && <> · Höhere Linie = bessere Sichtbarkeit</>}
         {!hasPrevious && <> · Gesamtzeitraum ohne Vorperiodenvergleich</>}
       </p>
     </section>

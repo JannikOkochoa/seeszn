@@ -21,6 +21,7 @@ import {
   type GscDimensionType,
 } from "@/lib/kpi/types";
 import { COCKPIT_RANGES, cockpitRangeLabel } from "@/lib/kpi/gscData";
+import { formatGoalPeriod, resolveActiveGoal, specForMetricKey } from "@/lib/kpi/goals";
 import { displayName, formatDate, formatDelta, formatNumber, formatPercent } from "@/lib/kpi/format";
 import { useWorkspace } from "./workspace";
 
@@ -48,28 +49,22 @@ export default function KpiDetailDrawer() {
     scopeBreakdown,
     dimensionsByBatch,
     loadDimensions,
-    activeTarget,
+    goalVersions,
     activeTaskCount,
     canWrite,
     canEditTarget,
     openCreate,
     series,
     previousSeries,
-    targetLine,
     annotations,
     currentRange,
     kpiTasks,
     latestApprovalByTask,
     setTaskDrawerId,
-    setNewTarget,
-    anchor,
+    setGoalDrawerOpen,
   } = useWorkspace();
 
   const [annotationFocus, setAnnotationFocus] = useState<string | null>(null);
-  const [targetEditing, setTargetEditing] = useState(false);
-  const [targetValue, setTargetValue] = useState("");
-  const [targetError, setTargetError] = useState<string | null>(null);
-  const [targetSaving, setTargetSaving] = useState(false);
 
   // Dimensions-Snapshots des aktiven Scopes lazy laden, sobald der Drawer
   // offen ist (aggregierte Exportwerte, unabhängig vom Tage-Filter).
@@ -86,22 +81,18 @@ export default function KpiDetailDrawer() {
   );
   const dimensionRows = batchId ? dimensionsByBatch.get(batchId) : undefined;
 
-  async function saveTarget() {
-    const value = Number(targetValue.replace(",", "."));
-    if (!Number.isFinite(value) || value <= 0) {
-      setTargetError("Bitte einen Zielwert größer 0 angeben.");
-      return;
-    }
-    setTargetSaving(true);
-    setTargetError(null);
-    const result = await setNewTarget(value, anchor);
-    setTargetSaving(false);
-    if (!result.ok) {
-      setTargetError(result.message);
-      return;
-    }
-    setTargetEditing(false);
-  }
+  // Aktives Ziel der primären Kennzahl für die aktuell gewählte Range-Periode
+  // (nur informativ hier; bearbeitet wird im Ziel-Drawer).
+  const periodDays = typeof range === "number" ? range : null;
+  const activeGoal =
+    periodDays !== null
+      ? resolveActiveGoal(goalVersions, {
+          kpiDefinitionId: kpi.id,
+          periodType: "rolling_days",
+          periodDays,
+        })
+      : resolveActiveGoal(goalVersions, { kpiDefinitionId: kpi.id });
+  const goalSpec = specForMetricKey(kpi.metric_key);
 
   return (
     <Drawer
@@ -172,62 +163,26 @@ export default function KpiDetailDrawer() {
               </div>
               <div>
                 <span className="kr-eyebrow">Ziel</span>
-                {targetEditing ? (
-                  <div className="kw-target-edit">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      className="kw-input kw-input--target"
-                      value={targetValue}
-                      onChange={(e) => setTargetValue(e.target.value)}
-                      aria-label="Neuer Zielwert, Klicks pro Tag"
-                      data-autofocus
-                    />
-                    <span className="kr-meta">Klicks pro Tag, gültig ab {formatDate(anchor)}</span>
-                    {targetError && (
-                      <span className="kw-form-error" role="alert">
-                        {targetError}
-                      </span>
-                    )}
-                    <span className="kw-form-actions">
+                <span className="kw-dhead-mid">
+                  {activeGoal && goalSpec ? goalSpec.formatValue(Number(activeGoal.target_value)) : "–"}
+                </span>
+                <span className="kr-meta">
+                  {activeGoal
+                    ? `${formatGoalPeriod(activeGoal.period_type, activeGoal.period_days)} · manuell gepflegt`
+                    : "Noch kein Ziel festgelegt"}
+                  {canEditTarget && (
+                    <>
+                      {" · "}
                       <button
                         type="button"
                         className="kw-link"
-                        onClick={() => void saveTarget()}
-                        disabled={targetSaving}
+                        onClick={() => setGoalDrawerOpen(true)}
                       >
-                        {targetSaving ? "Wird gespeichert…" : "Ziel speichern"}
+                        {activeGoal ? "Ziel bearbeiten" : "Ziel festlegen"}
                       </button>
-                      <button type="button" className="kw-link" onClick={() => setTargetEditing(false)}>
-                        Abbrechen
-                      </button>
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="kw-dhead-mid">
-                      {activeTarget ? formatNumber(Number(activeTarget.target_value)) : "–"}
-                    </span>
-                    <span className="kr-meta">
-                      {activeTarget ? "Klicks pro Tag · manuell gepflegt" : "Kein aktives Ziel"}
-                      {canEditTarget && (
-                        <>
-                          {" · "}
-                          <button
-                            type="button"
-                            className="kw-link"
-                            onClick={() => {
-                              setTargetValue(activeTarget ? String(activeTarget.target_value) : "");
-                              setTargetEditing(true);
-                            }}
-                          >
-                            {activeTarget ? "anpassen" : "Ziel festlegen"}
-                          </button>
-                        </>
-                      )}
-                    </span>
-                  </>
-                )}
+                    </>
+                  )}
+                </span>
               </div>
             </div>
             <div className="kw-dhead-foot">
@@ -270,10 +225,11 @@ export default function KpiDetailDrawer() {
                 ))}
               </div>
             </div>
+            {/* Keine Ziellinie: Periodenziele stehen als Zielerreichung im Kopf. */}
             <KpiTimeSeries
               series={series}
               previousSeries={previousSeries}
-              targetLine={targetLine}
+              targetLine={[]}
               annotations={annotationsInCurrentRange}
               isFiltered={false}
               onAnnotationOpen={(a) => setAnnotationFocus(a.id)}

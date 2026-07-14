@@ -22,6 +22,12 @@ const ALLOWED_ACTIONS = new Set([
   "annotation.created",
   "annotation.updated",
   "comment.created",
+  "kpi.goal_created",
+  "kpi.goal_changed",
+  "kpi.goal_archived",
+  "kpi.goal_owner_changed",
+  "review.checked_in",
+  "review.goal_changed",
 ]);
 
 /** entity_type -> Tabelle, gegen die die Organisationszugehörigkeit geprüft wird. */
@@ -31,6 +37,8 @@ const ENTITY_TABLES: Record<string, string> = {
   annotation: "annotations",
   comment: "comments",
   kpi_definition: "kpi_definitions",
+  kpi_goal: "kpi_targets",
+  review_check_in: "kpi_manual_check_ins",
 };
 
 /** Nur flache, kurze Skalar-Metadaten; keine Objekte, keine Secrets. */

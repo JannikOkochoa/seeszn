@@ -3,7 +3,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import HomepageMockup from "./HomepageMockup";
-import KpiMonitoring from "./KpiMonitoring";
 import KpiWorkspace from "./kpi/KpiWorkspace";
 import SignalAperture from "@/components/SignalAperture";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -25,14 +24,18 @@ import {
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+// Launch-Scope: In der Kundenansicht bleibt vorläufig nur das KPI Dashboard
+// sichtbar. Die übrigen Sektionen und ihre Daten bleiben vollständig erhalten;
+// dieses Flag blendet sie nur aus. Zum Reaktivieren auf false setzen und die
+// unten auskommentierten NAV-Einträge wieder aufnehmen.
+const CUSTOMER_KPI_ONLY = true;
+
 // Bereichs-Navigation in der Kopfleiste; die IDs sitzen auf den Sektionen.
+// Vorläufig ausgeblendet (Launch-Scope): Übersicht, Mockups, SEO Pipeline,
+// Experimente, Freigaben. Nur das KPI Dashboard bleibt navigierbar und ist die
+// Standardansicht nach dem Login.
 const NAV = [
-  { id: "uebersicht", label: "Übersicht" },
-  { id: "mockups", label: "Mockups" },
-  { id: "kpi-monitoring", label: "KPI Monitoring" },
-  { id: "seo-pipeline", label: "SEO Pipeline" },
-  { id: "experimente", label: "Experimente" },
-  { id: "freigaben", label: "Freigaben" },
+  { id: "kpi-monitoring", label: "KPI Dashboard" },
 ] as const;
 
 type ItemState = { status: RecStatus; note: string | null };
@@ -160,6 +163,8 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
       </header>
 
       <main className="kr-main">
+        {!CUSTOMER_KPI_ONLY && (
+          <>
         {/* ── 01 · Übersicht ─────────────────────────────────── */}
         <Reveal id="uebersicht" className="kr-section kr-intro" reduced={reduced}>
           <header className="kr-head">
@@ -235,25 +240,23 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
             </aside>
           </div>
         </Reveal>
+          </>
+        )}
 
-        {/* ── 03 · KPI Monitoring ────────────────────────────── */}
+        {/* ── 03 · KPI Dashboard ─────────────────────────────── */}
         <Reveal id="kpi-monitoring" className="kr-section" reduced={reduced}>
           <SectionHead
             reduced={reduced}
             index="03"
-            eyebrow="KPI Monitoring"
+            eyebrow="KPI Dashboard"
             title="Der Blick auf die Zahlen."
             lead="Ein Steuerungswert im Zentrum: organische Klicks auf den Städtereise-Produktseiten, aus importierten Google-Search-Console-Exporten, mit Ziel, Verlauf und den Maßnahmen dahinter."
           />
           <KpiWorkspace init={workspace} />
-          <div className="kr-kpi-legacy">
-            <p className="kr-eyebrow kr-kpi-legacy-label">
-              Weitere Arbeitsstände · redaktionell gepflegt
-            </p>
-            <KpiMonitoring />
-          </div>
         </Reveal>
 
+        {!CUSTOMER_KPI_ONLY && (
+          <>
         {/* ── 04 · SEO Pipeline ──────────────────────────────── */}
         <Reveal id="seo-pipeline" className="kr-section" reduced={reduced}>
           <SectionHead
@@ -434,6 +437,8 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
             ))}
           </div>
         </Reveal>
+          </>
+        )}
       </main>
 
       {/* ── Fußzeile ───────────────────────────────────────── */}
@@ -576,10 +581,6 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
         .kr-top-meta { white-space: nowrap; }
         .kr-top-user { white-space: nowrap; color: var(--ink-strong); }
         .kr-top-logout { white-space: nowrap; }
-
-        /* Redaktionelle KPI-Landschaft unterhalb des Live-KPI */
-        .kr-kpi-legacy { margin-top: clamp(64px, 8vw, 104px); }
-        .kr-kpi-legacy-label { border-top: 1px solid var(--line); padding-top: 18px; }
 
         /* ── Rhythmus ───────────────────────────────────────── */
         .kr-main { padding: 0 var(--gutter); max-width: 1400px; margin: 0 auto; }
