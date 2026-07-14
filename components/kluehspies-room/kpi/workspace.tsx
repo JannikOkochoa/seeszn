@@ -265,6 +265,9 @@ interface WorkspaceContextValue {
   /** „+ KPI hinzufügen"-Drawer. */
   kpiCreateOpen: boolean;
   setKpiCreateOpen: (open: boolean) => void;
+  /** Mitgliederverwaltung, ausschließlich für SEESZN-Admins. */
+  memberAdminOpen: boolean;
+  setMemberAdminOpen: (open: boolean) => void;
 }
 
 export interface GoalInput {
@@ -374,6 +377,7 @@ export function WorkspaceProvider({
   // Ziel-Drawer kann jeden KPI adressieren (primär oder eigener); null = primärer KPI.
   const [goalDrawerKpiId, setGoalDrawerKpiId] = useState<string | null>(null);
   const [kpiCreateOpen, setKpiCreateOpen] = useState(false);
+  const [memberAdminOpen, setMemberAdminOpen] = useState(false);
   const [taskDrawerId, setTaskDrawerId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<TaskDraft | null>(null);
   const [createNonce, setCreateNonce] = useState(0);
@@ -1511,6 +1515,8 @@ export function WorkspaceProvider({
     openGoalDrawer,
     kpiCreateOpen,
     setKpiCreateOpen,
+    memberAdminOpen,
+    setMemberAdminOpen,
     taskDrawerId,
     setTaskDrawerId,
     createDraft,

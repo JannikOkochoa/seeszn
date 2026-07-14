@@ -20,6 +20,7 @@ import GooglePresence from "./executive/GooglePresence";
 import ContentAuthority from "./executive/ContentAuthority";
 import WeitereKpis from "./executive/WeitereKpis";
 import KpiCreateDrawer from "./KpiCreateDrawer";
+import MemberAdminDrawer from "./MemberAdminDrawer";
 import DataSourceDrawer from "./executive/DataSourceDrawer";
 import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
@@ -30,13 +31,35 @@ import TaskCreateDrawer from "./TaskCreateDrawer";
 import UndoToast from "./UndoToast";
 
 function KpiToolbar() {
-  const { canCreateKpi, setKpiCreateOpen } = useWorkspace();
-  if (!canCreateKpi) return null;
+  const {
+    canCreateKpi,
+    isAdmin,
+    setKpiCreateOpen,
+    setMemberAdminOpen,
+  } = useWorkspace();
+
+  if (!canCreateKpi && !isAdmin) return null;
+
   return (
-    <div className="kw-ex-toolbar">
-      <button type="button" className="kw-link kw-ex-add-kpi" onClick={() => setKpiCreateOpen(true)}>
-        + KPI hinzufügen
-      </button>
+    <div className="kw-ex-toolbar kw-member-toolbar">
+      {canCreateKpi && (
+        <button
+          type="button"
+          className="kw-link kw-ex-add-kpi"
+          onClick={() => setKpiCreateOpen(true)}
+        >
+          + KPI hinzufügen
+        </button>
+      )}
+      {isAdmin && (
+        <button
+          type="button"
+          className="kw-link"
+          onClick={() => setMemberAdminOpen(true)}
+        >
+          Mitglieder verwalten
+        </button>
+      )}
     </div>
   );
 }
@@ -84,6 +107,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <DataSourceDrawer />
       <GoalDrawer />
       <KpiCreateDrawer />
+      <MemberAdminDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
       <UndoToast />
@@ -91,6 +115,13 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <style>{`
         /* ── KPI-Workspace: gleiche Sprache wie der Raum ────────────────── */
         .kw { display: flex; flex-direction: column; }
+        .kw-member-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+          gap: 12px 24px;
+        }
         .kw-block-label { border-top: 1px solid var(--line); padding-top: 18px; margin: clamp(48px, 6vw, 72px) 0 20px; }
         .kw-muted { color: var(--text-muted); }
         .kw-empty { padding: 18px 0; }
