@@ -34,6 +34,24 @@ alter table public.kpi_targets
   add column if not exists supersedes_target_id uuid references public.kpi_targets (id) on delete set null,
   add column if not exists archived_at timestamptz;
 
+-- Legacy-Ziele aus dem alten, unbestätigten Modell absichern. Erfasst wird der
+-- gesamte Prä-Migrationsbestand (alle beim Anwenden bereits vorhandenen Zeilen)
+-- – NICHT über einen Zahlenwert und NICHT über eine feste ID. Diese Migration
+-- fügt selbst keine Zeilen ein; alle vorhandenen Zeilen sind daher per Definition
+-- Legacy. Sie werden als archiviert markiert (nie aktiv), erhalten eine gültige
+-- Zeitraumform und werden NICHT physisch gelöscht. Muss vor der neuen
+-- period_shape-Regel und dem „ein aktives Ziel"-Index laufen. Später über die
+-- UI erstellte Ziele entstehen erst nach dieser Migration und bleiben unberührt.
+update public.kpi_targets
+set
+  period_type = 'current_state',
+  period_days = null,
+  comparator = 'at_least',
+  status = 'archived',
+  source_type = 'imported_legacy',
+  archived_at = now(),
+  end_date = coalesce(end_date, current_date);
+
 -- Zeitraum-Konsistenz: rollierende Ziele brauchen einen fachlich erlaubten
 -- period_days-Wert (7/28/90); Monats- und Zustandsziele haben keinen.
 alter table public.kpi_targets
@@ -60,19 +78,18 @@ comment on table public.kpi_targets is
   'Zielversion; Änderung = neue Version, alte wird superseded. Kanonische '
   'Zielwahrheit für alle KPIs (Klicks, Bewertungen, künftig weitere).';
 
--- organization_id einer Zielversion ist unveränderlich (created_by ist bereits
--- über kpi_targets_lock_author aus 20260712150000 geschützt).
-create trigger kpi_targets_lock_org
-  before update on public.kpi_targets
-  for each row
-  execute function public.prevent_author_change('organization_id');
+-- Kein eigener Org-Lock-Trigger: organization_id auf kpi_targets ist bereits
+-- unveränderlich. Der Trigger kpi_targets_lock_org (→ prevent_org_change) wird
+-- schon von der angewendeten Migration 20260712130100_security_hardening.sql
+-- angelegt (kanonisch für alle Tabellen), und created_by ist über
+-- kpi_targets_lock_author (20260712150000) geschützt. Ein zweiter Trigger
+-- gleichen Namens würde nur kollidieren – daher hier bewusst keiner.
 
--- ── 2 · Demo-Ziel „60 Klicks/Tag" entschärfen ────────────────────────────────
--- Der Wert lebt ausschließlich in der als DEPRECATED markierten Spalte
--- kpi_definitions.target_value (Seed) und wird vom Loader nicht gelesen. Er wird
--- hier auf NULL gesetzt, damit kein Demo-Ziel je aus dieser Altspalte auftaucht.
--- Kein Hard-Delete einer Zielzeile (es existiert keine); nur Bereinigung eines
--- toten Skalars. Idempotent.
+-- ── 2 · Deprecated Demo-Zielfeld entschärfen ─────────────────────────────────
+-- Das alte, als DEPRECATED markierte Skalarfeld kpi_definitions.target_value
+-- (Seed, vom Loader nicht gelesen) wird auf NULL gesetzt, damit kein Demo-Ziel
+-- je aus dieser Altspalte auftaucht. Die zugehörige Legacy-Zielzeile in
+-- kpi_targets wurde oben archiviert (nicht gelöscht). Idempotent.
 update public.kpi_definitions set target_value = null where target_value is not null;
 
 -- ── 3 · Manuelle Check-ins für manuell gepflegte KPIs (append-only) ───────────
