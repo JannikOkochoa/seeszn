@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// ─── NUR ENTWICKLUNG: Bootstrap der Google-Bewertungs-KPIs ────────────────────
-// Legt die manuell gepflegten Review-KPIs für Klühspies an: zwei
-// kpi_definitions (Sternebewertung, neue Bewertungen), die verifizierte
-// Baseline als append-only Check-in und die zugehörigen Zielversionen
-// (kpi_targets). Läuft ausschließlich lokal oder gegen das eine freigegebene
-// Dev-Projekt (Project-Ref unten). Kein anderes Remote-Projekt.
+// ─── NUR ENTWICKLUNG: Bootstrap der manuellen KPIs ────────────────────────────
+// Legt die manuell gepflegten KPIs für Klühspies an: Google-Bewertungen
+// (Sterne + neue Bewertungen), Google-Präsenz (Profilaufrufe, Interaktionen,
+// ungefährer Monatswert) und Content & Authority (Blog-/Redditziele). Erstellt
+// die kpi_definitions, die verifizierten Baselines als append-only Check-ins und
+// die zugehörigen Zielversionen (kpi_targets). Läuft ausschließlich lokal oder
+// gegen das eine freigegebene Dev-Projekt (Project-Ref unten). Sekundäre KPIs;
+// die vier Search-KPIs bleiben unberührt.
 //
 // Aufruf:
 //   node --env-file=.env.local scripts/bootstrap-review-kpis.mjs            (anwenden)
@@ -33,6 +35,34 @@ const BASELINE = {
 
 const RATING_KEY = "google_rating";
 const NEW_KEY = "google_new_reviews";
+
+// Google-Präsenz: verifizierte Baseline vom 14.07.2026. Werte sind manuell
+// bestätigt, sekundär, KEIN Bestandteil der vier Search-KPIs. 2.860/1.000 sind
+// NICHT als „letzte 90 Tage" zu verstehen; nächster Vergleich nach 90 Tagen.
+const PRESENCE = {
+  profileViews: 2860,
+  interactions: 1000,
+  monthlyEstimate: 505,
+  measuredAt: "2026-07-14",
+};
+const PROFILE_VIEWS_KEY = "google_profile_views";
+const INTERACTIONS_KEY = "google_interactions";
+const MONTHLY_VIEWS_KEY = "google_monthly_views_estimate";
+
+// Content & Authority: nur operative Ziele, noch keine erfundenen Ist-Werte.
+const CONTENT = { blogGoal: 1, redditGoal: 1 };
+const BLOG_KEY = "blog_posts_published";
+const REDDIT_KEY = "qualified_reddit_contributions";
+
+const MANUAL_KEYS = [
+  RATING_KEY,
+  NEW_KEY,
+  PROFILE_VIEWS_KEY,
+  INTERACTIONS_KEY,
+  MONTHLY_VIEWS_KEY,
+  BLOG_KEY,
+  REDDIT_KEY,
+];
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
@@ -86,12 +116,12 @@ async function main() {
   }
   const creatorId = creator.data.id;
 
-  // Existieren die Review-KPI-Definitionen bereits?
+  // Existieren die manuellen KPI-Definitionen bereits?
   const defs = await admin
     .from("kpi_definitions")
     .select("id, metric_key, name")
     .eq("organization_id", organizationId)
-    .in("metric_key", [RATING_KEY, NEW_KEY]);
+    .in("metric_key", MANUAL_KEYS);
   if (defs.error) {
     console.error(`Konnte kpi_definitions nicht lesen: ${defs.error.message}`);
     console.error("Ist die Migration 20260714100000_kpi_goal_system.sql angewendet?");
@@ -99,9 +129,51 @@ async function main() {
   }
   const byKey = new Map((defs.data ?? []).map((d) => [d.metric_key, d]));
 
+  const DEFINITIONS = [
+    [RATING_KEY, "Google-Bewertung"],
+    [NEW_KEY, "Neue Google-Bewertungen"],
+    [PROFILE_VIEWS_KEY, "Profilaufrufe"],
+    [INTERACTIONS_KEY, "Interaktionen"],
+    [MONTHLY_VIEWS_KEY, "Monatliche Aufrufe (ungefähr)"],
+    [BLOG_KEY, "Blogartikel"],
+    [REDDIT_KEY, "Reddit"],
+  ];
+
   const plan = [];
-  if (!byKey.has(RATING_KEY)) plan.push(`kpi_definition anlegen: ${RATING_KEY} (Google-Bewertung)`);
-  if (!byKey.has(NEW_KEY)) plan.push(`kpi_definition anlegen: ${NEW_KEY} (Neue Google-Bewertungen)`);
+  for (const [key, name] of DEFINITIONS) {
+    if (!byKey.has(key)) plan.push(`kpi_definition anlegen: ${key} (${name})`);
+  }
+
+  // Google-Präsenz-Baseline: bereits vorhanden? (Idempotenz + nie überschreiben)
+  const viewsKpiId = byKey.get(PROFILE_VIEWS_KEY)?.id ?? null;
+  let existingPresence = null;
+  if (viewsKpiId) {
+    const rows = await admin
+      .from("kpi_manual_check_ins")
+      .select("value, measured_at")
+      .eq("organization_id", organizationId)
+      .eq("kpi_definition_id", viewsKpiId)
+      .order("measured_at", { ascending: false })
+      .limit(1);
+    if (!rows.error) existingPresence = rows.data?.[0] ?? null;
+  }
+  if (existingPresence) {
+    if (Number(existingPresence.value) !== PRESENCE.profileViews) {
+      console.error("Abbruch: Es existiert bereits ein abweichender Profilaufrufe-Check-in.");
+      console.error(`  vorhanden: ${existingPresence.value} (Stand ${existingPresence.measured_at})`);
+      console.error(`  Baseline:  ${PRESENCE.profileViews}`);
+      console.error("Der Bootstrap setzt manuell gepflegte Daten nicht zurück.");
+      process.exit(validateOnly ? 0 : 2);
+    }
+    log("Google-Präsenz-Baseline bereits vorhanden und identisch – No-op.");
+  } else {
+    plan.push(
+      `Google-Präsenz-Check-ins anlegen: ${PRESENCE.profileViews} Aufrufe / ${PRESENCE.interactions} Interaktionen / ca. ${PRESENCE.monthlyEstimate} monatlich (Stand ${PRESENCE.measuredAt})`,
+    );
+  }
+  plan.push(`Blogziel anlegen: ≥ ${CONTENT.blogGoal} pro Kalenderwoche`);
+  plan.push(`Redditziel anlegen: ≥ ${CONTENT.redditGoal} pro Kalendermonat`);
+  plan.push('Blog-/Reddit-Ist-Werte: NICHT gesetzt → "noch nicht erfasst"');
 
   // Vorhandene Rating-Check-ins prüfen (Idempotenz + „nie überschreiben").
   let ratingKpiId = byKey.get(RATING_KEY)?.id ?? null;
@@ -167,8 +239,13 @@ async function main() {
 
   ratingKpiId = await ensureDefinition(RATING_KEY, "Google-Bewertung");
   const newKpiId = await ensureDefinition(NEW_KEY, "Neue Google-Bewertungen");
+  const profileViewsKpiId = await ensureDefinition(PROFILE_VIEWS_KEY, "Profilaufrufe");
+  const interactionsKpiId = await ensureDefinition(INTERACTIONS_KEY, "Interaktionen");
+  const monthlyKpiId = await ensureDefinition(MONTHLY_VIEWS_KEY, "Monatliche Aufrufe (ungefähr)");
+  const blogKpiId = await ensureDefinition(BLOG_KEY, "Blogartikel");
+  const redditKpiId = await ensureDefinition(REDDIT_KEY, "Reddit");
 
-  async function ensureActiveGoal(kpiId, targetValue, periodType) {
+  async function ensureActiveGoal(kpiId, targetValue, periodType, rationale) {
     const active = await admin
       .from("kpi_targets")
       .select("id, target_value")
@@ -190,31 +267,45 @@ async function main() {
       source_type: "manual_confirmed",
       status: "active",
       created_by: creatorId,
-      rationale: "Erstes Ziel nach verifizierter Review-Baseline",
+      rationale,
     });
     if (inserted.error) throw new Error(`Ziel ${periodType}: ${inserted.error.message}`);
   }
 
-  if (!existingRating) {
-    const checkIn = await admin.from("kpi_manual_check_ins").insert({
+  async function insertCheckIn(kpiId, value, secondaryValue, measuredAt, note) {
+    const row = await admin.from("kpi_manual_check_ins").insert({
       organization_id: organizationId,
-      kpi_definition_id: ratingKpiId,
-      value: BASELINE.rating,
-      secondary_value: BASELINE.reviewCount,
+      kpi_definition_id: kpiId,
+      value,
+      secondary_value: secondaryValue,
       period_key: null,
-      measured_at: today,
-      note: "Verifizierte Baseline zum Launch",
+      measured_at: measuredAt,
+      note,
       source_type: "manually_entered",
       entered_by: creatorId,
     });
-    if (checkIn.error) throw new Error(`Rating-Check-in: ${checkIn.error.message}`);
+    if (row.error) throw new Error(`Check-in: ${row.error.message}`);
   }
 
-  await ensureActiveGoal(ratingKpiId, BASELINE.targetRating, "current_state");
-  await ensureActiveGoal(newKpiId, BASELINE.monthlyGoal, "calendar_month");
+  if (!existingRating) {
+    await insertCheckIn(ratingKpiId, BASELINE.rating, BASELINE.reviewCount, today, "Verifizierte Baseline zum Launch");
+  }
+  await ensureActiveGoal(ratingKpiId, BASELINE.targetRating, "current_state", "Erstes Ziel nach verifizierter Review-Baseline");
+  await ensureActiveGoal(newKpiId, BASELINE.monthlyGoal, "calendar_month", "Erstes Ziel nach verifizierter Review-Baseline");
 
-  log("\nFertig. Review-KPIs, Baseline-Check-in und Ziele sind gesetzt.");
-  log('Neue Bewertungen im Monat bleiben bewusst "noch nicht erfasst".');
+  // Google-Präsenz: drei Baseline-Check-ins (nur wenn noch keiner existiert).
+  if (!existingPresence) {
+    await insertCheckIn(profileViewsKpiId, PRESENCE.profileViews, null, PRESENCE.measuredAt, "Verifizierte Baseline 14.07.2026");
+    await insertCheckIn(interactionsKpiId, PRESENCE.interactions, null, PRESENCE.measuredAt, "Verifizierte Baseline 14.07.2026");
+    await insertCheckIn(monthlyKpiId, PRESENCE.monthlyEstimate, null, PRESENCE.measuredAt, "Ungefährer Monatswert · Baseline 14.07.2026");
+  }
+
+  // Content & Authority: nur Ziele, keine erfundenen Ist-Werte.
+  await ensureActiveGoal(blogKpiId, CONTENT.blogGoal, "calendar_week", "Operatives Content-Ziel");
+  await ensureActiveGoal(redditKpiId, CONTENT.redditGoal, "calendar_month", "Operatives Authority-Ziel");
+
+  log("\nFertig. Review-, Google-Präsenz- und Content-KPIs mit Baselines und Zielen sind gesetzt.");
+  log('Monatliche Reviews sowie Blog-/Reddit-Ist-Werte bleiben bewusst "noch nicht erfasst".');
 }
 
 main().catch((error) => {

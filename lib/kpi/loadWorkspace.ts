@@ -21,7 +21,6 @@ import {
   type Role,
   type WorkspaceInit,
 } from "./types";
-import { REVIEW_NEW_METRIC_KEY, REVIEW_RATING_METRIC_KEY } from "./reviews";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function loadWorkspace(
@@ -59,7 +58,7 @@ export async function loadWorkspace(
     taskLinks,
     approvals,
     goalVersions,
-    reviewKpis,
+    manualKpis,
     manualCheckIns,
   ] = await Promise.all([
       supabase
@@ -110,13 +109,14 @@ export async function loadWorkspace(
         )
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false }),
-      // Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis zum
+      // Manuell gepflegte KPI-Definitionen (Bewertungen, Google-Präsenz, Content
+      // & Authority): alle außer der primären GSC-Kennzahl. Leer bis zum
       // Bootstrap-Script (scripts/bootstrap-review-kpis.mjs).
       supabase
         .from("kpi_definitions")
         .select("id, organization_id, name, metric_key, owner_id, data_source_id")
         .eq("organization_id", organizationId)
-        .in("metric_key", [REVIEW_RATING_METRIC_KEY, REVIEW_NEW_METRIC_KEY]),
+        .neq("metric_key", METRIC_KEY),
       // Append-only Check-ins der manuellen KPIs. Fehlt die Tabelle noch
       // (vor der Migration), bleibt data null → [].
       supabase
@@ -202,7 +202,7 @@ export async function loadWorkspace(
     taskLinks: (taskLinks.data as WorkspaceInit["taskLinks"]) ?? [],
     approvals: (approvals.data as WorkspaceInit["approvals"]) ?? [],
     annotations: (annotations.data as WorkspaceInit["annotations"]) ?? [],
-    reviewKpis: (reviewKpis.data as WorkspaceInit["reviewKpis"]) ?? [],
+    manualKpis: (manualKpis.data as WorkspaceInit["manualKpis"]) ?? [],
     manualCheckIns: (manualCheckIns.data as WorkspaceInit["manualCheckIns"]) ?? [],
     gsc: {
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],

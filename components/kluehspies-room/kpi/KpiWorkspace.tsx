@@ -16,6 +16,8 @@ import PerformanceCanvas from "./executive/PerformanceCanvas";
 import AttentionPanel from "./executive/AttentionPanel";
 import NextActionPanel from "./executive/NextActionPanel";
 import ReviewQuickWin from "./executive/ReviewQuickWin";
+import GooglePresence from "./executive/GooglePresence";
+import ContentAuthority from "./executive/ContentAuthority";
 import DataSourceDrawer from "./executive/DataSourceDrawer";
 import ExecutiveEmptyState from "./executive/ExecutiveEmptyState";
 import TaskList from "./TaskList";
@@ -41,6 +43,8 @@ function ExecutiveCockpit() {
             <NextActionPanel />
           </div>
           <ReviewQuickWin />
+          <GooglePresence />
+          <ContentAuthority />
         </>
       ) : (
         <ExecutiveEmptyState />
@@ -669,6 +673,34 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 20px; }
         .kw-ex-review-edit { color: var(--text-secondary); }
         .kw-ex-review-empty { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+
+        /* G · Google-Präsenz (sekundär) */
+        .kw-ex-presence { margin-top: clamp(32px, 4.5vw, 52px); max-width: 640px; }
+        .kw-ex-presence-values {
+          display: flex; flex-wrap: wrap; gap: 20px 40px; margin: 0;
+          border-top: 1px solid var(--line-soft); padding-top: 16px;
+        }
+        .kw-ex-presence-values > div { display: flex; flex-direction: column; gap: 4px; }
+        .kw-ex-presence-values dd {
+          margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.8vw, 32px);
+          line-height: 1; color: var(--ink-strong); font-variant-numeric: tabular-nums;
+        }
+        .kw-ex-presence-values dt { font-size: 13px; color: var(--text-secondary); }
+        .kw-ex-presence-meta { margin-top: 14px; }
+
+        /* H · Content & Authority (sekundär) */
+        .kw-ex-content { margin-top: clamp(32px, 4.5vw, 52px); max-width: 640px; }
+        .kw-ex-content-list {
+          list-style: none; margin: 0; padding: 0;
+          border-top: 1px solid var(--line-soft);
+        }
+        .kw-ex-content-list > li {
+          display: flex; flex-direction: column; gap: 5px;
+          border-bottom: 1px solid var(--line-soft); padding: 14px 0 16px;
+        }
+        .kw-ex-content-name { font-family: var(--serif); font-size: 17px; color: var(--ink-strong); }
+        .kw-ex-content-line { color: var(--text-secondary); }
+        .kw-ex-content-hint { color: var(--text-muted); font-style: italic; }
 
         /* Bewertungen anfragen */
         .kw-review-link-text {

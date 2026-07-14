@@ -11,7 +11,7 @@ import type { GoalVersionRow } from "./types";
 const roundPct = (pct: number) => Math.round(pct);
 
 export type MetricDirection = "higher_is_better" | "lower_is_better";
-export type PeriodType = "rolling_days" | "calendar_month" | "current_state";
+export type PeriodType = "rolling_days" | "calendar_week" | "calendar_month" | "current_state";
 export type Comparator = "at_least" | "at_most";
 export type GoalSourceType = "manual_confirmed" | "imported_legacy" | "demo" | "system";
 export type GoalStatusValue = "active" | "superseded" | "archived" | "draft";
@@ -30,7 +30,16 @@ export interface AllowedPeriod {
 export interface KpiSpec {
   metricKey: string;
   label: string;
-  unit: "clicks" | "impressions" | "percent" | "position" | "stars" | "reviews";
+  unit:
+    | "clicks"
+    | "impressions"
+    | "percent"
+    | "position"
+    | "stars"
+    | "reviews"
+    | "views"
+    | "interactions"
+    | "posts";
   unitLabel: string;
   /** Substantiv für „X … fehlen" bzw. „X … über dem Ziel". */
   remainingNoun: string;
@@ -125,6 +134,64 @@ export const KPI_SPECS: Record<string, KpiSpec> = {
     allowedPeriods: [{ periodType: "calendar_month", periodDays: null, label: "Aktueller Monat" }],
     formatValue: (n) => de(n),
   },
+  // Google-Präsenz: manuell gepflegte Baselines, Vergleich nach 90 Tagen –
+  // kein rollierendes Ziel, deshalb allowedPeriods nur als Formalie current_state.
+  google_profile_views: {
+    metricKey: "google_profile_views",
+    label: "Profilaufrufe",
+    unit: "views",
+    unitLabel: "Aufrufe",
+    remainingNoun: "Aufrufe",
+    direction: "higher_is_better",
+    comparator: "at_least",
+    allowedPeriods: [{ periodType: "current_state", periodDays: null, label: "Aktueller Stand" }],
+    formatValue: (n) => de(n),
+  },
+  google_interactions: {
+    metricKey: "google_interactions",
+    label: "Interaktionen",
+    unit: "interactions",
+    unitLabel: "Interaktionen",
+    remainingNoun: "Interaktionen",
+    direction: "higher_is_better",
+    comparator: "at_least",
+    allowedPeriods: [{ periodType: "current_state", periodDays: null, label: "Aktueller Stand" }],
+    formatValue: (n) => de(n),
+  },
+  google_monthly_views_estimate: {
+    metricKey: "google_monthly_views_estimate",
+    label: "Monatliche Aufrufe (ungefähr)",
+    unit: "views",
+    unitLabel: "Aufrufe",
+    remainingNoun: "Aufrufe",
+    direction: "higher_is_better",
+    comparator: "at_least",
+    allowedPeriods: [{ periodType: "current_state", periodDays: null, label: "Aktueller Stand" }],
+    formatValue: (n) => de(n),
+  },
+  // Content & Authority: operative Wochen-/Monatsziele.
+  blog_posts_published: {
+    metricKey: "blog_posts_published",
+    label: "Blogartikel",
+    unit: "posts",
+    unitLabel: "Beiträge",
+    remainingNoun: "Beiträge",
+    direction: "higher_is_better",
+    comparator: "at_least",
+    allowedPeriods: [{ periodType: "calendar_week", periodDays: null, label: "Aktuelle Woche" }],
+    formatValue: (n) => de(n),
+  },
+  qualified_reddit_contributions: {
+    metricKey: "qualified_reddit_contributions",
+    label: "Reddit",
+    unit: "posts",
+    unitLabel: "Beiträge",
+    remainingNoun: "Beiträge",
+    direction: "higher_is_better",
+    comparator: "at_least",
+    allowedPeriods: [{ periodType: "calendar_month", periodDays: null, label: "Aktueller Monat" }],
+    formatValue: (n) => de(n),
+  },
 };
 
 export function specForMetricKey(metricKey: string): KpiSpec | null {
@@ -138,6 +205,7 @@ export function directionExplanation(direction: MetricDirection): string {
 /** Menschlicher Zeitraumtext, unabhängig von einer einzelnen KPI. */
 export function formatGoalPeriod(periodType: PeriodType, periodDays: number | null): string {
   if (periodType === "rolling_days") return `${periodDays} Tage`;
+  if (periodType === "calendar_week") return "Aktuelle Woche";
   if (periodType === "calendar_month") return "Aktueller Monat";
   return "Aktueller Stand";
 }

@@ -17,13 +17,13 @@ import ReviewRequestDrawer from "./ReviewRequestDrawer";
 const fmt1 = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 1 });
 
 export default function ReviewQuickWin() {
-  const { reviewKpis, manualCheckIns, goalVersions, canEditTarget, profiles } = useWorkspace();
+  const { manualKpis, manualCheckIns, goalVersions, canEditTarget, profiles } = useWorkspace();
   const [editing, setEditing] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
 
   const model = useMemo(
-    () => deriveReviewModel(reviewKpis, manualCheckIns, goalVersions, new Date().toISOString().slice(0, 10)),
-    [reviewKpis, manualCheckIns, goalVersions],
+    () => deriveReviewModel(manualKpis, manualCheckIns, goalVersions, new Date().toISOString().slice(0, 10)),
+    [manualKpis, manualCheckIns, goalVersions],
   );
   const updater = model.updatedById ? profiles.find((p) => p.id === model.updatedById) : undefined;
 

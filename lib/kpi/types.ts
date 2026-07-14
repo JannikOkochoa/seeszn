@@ -73,7 +73,7 @@ export interface TargetRow {
   end_date: string | null;
 }
 
-export type GoalPeriodType = "rolling_days" | "calendar_month" | "current_state";
+export type GoalPeriodType = "rolling_days" | "calendar_week" | "calendar_month" | "current_state";
 export type GoalComparator = "at_least" | "at_most";
 export type GoalSourceType = "manual_confirmed" | "imported_legacy" | "demo" | "system";
 export type GoalStatusValue = "active" | "superseded" | "archived" | "draft";
@@ -318,9 +318,10 @@ export interface WorkspaceInit {
   taskLinks: TaskLinkRow[];
   approvals: ApprovalRow[];
   annotations: AnnotationRow[];
-  /** Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis zum Bootstrap. */
-  reviewKpis: KpiDefinitionRow[];
-  /** Append-only Check-ins der manuellen KPIs (Ist-Werte der Bewertungen). */
+  /** Manuell gepflegte KPI-Definitionen (Bewertungen, Google-Präsenz, Content
+   *  & Authority): alle außer der primären GSC-Kennzahl; leer bis zum Bootstrap. */
+  manualKpis: KpiDefinitionRow[];
+  /** Append-only Check-ins der manuellen KPIs (Ist-Werte). */
   manualCheckIns: ManualCheckInRow[];
   /** Echte GSC-Daten: aktive Batches je Scope + deren tägliche Zeitreihen.
    *  Einzige Quelle der KPI-Berechnung; Demo-Daten fließen nicht mehr ein. */

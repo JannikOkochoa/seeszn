@@ -21,7 +21,7 @@
 
 alter table public.kpi_targets
   add column if not exists period_type text not null default 'rolling_days'
-    check (period_type in ('rolling_days', 'calendar_month', 'current_state')),
+    check (period_type in ('rolling_days', 'calendar_week', 'calendar_month', 'current_state')),
   add column if not exists period_days integer,
   add column if not exists comparator text not null default 'at_least'
     check (comparator in ('at_least', 'at_most')),
@@ -41,7 +41,7 @@ alter table public.kpi_targets
 alter table public.kpi_targets
   add constraint kpi_targets_period_shape check (
     (period_type = 'rolling_days' and period_days in (7, 28, 90))
-    or (period_type in ('calendar_month', 'current_state') and period_days is null)
+    or (period_type in ('calendar_week', 'calendar_month', 'current_state') and period_days is null)
   );
 
 -- Die alte Überlappungssperre (eine Zielversion je KPI und Datumsfenster) wird

@@ -56,6 +56,14 @@ import type {
   WorkspaceInit,
 } from "@/lib/kpi/types";
 import { REVIEW_NEW_METRIC_KEY, REVIEW_RATING_METRIC_KEY } from "@/lib/kpi/reviews";
+import {
+  BLOG_POSTS_KEY,
+  GOOGLE_INTERACTIONS_KEY,
+  GOOGLE_MONTHLY_VIEWS_KEY,
+  GOOGLE_PROFILE_VIEWS_KEY,
+  REDDIT_CONTRIB_KEY,
+  isoWeekKey,
+} from "@/lib/kpi/operational";
 
 /* ── Hilfen ─────────────────────────────────────────────────────────────────── */
 
@@ -119,8 +127,9 @@ interface WorkspaceContextValue {
   // Live-Zustand
   /** Versionierte Ziele aller KPIs (append-only Historie). */
   goalVersions: GoalVersionRow[];
-  /** Manuell gepflegte KPI-Definitionen (Google-Bewertungen); leer bis Bootstrap. */
-  reviewKpis: KpiDefinitionRow[];
+  /** Manuell gepflegte KPI-Definitionen (Bewertungen, Google-Präsenz, Content &
+   *  Authority): alle außer der primären GSC-Kennzahl; leer bis Bootstrap. */
+  manualKpis: KpiDefinitionRow[];
   /** Append-only Check-ins der manuellen KPIs. */
   manualCheckIns: ManualCheckInRow[];
   tasks: TaskRow[];
@@ -237,6 +246,10 @@ interface WorkspaceContextValue {
   archiveGoal: (goalId: string) => Promise<ActionResult>;
   /** Google-Bewertungen aktualisieren: neue Check-ins + ggf. neue Zielversionen. */
   updateReviewValues: (input: ReviewValuesInput) => Promise<ActionResult>;
+  /** Google-Präsenz aktualisieren: neue manuelle Check-ins (append-only). */
+  updateGooglePresence: (input: GooglePresenceInput) => Promise<ActionResult>;
+  /** Content & Authority aktualisieren: neue manuelle Check-ins (append-only). */
+  updateContentAuthority: (input: ContentAuthorityInput) => Promise<ActionResult>;
 }
 
 export interface GoalInput {
@@ -258,6 +271,21 @@ export interface ReviewValuesInput {
   targetRating: number;
   newThisMonth: number | null;
   monthlyGoal: number;
+  note: string | null;
+}
+
+export interface GooglePresenceInput {
+  profileViews: number;
+  interactions: number;
+  monthlyEstimate: number;
+  measuredAt: string;
+  note: string | null;
+}
+
+export interface ContentAuthorityInput {
+  /** null = kein Check-in für diese Periode anlegen. */
+  blogThisWeek: number | null;
+  redditThisMonth: number | null;
   note: string | null;
 }
 
@@ -945,8 +973,8 @@ export function WorkspaceProvider({
   // ehrliche Fehlermeldung statt stiller No-op.
   const updateReviewValues = useCallback(
     async (input: ReviewValuesInput): Promise<ActionResult> => {
-      const ratingKpi = init.reviewKpis.find((k) => k.metric_key === REVIEW_RATING_METRIC_KEY);
-      const newKpi = init.reviewKpis.find((k) => k.metric_key === REVIEW_NEW_METRIC_KEY);
+      const ratingKpi = init.manualKpis.find((k) => k.metric_key === REVIEW_RATING_METRIC_KEY);
+      const newKpi = init.manualKpis.find((k) => k.metric_key === REVIEW_NEW_METRIC_KEY);
       if (!ratingKpi || !newKpi) {
         return { ok: false, message: "Die Bewertungs-KPIs sind noch nicht eingerichtet." };
       }
@@ -1023,7 +1051,122 @@ export function WorkspaceProvider({
       });
       return { ok: true };
     },
-    [supabase, init.reviewKpis, organizationId, viewer.id, logAudit, setGoal],
+    [supabase, init.manualKpis, organizationId, viewer.id, logAudit, setGoal],
+  );
+
+  // Kleiner Helfer: einen manuellen Check-in anlegen (append-only) und lokal
+  // spiegeln. GSC-Ist-Werte laufen NIE hierüber.
+  const insertCheckIn = useCallback(
+    async (
+      kpiId: string,
+      fields: {
+        value: number;
+        secondaryValue?: number | null;
+        periodKey: string | null;
+        measuredAt: string;
+        note: string | null;
+      },
+    ): Promise<ManualCheckInRow | null> => {
+      const inserted = await supabase
+        .from("kpi_manual_check_ins")
+        .insert({
+          organization_id: organizationId,
+          kpi_definition_id: kpiId,
+          value: fields.value,
+          secondary_value: fields.secondaryValue ?? null,
+          period_key: fields.periodKey,
+          measured_at: fields.measuredAt,
+          note: fields.note,
+          source_type: "manually_entered",
+          entered_by: viewer.id,
+        })
+        .select()
+        .single();
+      if (inserted.error || !inserted.data) return null;
+      const row = inserted.data as ManualCheckInRow;
+      setManualCheckIns((prev) => [row, ...prev]);
+      return row;
+    },
+    [supabase, organizationId, viewer.id],
+  );
+
+  const updateGooglePresence = useCallback(
+    async (input: GooglePresenceInput): Promise<ActionResult> => {
+      const viewsKpi = init.manualKpis.find((k) => k.metric_key === GOOGLE_PROFILE_VIEWS_KEY);
+      const interactionsKpi = init.manualKpis.find((k) => k.metric_key === GOOGLE_INTERACTIONS_KEY);
+      const monthlyKpi = init.manualKpis.find((k) => k.metric_key === GOOGLE_MONTHLY_VIEWS_KEY);
+      if (!viewsKpi || !interactionsKpi || !monthlyKpi) {
+        return { ok: false, message: "Die Google-Präsenz-KPIs sind noch nicht eingerichtet." };
+      }
+      const views = await insertCheckIn(viewsKpi.id, {
+        value: input.profileViews,
+        periodKey: null,
+        measuredAt: input.measuredAt,
+        note: input.note,
+      });
+      if (!views) return { ok: false, message: "Die Werte konnten nicht gespeichert werden." };
+      await insertCheckIn(interactionsKpi.id, {
+        value: input.interactions,
+        periodKey: null,
+        measuredAt: input.measuredAt,
+        note: input.note,
+      });
+      await insertCheckIn(monthlyKpi.id, {
+        value: input.monthlyEstimate,
+        periodKey: null,
+        measuredAt: input.measuredAt,
+        note: input.note,
+      });
+      logAudit("presence.checked_in", "manual_check_in", views.id, {
+        profileViews: input.profileViews,
+        interactions: input.interactions,
+        monthlyEstimate: input.monthlyEstimate,
+        measuredAt: input.measuredAt,
+      });
+      return { ok: true };
+    },
+    [insertCheckIn, init.manualKpis, logAudit],
+  );
+
+  const updateContentAuthority = useCallback(
+    async (input: ContentAuthorityInput): Promise<ActionResult> => {
+      const blogKpi = init.manualKpis.find((k) => k.metric_key === BLOG_POSTS_KEY);
+      const redditKpi = init.manualKpis.find((k) => k.metric_key === REDDIT_CONTRIB_KEY);
+      if (!blogKpi || !redditKpi) {
+        return { ok: false, message: "Die Content-KPIs sind noch nicht eingerichtet." };
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      let anchorId: string | null = null;
+      if (input.blogThisWeek !== null) {
+        const row = await insertCheckIn(blogKpi.id, {
+          value: input.blogThisWeek,
+          periodKey: isoWeekKey(today),
+          measuredAt: today,
+          note: input.note,
+        });
+        if (!row) return { ok: false, message: "Die Werte konnten nicht gespeichert werden." };
+        anchorId = row.id;
+      }
+      if (input.redditThisMonth !== null) {
+        const row = await insertCheckIn(redditKpi.id, {
+          value: input.redditThisMonth,
+          periodKey: today.slice(0, 7),
+          measuredAt: today,
+          note: input.note,
+        });
+        if (!row && anchorId === null)
+          return { ok: false, message: "Die Werte konnten nicht gespeichert werden." };
+        anchorId = anchorId ?? row?.id ?? null;
+      }
+      if (anchorId) {
+        logAudit("content.checked_in", "manual_check_in", anchorId, {
+          blog: input.blogThisWeek ?? "",
+          reddit: input.redditThisMonth ?? "",
+        });
+      }
+      return { ok: true };
+    },
+    [insertCheckIn, init.manualKpis, logAudit],
   );
 
   /* ── Abgeleitete Werte ───────────────────────────────────────────────────── */
@@ -1154,7 +1297,7 @@ export function WorkspaceProvider({
     pages: init.pages,
     productPages,
     goalVersions,
-    reviewKpis: init.reviewKpis,
+    manualKpis: init.manualKpis,
     manualCheckIns,
     tasks,
     approvals,
@@ -1205,6 +1348,8 @@ export function WorkspaceProvider({
     setGoal,
     archiveGoal,
     updateReviewValues,
+    updateGooglePresence,
+    updateContentAuthority,
   };
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
