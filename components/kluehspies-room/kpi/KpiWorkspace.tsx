@@ -1,11 +1,13 @@
 "use client";
 
-// ─── KPI-Workspace: Executive Cockpit ─────────────────────────────────────────
-// Komposition des KPI-Slice innerhalb der Sektion „KPI Dashboard“ als ruhiges
-// Executive Cockpit: Intro, Data-Freshness-Zeile, vier zentrale KPIs, ein
-// großer Performance Canvas, Aufmerksamkeit + nächste Handlung, darunter die
-// Maßnahmen. Alle kw-Styles leben hier zentral; die Sprache bleibt die des
-// Raums: ein Serif, ein Sans, Hairlines, warmes Papier, Gelb nur als Marker.
+// ─── KPI-Workspace: Executive Cockpit + SEO Intelligence ─────────────────────
+// Komposition des KPI-Slice als Decision Layer: Intro mit konkreter Lage,
+// Data-Freshness-Zeile, vier zentrale KPIs, Performance Canvas, Aufmerksamkeit
+// + nächste Handlung, danach die Intelligence-Sektionen (Quick Wins, Gewinner
+// & Verlierer, Content-Chancen, SEO Health, Action Feed), die Maßnahmen und
+// zuletzt die weiteren Kennzahlen. Alle kw-Styles leben hier zentral; die
+// Sprache bleibt die des Raums: ein Serif, ein Sans, Hairlines, warmes Papier,
+// Gelb nur als Marker.
 
 import type { WorkspaceInit } from "@/lib/kpi/types";
 import { useWorkspace, WorkspaceProvider } from "./workspace";
@@ -15,6 +17,11 @@ import ExecutiveKpiGrid from "./executive/ExecutiveKpiGrid";
 import PerformanceCanvas from "./executive/PerformanceCanvas";
 import AttentionPanel from "./executive/AttentionPanel";
 import NextActionPanel from "./executive/NextActionPanel";
+import QuickWinsPanel from "./intelligence/QuickWinsPanel";
+import WinnersLosersPanel from "./intelligence/WinnersLosersPanel";
+import ContentOpportunitiesPanel from "./intelligence/ContentOpportunitiesPanel";
+import SeoHealthPanel from "./intelligence/SeoHealthPanel";
+import ActionFeed from "./intelligence/ActionFeed";
 import ReviewQuickWin from "./executive/ReviewQuickWin";
 import GooglePresence from "./executive/GooglePresence";
 import ContentAuthority from "./executive/ContentAuthority";
@@ -82,15 +89,34 @@ function ExecutiveCockpit() {
             <AttentionPanel />
             <NextActionPanel />
           </div>
-          <ReviewQuickWin />
-          <GooglePresence />
-          <ContentAuthority />
-          <WeitereKpis />
+          <QuickWinsPanel />
+          <WinnersLosersPanel />
+          <ContentOpportunitiesPanel />
+          <SeoHealthPanel />
+          <ActionFeed />
         </>
       ) : (
         <ExecutiveEmptyState />
       )}
     </>
+  );
+}
+
+// Weitere Kennzahlen (manuell gepflegt) folgen nach den Maßnahmen: der
+// SEO-Entscheidungsfluss – Lage, Chancen, Aufgaben, Maßnahmen – bleibt oben
+// zusammenhängend. Gating wie zuvor: sichtbar erst mit echten Daten.
+function SecondaryKpis() {
+  const { hasRealData } = useWorkspace();
+  if (!hasRealData) return null;
+
+  return (
+    <div className="kw-secondary-block">
+      <p className="kr-eyebrow kw-block-label">Weitere Kennzahlen</p>
+      <ReviewQuickWin />
+      <GooglePresence />
+      <ContentAuthority />
+      <WeitereKpis />
+    </div>
   );
 }
 
@@ -103,6 +129,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           <p className="kr-eyebrow kw-block-label">Maßnahmen · priorisiert</p>
           <TaskList />
         </div>
+        <SecondaryKpis />
       </div>
 
       <KpiDetailDrawer />
@@ -597,6 +624,11 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           font-family: var(--serif); font-size: clamp(17px, 1.9vw, 21px);
           line-height: 1.5; color: var(--text-body); margin: 0; max-width: 640px;
         }
+        .kw-ex-priority {
+          font-family: var(--serif); font-size: clamp(16px, 1.8vw, 19px);
+          line-height: 1.5; color: var(--ink-strong); margin: 12px 0 0; max-width: 640px;
+          border-left: 2px solid var(--signal); padding-left: 14px;
+        }
 
         /* B · Data Freshness Bar */
         .kw-ex-freshness {
@@ -921,6 +953,107 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         }
         .kw-undo-text { color: var(--ink-strong); }
 
+        /* ── SEO Intelligence: Decision-Layer-Sektionen ─────────────────────
+           Jede Karte beantwortet drei Fragen (Was ist passiert / Warum /
+           Empfehlung) in derselben ruhigen Sprache: Hairlines, Serif nur für
+           das Subjekt, keine Farbe außer den bestehenden Markern. */
+        .kw-int-section { margin-top: clamp(36px, 5vw, 60px); }
+        .kw-int-label { border-top: 1px solid var(--line); padding-top: 16px; margin-bottom: 8px; }
+        .kw-int-lead {
+          font-family: var(--sans); font-size: 13px; line-height: 1.6;
+          color: var(--text-muted); margin: 0 0 18px; max-width: 640px;
+        }
+        .kw-int-section .kw-provenance { margin-top: 16px; }
+
+        .kw-int-cards {
+          list-style: none; margin: 0; padding: 0;
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: clamp(16px, 2vw, 22px);
+        }
+        .kw-int-card {
+          display: flex; flex-direction: column;
+          border: 1px solid var(--line); background: var(--paper-soft);
+          padding: clamp(18px, 2.2vw, 26px);
+          transition: border-color 0.25s ease;
+        }
+        .kw-int-card:hover { border-color: var(--line-strong); }
+        .kw-int-card-head {
+          display: flex; justify-content: space-between; align-items: baseline;
+          gap: 16px; margin-bottom: 6px;
+        }
+        .kw-int-subject {
+          font-family: var(--serif); font-size: clamp(17px, 1.9vw, 20px);
+          line-height: 1.3; color: var(--ink-strong); overflow-wrap: anywhere;
+        }
+        .kw-int-score {
+          flex: none; font-size: 10px; font-weight: 500; letter-spacing: 0.12em;
+          text-transform: uppercase; color: var(--text-muted);
+          border: 1px solid var(--line-strong); padding: 2px 8px 3px; white-space: nowrap;
+        }
+        .kw-int-score[data-level="hoch"] { color: var(--ink-strong); border-color: var(--ink-strong); }
+        .kw-int-format { margin: 0 0 4px; }
+        .kw-int-qa { margin: 10px 0 0; display: flex; flex-direction: column; gap: 10px; }
+        .kw-int-qa > div { display: flex; flex-direction: column; gap: 3px; }
+        .kw-int-qa dt { font-size: 10px; }
+        .kw-int-qa dd { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-body); }
+        .kw-int-qa dd.kw-int-action { color: var(--ink-strong); }
+        .kw-int-card-foot {
+          display: flex; justify-content: space-between; align-items: baseline; gap: 12px 20px;
+          flex-wrap: wrap; margin-top: auto; padding-top: 14px;
+          border-top: 1px solid var(--line-soft);
+        }
+        .kw-int-card .kw-int-qa { margin-bottom: 16px; }
+
+        /* Gewinner & Verlierer */
+        .kw-int-cols {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: clamp(24px, 3.5vw, 56px); align-items: start;
+        }
+        .kw-int-move-list { list-style: none; margin: 0; padding: 0; }
+        .kw-int-move {
+          border-top: 1px solid var(--line-soft); padding: 14px 0 18px;
+          display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+        }
+        .kw-int-move:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-int-move-name { font-family: var(--serif); font-size: 17px; color: var(--ink-strong); }
+        .kw-int-move-queries { margin: 0; }
+        .kw-int-move-cta { margin-top: 2px; }
+
+        /* SEO Health */
+        .kw-int-health { list-style: none; margin: 0; padding: 0; }
+        .kw-int-health-row {
+          display: grid; grid-template-columns: 200px 170px minmax(0, 1.3fr) minmax(0, 1fr);
+          gap: 6px 24px; align-items: baseline;
+          border-top: 1px solid var(--line-soft); padding: 13px 0 15px;
+        }
+        .kw-int-health-row:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-int-health-name {
+          display: inline-flex; align-items: baseline; gap: 10px;
+          font-family: var(--serif); font-size: 16px; color: var(--ink-strong);
+        }
+        .kw-int-dot { width: 7px; height: 7px; flex: none; align-self: center; background: var(--text-faint); }
+        .kw-int-health-row[data-status="growing"] .kw-int-dot { background: var(--signal); }
+        .kw-int-health-row[data-status="attention"] .kw-int-dot { background: var(--clay); }
+        .kw-int-health-status { font-size: 13px; color: var(--text-secondary); }
+        .kw-int-health-row[data-status="attention"] .kw-int-health-status { color: var(--clay); }
+
+        /* Action Feed */
+        .kw-int-feed { list-style: none; margin: 0; padding: 0; }
+        .kw-int-feed-item {
+          display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 8px 22px; align-items: baseline;
+          border-top: 1px solid var(--line-soft); padding: 16px 0 18px;
+        }
+        .kw-int-feed-item:last-child { border-bottom: 1px solid var(--line-soft); }
+        .kw-int-stars { white-space: nowrap; font-size: 14px; letter-spacing: 2px; color: var(--ink-strong); }
+        .kw-int-stars span[data-empty] { color: var(--text-faint); }
+        .kw-int-feed-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .kw-int-feed-title { font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ink-strong); }
+        .kw-int-feed-source { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+
+        /* Weitere Kennzahlen nach den Maßnahmen */
+        .kw-secondary-block .kw-ex-reviews { margin-top: 0; }
+
         /* ── Responsiv ──────────────────────────────────────────────────── */
         @media (max-width: 1100px) {
           /* Tablet: zwei KPI-Spalten, Chart volle Breite, Panels untereinander. */
@@ -932,6 +1065,12 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           .kw-dhead-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .kw-props { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .kw-cards { grid-template-columns: 1fr; }
+          .kw-int-cards { grid-template-columns: 1fr; }
+          .kw-int-cols { grid-template-columns: 1fr; }
+          .kw-int-health-row {
+            grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: auto;
+          }
+          .kw-int-health-what, .kw-int-health-action { grid-column: 1 / -1; }
         }
         @media (max-width: 720px) {
           /* Mobil: KPIs in zwei schmalen Spalten, Drawer als Full-Screen Sheet,
@@ -952,6 +1091,8 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           .kw-bar-row { align-items: flex-start; }
           .kw-card-meta { grid-template-columns: 1fr; gap: 14px; }
           .kw-deleted-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .kw-int-feed-item { grid-template-columns: minmax(0, 1fr); }
+          .kw-int-stars { font-size: 13px; }
         }
       `}</style>
     </WorkspaceProvider>

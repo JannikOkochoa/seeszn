@@ -1,15 +1,17 @@
 "use client";
 
 // ─── Executive Intro ──────────────────────────────────────────────────────────
-// Sehr einfache Begrüßung plus eine deterministisch berechnete Zusammenfassung
-// aus dem 28-Tage-Vergleich des Standard-Scopes (alle Städtereisen). Keine KI,
-// keine Kausalität, maximal zwei kurze Sätze (lib/kpi/executive.ts).
+// Begrüßung plus konkrete Lage in wenigen Sätzen: Gesamtentwicklung, stärkste
+// positive und negative Bewegung mit Namen und Zahlen, dazu genau eine
+// Priorität. Deterministisch aus den stabilen 28-Tage-Vergleichen
+// (lib/kpi/intelligence.ts) – keine KI, keine Kausalitätsbehauptung.
 
-import { buildExecutiveSummary, greetingForHour } from "@/lib/kpi/executive";
+import { greetingForHour } from "@/lib/kpi/executive";
 import { useWorkspace } from "../workspace";
 
 export default function ExecutiveIntro() {
-  const { executiveBase, executiveScopeBreakdown } = useWorkspace();
+  const { intelligence } = useWorkspace();
+  const { narrative } = intelligence;
 
   return (
     <header className="kw-ex-intro">
@@ -18,9 +20,10 @@ export default function ExecutiveIntro() {
       <h3 className="kw-ex-greeting" suppressHydrationWarning>
         {greetingForHour(new Date().getHours())}
       </h3>
-      <p className="kw-ex-summary">
-        {buildExecutiveSummary(executiveBase, executiveScopeBreakdown)}
-      </p>
+      <p className="kw-ex-summary">{narrative.statements.join(" ")}</p>
+      {narrative.prioritySentence && (
+        <p className="kw-ex-priority">{narrative.prioritySentence}</p>
+      )}
     </header>
   );
 }

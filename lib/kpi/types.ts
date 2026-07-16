@@ -340,6 +340,11 @@ export interface WorkspaceInit {
     activeDatasets: GscActiveDatasetRow[];
     batches: GscImportBatchRow[];
     daily: GscScopeDailyRow[];
+    /** Dimensions-Snapshots der aktiven Batches für die Intelligence-
+     *  Ableitungen: Queries/Seiten (nach Impressionen begrenzt) sowie Geräte
+     *  und Darstellung in der Suche. Vollständige Tabellen lädt der
+     *  Detail-Drawer weiterhin lazy nach. */
+    dimensions: GscDimensionSnapshotRow[];
   };
 }
 

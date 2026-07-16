@@ -1,27 +1,36 @@
 "use client";
 
 // ─── Nächster Schritt ─────────────────────────────────────────────────────────
-// Keine Linksammlung, sondern eine echte Empfehlung: ein Satz Lageeinschätzung
-// plus kurze Begründung, deterministisch aus dem Vorperiodenvergleich
-// (lib/kpi/executive.ts), darunter genau eine dominante Aktion. Für Viewer wird
-// „Details ansehen“ zur primären Aktion. Sekundäres bleibt bewusst leise.
+// Genau eine dominante Empfehlung: der oberste Eintrag des berechneten Action
+// Feed (konkret, mit Zahlen). Liegt keiner vor, fällt das Panel auf die ruhige
+// Lageeinschätzung aus dem Vorperiodenvergleich zurück (lib/kpi/executive.ts).
+// Für Viewer wird „Details ansehen“ zur primären Aktion.
 
 import { buildNextStep } from "@/lib/kpi/executive";
 import { useWorkspace } from "../workspace";
+import { draftFromSeed } from "../intelligence/draft";
 
 export default function NextActionPanel() {
-  const { canWrite, openCreate, setKpiDrawerOpen, gscComparison } = useWorkspace();
-  const next = buildNextStep(gscComparison);
+  const { canWrite, openCreate, setKpiDrawerOpen, gscComparison, intelligence, pages } =
+    useWorkspace();
+  const top = intelligence.actionFeed[0] ?? null;
+  const fallback = buildNextStep(gscComparison);
 
   return (
     <section className="kw-ex-action" aria-label="Nächster Schritt">
       <p className="kr-eyebrow kw-ex-panel-label">Nächster Schritt</p>
-      <p className="kw-ex-action-headline">{next.headline}</p>
-      <p className="kr-meta kw-ex-action-rationale">{next.rationale}</p>
+      <p className="kw-ex-action-headline">{top ? top.title : fallback.headline}</p>
+      <p className="kr-meta kw-ex-action-rationale">{top ? top.why : fallback.rationale}</p>
       <div className="kw-ex-action-buttons">
         {canWrite ? (
           <>
-            <button type="button" className="kr-btn" onClick={() => openCreate({ source: "kpi" })}>
+            <button
+              type="button"
+              className="kr-btn"
+              onClick={() =>
+                openCreate(top ? draftFromSeed(top.draft, pages) : { source: "kpi" })
+              }
+            >
               Maßnahme erstellen
             </button>
             <button

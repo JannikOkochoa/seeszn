@@ -7,7 +7,6 @@ import assert from "node:assert/strict";
 import {
   buildAttentionItems,
   buildExecutiveKpis,
-  buildExecutiveSummary,
   getLiveSourceStatuses,
   greetingForHour,
 } from "../lib/kpi/executive.ts";
@@ -41,58 +40,21 @@ function comparisonOf(rows) {
   return computeRange(rows, 7).comparison;
 }
 
-/* ── Executive Summary: die vier Regeln ─────────────────────────────────────── */
-
-test("Summary: Impressionen steigen, Klicks fallen", () => {
-  const rows = twoWeeks((d, date) =>
-    d <= 7 ? day("b", date, 10, 1000, 20) : day("b", date, 5, 2000, 20),
-  );
-  assert.equal(
-    buildExecutiveSummary(comparisonOf(rows)),
-    "Die Reichweite steigt, aber sie führt aktuell zu weniger Klicks.",
-  );
-});
-
-test("Summary: beides steigt", () => {
-  const rows = twoWeeks((d, date) =>
-    d <= 7 ? day("b", date, 5, 1000, 20) : day("b", date, 10, 2000, 20),
-  );
-  assert.equal(
-    buildExecutiveSummary(comparisonOf(rows)),
-    "Organische Nachfrage und Reichweite entwickeln sich positiv.",
-  );
-});
-
-test("Summary: Klicks fallen und Position verschlechtert sich", () => {
-  const rows = twoWeeks((d, date) =>
-    d <= 7 ? day("b", date, 10, 1000, 20) : day("b", date, 5, 1000, 28),
-  );
-  assert.equal(
-    buildExecutiveSummary(comparisonOf(rows)),
-    "Die organische Sichtbarkeit hat sich in der aktuellen Periode abgeschwächt.",
-  );
-});
-
-test("Summary: kaum Veränderung ist stabil", () => {
-  const rows = twoWeeks((d, date) => day("b", date, 10, 1000, 20));
-  assert.equal(
-    buildExecutiveSummary(comparisonOf(rows)),
-    "Die organische Entwicklung ist weitgehend stabil.",
-  );
-});
-
-test("Summary: ohne Daten ehrlicher Hinweis, keine erfundene Aussage", () => {
-  assert.match(buildExecutiveSummary(null), /Search-Console-Export/);
-});
+/* ── Executive-Zusammenfassung: siehe tests/intelligence.test.mjs ───────────── */
+// Die frühere buildExecutiveSummary wurde durch buildExecutiveNarrative in
+// lib/kpi/intelligence.ts ersetzt (konkrete Scopes, Zahlen und Priorität).
 
 /* ── KPI-Modelle ────────────────────────────────────────────────────────────── */
+
+/** Quellzeilen-Kontext für buildExecutiveKpis (Zeitraum, Datenstand). */
+const KPI_CONTEXT = { rangeLabel: "7 Tage", dataAsOfLabel: null };
 
 test("KPI-Modelle: vier Werte, Position mit betterWhen=down korrekt bewertet", () => {
   const rows = twoWeeks((d, date) =>
     d <= 7 ? day("b", date, 10, 1000, 30) : day("b", date, 20, 1200, 20),
   );
   const cmp = comparisonOf(rows);
-  const kpis = buildExecutiveKpis(cmp.current, cmp);
+  const kpis = buildExecutiveKpis(cmp.current, cmp, KPI_CONTEXT);
   assert.equal(kpis.length, 4);
   const byKey = Object.fromEntries(kpis.map((k) => [k.key, k]));
   // Klicks gestiegen -> besser
@@ -109,7 +71,7 @@ test("KPI-Modelle: Vorperiode 0 ergibt keinen Prozentwert (Division durch null)"
     d <= 7 ? day("b", date, 0, 0, 0) : day("b", date, 3, 300, 15),
   );
   const cmp = comparisonOf(rows);
-  const clicks = buildExecutiveKpis(cmp.current, cmp).find((k) => k.key === "clicks");
+  const clicks = buildExecutiveKpis(cmp.current, cmp, KPI_CONTEXT).find((k) => k.key === "clicks");
   assert.equal(clicks.deltaPct, null);
   assert.match(clicks.srText, /Kein Vorperiodenvergleich/);
 });
@@ -120,7 +82,7 @@ test("KPI-Modelle: kleine Basis wird als lowBase markiert", () => {
   );
   const cmp = comparisonOf(rows);
   assert.equal(cmp.lowBase, true);
-  const clicks = buildExecutiveKpis(cmp.current, cmp).find((k) => k.key === "clicks");
+  const clicks = buildExecutiveKpis(cmp.current, cmp, KPI_CONTEXT).find((k) => k.key === "clicks");
   assert.equal(clicks.lowBase, true);
 });
 

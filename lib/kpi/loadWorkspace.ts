@@ -13,6 +13,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import {
   METRIC_KEY,
   type GscActiveDatasetRow,
+  type GscDimensionSnapshotRow,
   type GscImportBatchRow,
   type GscScopeDailyRow,
   type MemberCompany,
@@ -133,7 +134,7 @@ export async function loadWorkspace(
     (d) => d.import_batch_id,
   );
 
-  const [annotations, batches, daily] = await Promise.all([
+  const [annotations, batches, daily, dimensions] = await Promise.all([
     kpiId
       ? supabase
           .from("annotations")
@@ -160,6 +161,31 @@ export async function loadWorkspace(
           .eq("import_batch_id", batchId)
           .order("date", { ascending: true }),
       ),
+    ),
+    // Dimensions-Snapshots für die Intelligence-Ableitungen: Queries und
+    // Seiten nach Impressionen begrenzt (der Long Tail trägt keine
+    // Entscheidung), Geräte/Darstellung vollständig (wenige Zeilen). Die
+    // vollständigen Tabellen lädt der Detail-Drawer weiterhin lazy.
+    Promise.all(
+      activeBatchIds.flatMap((batchId) => [
+        supabase
+          .from("gsc_dimension_snapshots")
+          .select(
+            "import_batch_id, dimension_type, dimension_value, clicks, impressions, ctr, position, period_start, period_end",
+          )
+          .eq("import_batch_id", batchId)
+          .in("dimension_type", ["query", "page"])
+          .order("impressions", { ascending: false })
+          .limit(800),
+        supabase
+          .from("gsc_dimension_snapshots")
+          .select(
+            "import_batch_id, dimension_type, dimension_value, clicks, impressions, ctr, position, period_start, period_end",
+          )
+          .eq("import_batch_id", batchId)
+          .in("dimension_type", ["device", "search_appearance"])
+          .limit(40),
+      ]),
     ),
   ]);
 
@@ -208,6 +234,9 @@ export async function loadWorkspace(
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
       batches: (batches.data as GscImportBatchRow[]) ?? [],
       daily: daily.flatMap((result) => (result.data as GscScopeDailyRow[]) ?? []),
+      dimensions: dimensions.flatMap(
+        (result) => (result.data as GscDimensionSnapshotRow[]) ?? [],
+      ),
     },
   };
 }

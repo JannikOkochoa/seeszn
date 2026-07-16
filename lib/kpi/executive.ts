@@ -25,79 +25,15 @@ function direction(pct: number | null, threshold = STABLE_THRESHOLD_PCT): "up" |
   return "flat";
 }
 
-/* ── Executive Intro: Zusammenfassung in maximal zwei Sätzen ────────────────── */
+/* ── Executive Intro: Begrüßung ─────────────────────────────────────────────── */
+// Die konkrete Lage-Zusammenfassung (Gesamtentwicklung, Gewinner, Verlierer,
+// Priorität) lebt in lib/kpi/intelligence.ts (buildExecutiveNarrative).
 
 /** Tageszeitabhängige Begrüßung; deterministisch aus der Stunde. */
 export function greetingForHour(hour: number): string {
   if (hour >= 5 && hour < 11) return "Guten Morgen.";
   if (hour >= 11 && hour < 18) return "Guten Tag.";
   return "Guten Abend.";
-}
-
-/**
- * Ein Scope-Vergleich für die Executive-Zusammenfassung: Pilotseite plus ihr
- * eigener 28-Tage-Vergleich, unabhängig von der Nutzerauswahl im Cockpit.
- */
-export interface ExecutiveScopeComparison {
-  option: ScopeOption;
-  comparison: PeriodComparison | null;
-}
-
-/**
- * Deterministische Zusammenfassung aus dem stabilen 28-Tage-Vergleich des
- * Standard-Scopes (nie aus der Nutzerauswahl im Cockpit, damit "Gesamter
- * Zeitraum" die Aussage nicht künstlich dramatisiert). Feste Satzreihenfolge:
- * zuerst ein echter positiver oder stabiler Befund, danach der wichtigste
- * Hebel. Keine Schönfärberei, keine erfundenen Wins, keine
- * Kausalitätsbehauptung – jede Regel liest ausschließlich aus den echten
- * Vergleichswerten. Maximal zwei kurze Sätze.
- */
-export function buildExecutiveSummary(
-  comparison: PeriodComparison | null,
-  productScopes: ExecutiveScopeComparison[] = [],
-): string {
-  if (!comparison) {
-    return "Sobald ein Search-Console-Export importiert ist, erscheint hier die Entwicklung.";
-  }
-  const { current, previous } = comparison;
-  const clicksDir = direction(pctChange(current.clicks, previous.clicks));
-  const imprDir = direction(pctChange(current.impressions, previous.impressions));
-  const ctrDir =
-    current.ctr !== null && previous.ctr !== null
-      ? direction(pctChange(current.ctr, previous.ctr))
-      : "flat";
-
-  const pilots = productScopes.filter(
-    (s) => s.comparison !== null && s.comparison.current.clicks > 0,
-  );
-  const topPilot =
-    pilots.length > 0
-      ? [...pilots].sort((a, b) => b.comparison!.current.clicks - a.comparison!.current.clicks)[0]
-      : null;
-
-  if (imprDir === "up" && clicksDir === "down") {
-    return (
-      "Klühspies wird häufiger in Google eingeblendet. Der nächste Hebel liegt darin, " +
-      "aus dieser wachsenden Reichweite mehr Klicks zu gewinnen."
-    );
-  }
-  if (topPilot && ctrDir !== "up") {
-    const pilotPhrase =
-      pilots.length === 1
-        ? `${topPilot.option.label} bleibt die stärkste Pilotseite.`
-        : `${topPilot.option.label} bleibt die stärkste der ${pilots.length} Pilotseiten.`;
-    return `${pilotPhrase} Gleichzeitig bietet die Klickrate noch Potenzial.`;
-  }
-  if (clicksDir === "up" && imprDir === "up") {
-    return "Organische Nachfrage und Reichweite entwickeln sich positiv. Der Fokus liegt jetzt auf der weiteren Stabilisierung.";
-  }
-  if (clicksDir === "flat" && imprDir === "flat") {
-    return "Die organische Entwicklung bleibt stabil. Einzelne Seiten bieten weiterhin gezieltes Optimierungspotenzial.";
-  }
-  return (
-    "Die vorhandene Reichweite bietet eine gute Grundlage. Klickrate und Position benötigen " +
-    "in der aktuellen Periode besondere Aufmerksamkeit."
-  );
 }
 
 /* ── Vier zentrale KPI-Werte, datengetrieben und austauschbar ───────────────── */

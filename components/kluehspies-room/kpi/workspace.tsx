@@ -29,12 +29,30 @@ import {
   dataAsOf,
   defaultScopeKey,
   provenanceFor,
+  sitewideOption,
   type CockpitRange,
   type DatasetProvenance,
   type PeriodComparison,
   type PeriodTotals,
   type ScopeOption,
 } from "@/lib/kpi/gscData";
+import {
+  buildActionFeed,
+  buildContentOpportunities,
+  buildDeviceInsight,
+  buildExecutiveNarrative,
+  buildQuickWins,
+  buildScopeMovements,
+  buildSeoHealth,
+  type ActionFeedItem,
+  type ContentOpportunity,
+  type DeviceInsight,
+  type ExecutiveNarrative,
+  type HealthRow,
+  type QuickWin,
+  type ScopeComparison,
+  type ScopeMovement,
+} from "@/lib/kpi/intelligence";
 import type {
   AnnotationRow,
   ApprovalRow,
@@ -115,6 +133,26 @@ export interface CreateTaskInput {
 
 export type RealtimeState = "connecting" | "live" | "offline";
 
+/**
+ * SEO Intelligence: alle deterministischen Ableitungen des Decision Layer auf
+ * stabiler 28-Tage-Basis (unabhängig vom Zeitraum-Filter des Canvas) bzw. den
+ * aggregierten Dimensions-Snapshots des Exportzeitraums.
+ */
+export interface WorkspaceIntelligence {
+  narrative: ExecutiveNarrative;
+  quickWins: QuickWin[];
+  deviceInsight: DeviceInsight | null;
+  contentOpportunities: ContentOpportunity[];
+  winners: ScopeMovement[];
+  losers: ScopeMovement[];
+  health: HealthRow[];
+  actionFeed: ActionFeedItem[];
+  /** Quelle der Tiefen-Ableitungen: Sitewide-Export, sonst Städtereisen. */
+  sourceScope: ScopeOption | null;
+  /** Exportzeitraum der zugrunde liegenden Dimensions-Snapshots. */
+  sourcePeriod: { start: string; end: string } | null;
+}
+
 interface WorkspaceContextValue {
   // Stammdaten
   viewer: WorkspaceInit["viewer"];
@@ -175,6 +213,8 @@ interface WorkspaceContextValue {
   /** Aggregierte Dimensions-Snapshots je Batch, lazy geladen. */
   dimensionsByBatch: Map<string, GscDimensionSnapshotRow[]>;
   loadDimensions: (batchId: string) => Promise<void>;
+  /** SEO Intelligence: berechnete Quick Wins, Bewegungen, Chancen, Aufgaben. */
+  intelligence: WorkspaceIntelligence;
   // Abgeleitet
   anchor: string;
   currentRange: { from: string; to: string };
@@ -1433,6 +1473,68 @@ export function WorkspaceProvider({
     };
   }, [scopeOptions, scopeKey, init.gsc.daily, init.gsc.batches, range]);
 
+  // SEO Intelligence: stabile 28-Tage-Vergleiche je Scope plus die
+  // aggregierten Dimensions-Snapshots (Exportzeitraum). Bewusst unabhängig vom
+  // Zeitraum-/Scope-Filter des Canvas, damit die Aussagen nicht mit jedem
+  // Filterklick springen. Der Action Feed hängt zusätzlich an tasks, weil er
+  // bereits angelegte offene Maßnahmen ausblendet.
+  const intelligence = useMemo<WorkspaceIntelligence>(() => {
+    const dims = init.gsc.dimensions;
+    const sitewide = sitewideOption(init.gsc.activeDatasets, init.gsc.batches);
+    const baseOption = scopeOptions.find((o) => o.scopeType === "path_prefix") ?? null;
+    const compare28 = (option: ScopeOption): PeriodComparison | null =>
+      computeRange(dailyForBatch(init.gsc.daily, option.batchId), 28)?.comparison ?? null;
+
+    const productScopes: ScopeComparison[] = scopeOptions
+      .filter((o) => o.scopeType === "product_page")
+      .map((option) => ({ option, comparison: compare28(option) }));
+    const base = baseOption ? compare28(baseOption) : null;
+
+    const sourceScope = sitewide ?? baseOption;
+    const quickWins = sourceScope ? buildQuickWins(dims, sourceScope.batchId) : [];
+    const deviceInsight = sourceScope ? buildDeviceInsight(dims, sourceScope.batchId) : null;
+    const contentOpportunities = sourceScope
+      ? buildContentOpportunities(dims, sourceScope.batchId)
+      : [];
+    const { winners, losers } = buildScopeMovements(productScopes, dims);
+    const healthScopes: ScopeComparison[] = [
+      ...(sitewide ? [{ option: sitewide, comparison: compare28(sitewide) }] : []),
+      ...(baseOption ? [{ option: baseOption, comparison: base }] : []),
+      ...productScopes,
+    ];
+    const sourceRow = sourceScope
+      ? init.gsc.dimensions.find((d) => d.import_batch_id === sourceScope.batchId)
+      : undefined;
+
+    return {
+      narrative: buildExecutiveNarrative(base, productScopes),
+      quickWins,
+      deviceInsight,
+      contentOpportunities,
+      winners,
+      losers,
+      health: buildSeoHealth(healthScopes),
+      actionFeed: buildActionFeed({
+        quickWins,
+        losers,
+        opportunities: contentOpportunities,
+        deviceInsight,
+        openTasks: tasks,
+      }),
+      sourceScope,
+      sourcePeriod: sourceRow
+        ? { start: sourceRow.period_start, end: sourceRow.period_end }
+        : null,
+    };
+  }, [
+    scopeOptions,
+    init.gsc.activeDatasets,
+    init.gsc.batches,
+    init.gsc.daily,
+    init.gsc.dimensions,
+    tasks,
+  ]);
+
   const kpiTasks = useMemo(() => {
     if (!kpi) return [];
     const linked = new Set(taskLinks.filter((l) => l.kpi_definition_id === kpi.id).map((l) => l.task_id));
@@ -1494,6 +1596,7 @@ export function WorkspaceProvider({
     scopeOptions,
     dimensionsByBatch,
     loadDimensions,
+    intelligence,
     ...derived,
     kpiTasks,
     activeTaskCount,

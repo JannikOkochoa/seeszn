@@ -67,6 +67,29 @@ export function defaultScopeKey(options: ScopeOption[]): string | null {
   return (options.find((o) => o.scopeType === "path_prefix") ?? options[0])?.key ?? null;
 }
 
+/**
+ * Der Sitewide-Datensatz als eigener Scope. Er bleibt bewusst außerhalb der
+ * KPI-Scope-Auswahl (buildScopeOptions), ist aber die reichste Quelle für die
+ * Intelligence-Ableitungen (Quick Wins, Content-Chancen, SEO Health).
+ */
+export function sitewideOption(
+  activeDatasets: GscActiveDatasetRow[],
+  batches: GscImportBatchRow[],
+): ScopeOption | null {
+  const batchIds = new Set(batches.map((b) => b.id));
+  const ds = activeDatasets.find(
+    (d) => d.scope_type === "sitewide" && batchIds.has(d.import_batch_id),
+  );
+  if (!ds) return null;
+  return {
+    key: scopeKeyOf(ds.scope_type, ds.scope_value),
+    scopeType: ds.scope_type,
+    scopeValue: ds.scope_value,
+    label: "Gesamte Website",
+    batchId: ds.import_batch_id,
+  };
+}
+
 /** Tageszeilen eines Batches, nach Datum sortiert. */
 export function dailyForBatch(daily: GscScopeDailyRow[], batchId: string): GscScopeDailyRow[] {
   return daily
