@@ -121,7 +121,7 @@ async function fetchScopeData(
     startDate,
     endDate,
     dimensions: ["date"],
-    pageUrls: scope.pageUrls,
+    pageFilter: scope.pageFilter,
   });
   const daily = toDaily(dailyRaw);
 
@@ -133,7 +133,7 @@ async function fetchScopeData(
         startDate,
         endDate,
         dimensions: [dimension],
-        pageUrls: scope.pageUrls,
+        pageFilter: scope.pageFilter,
       });
     } catch {
       // search_appearance ist nicht für jede Property verfügbar; solche

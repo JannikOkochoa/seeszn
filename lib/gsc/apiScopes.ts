@@ -14,6 +14,7 @@
 
 import "server-only";
 import type { GscScopeType } from "@/lib/kpi/types";
+import type { PageFilter } from "./apiClient";
 
 /** Produktdomain der Städtereise-Seiten (siehe lib/product-pages/provider.ts). */
 const BASE = "https://www.klassenfahrten-kluehspies.de";
@@ -25,16 +26,27 @@ export const MUENCHEN_URL = `${BASE}/staedte-klassenfahrten/deutschland/muenchen
 /** Die drei kanonischen Hauptseiten – Grundlage des gemeinsamen Scopes. */
 export const CITY_PAGE_URLS: readonly string[] = [BERLIN_URL, HAMBURG_URL, MUENCHEN_URL];
 
+/** Regex-Metazeichen für RE2 escapen (Google nutzt RE2 für includingRegex). */
+function escapeRe2(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Verankerter RE2-Regex, der ausschließlich exakt die drei kanonischen
+ * Stadt-URLs matcht: ^(berlin|hamburg|muenchen)$. Durch ^…$ fallen Unterseiten
+ * und andere Städtereisen heraus.
+ */
+export const CITY_PAGES_REGEX = `^(${CITY_PAGE_URLS.map(escapeRe2).join("|")})$`;
+
 export interface ApiScope {
   scopeType: GscScopeType;
   scopeValue: string | null;
   /**
-   * Exakte Seiten, die dieser Scope aggregiert. Leer = ganze Property
-   * (sitewide, kein Seiten-Filter). Für alle anderen Scopes wird pro URL ein
-   * "equals"-Filter erzeugt (inkl. Variante ohne Trailing Slash), damit die
-   * Google-Normalisierung greift, aber keine Unterseiten einfließen.
+   * Seiten-Filter für die GSC-Abfrage. "none" = ganze Property (sitewide);
+   * "equals" = genau eine kanonische URL; "includingRegex" = verankerter RE2
+   * über exakt die drei Hauptseiten. Nie ein echter Pfad-Prefix.
    */
-  pageUrls: readonly string[];
+  pageFilter: PageFilter;
   /**
    * Interner Dateiname des erzeugten Batch (nur Diagnostik, wird in der
    * Oberfläche nicht angezeigt). Enthält keine Secrets.
@@ -51,32 +63,34 @@ export const API_SCOPES: readonly ApiScope[] = [
   {
     scopeType: "sitewide",
     scopeValue: `${BASE}/`,
-    pageUrls: [],
+    pageFilter: { kind: "none" },
     originalFileName: "gsc-api:sitewide",
   },
   {
+    // scope_value bleibt aus Kompatibilität "/staedte-klassenfahrten/" (Key in
+    // gsc_active_datasets), der GSC-Filter umfasst aber ausschließlich die drei
+    // Hauptseiten – kein echter Pfad-Prefix. Label bleibt "Alle Städtereisen".
     scopeType: "path_prefix",
     scopeValue: "/staedte-klassenfahrten/",
-    // Intern ausschließlich die drei Hauptseiten – nicht der gesamte Pfad.
-    pageUrls: CITY_PAGE_URLS,
+    pageFilter: { kind: "includingRegex", regex: CITY_PAGES_REGEX },
     originalFileName: "gsc-api:staedtereisen",
   },
   {
     scopeType: "product_page",
     scopeValue: "Berlin",
-    pageUrls: [BERLIN_URL],
+    pageFilter: { kind: "equals", url: BERLIN_URL },
     originalFileName: "gsc-api:berlin",
   },
   {
     scopeType: "product_page",
     scopeValue: "Hamburg",
-    pageUrls: [HAMBURG_URL],
+    pageFilter: { kind: "equals", url: HAMBURG_URL },
     originalFileName: "gsc-api:hamburg",
   },
   {
     scopeType: "product_page",
     scopeValue: "München",
-    pageUrls: [MUENCHEN_URL],
+    pageFilter: { kind: "equals", url: MUENCHEN_URL },
     originalFileName: "gsc-api:muenchen",
   },
 ];

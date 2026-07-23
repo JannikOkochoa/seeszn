@@ -130,44 +130,67 @@ export interface GscApiMetricRow {
   position: number;
 }
 
+/**
+ * Seiten-Filter einer Abfrage. Google unterstützt in dimensionFilterGroups nur
+ * groupType "and"; jeder Scope kommt deshalb mit genau einem page-Filter aus.
+ *   none           – kein Seitenfilter (ganze Property)
+ *   equals         – exakt eine kanonische URL (inkl. Trailing Slash)
+ *   includingRegex – verankerter RE2 über genau die gewünschten Seiten
+ */
+export type PageFilter =
+  | { kind: "none" }
+  | { kind: "equals"; url: string }
+  | { kind: "includingRegex"; regex: string };
+
 export interface SearchAnalyticsQuery {
   startDate: string;
   endDate: string;
   /** GSC-Dimensionen, z. B. ["date"] oder ["query"]. */
   dimensions: string[];
-  /**
-   * Seiten, die exakt (equals) gematcht werden. Leer = kein Seitenfilter
-   * (ganze Property). Pro URL wird zusätzlich die Variante ohne Trailing Slash
-   * ergänzt, um die Google-URL-Normalisierung abzudecken – ohne Unterseiten.
-   */
-  pageUrls: readonly string[];
+  pageFilter: PageFilter;
 }
 
-/** OR-Gruppe aus exakten Seiten-Filtern (mit/ohne Trailing Slash). */
-function pageFilterGroup(pageUrls: readonly string[]) {
-  if (pageUrls.length === 0) return undefined;
-  const filters = pageUrls.flatMap((url) => {
-    const variants = new Set([url, url.endsWith("/") ? url.slice(0, -1) : `${url}/`]);
-    return [...variants].map((expression) => ({
-      dimension: "page",
-      operator: "equals",
-      expression,
-    }));
-  });
-  return [{ groupType: "or", filters }];
+/** Genau eine AND-Gruppe mit einem page-Filter (oder keiner). */
+function dimensionFilterGroups(filter: PageFilter) {
+  if (filter.kind === "none") return undefined;
+  const pageFilter =
+    filter.kind === "equals"
+      ? { dimension: "page", operator: "equals", expression: filter.url }
+      : { dimension: "page", operator: "includingRegex", expression: filter.regex };
+  return [{ groupType: "and", filters: [pageFilter] }];
+}
+
+/**
+ * Extrahiert Googles nicht-sensible Fehlerdetails (message/reason) aus dem
+ * Response-Body. Es werden ausschließlich diese Felder gelesen – niemals
+ * Header, Tokens oder der Authorization-Wert.
+ */
+async function readGoogleError(res: Response): Promise<string> {
+  try {
+    const data = (await res.json()) as {
+      error?: { message?: string; errors?: Array<{ reason?: string; message?: string }> };
+    };
+    const reason = data.error?.errors?.[0]?.reason ?? null;
+    const message = data.error?.message ?? data.error?.errors?.[0]?.message ?? null;
+    const detail = [reason, message].filter(Boolean).join(": ").slice(0, 300);
+    return detail ? ` – ${detail}` : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
  * Führt eine Search-Analytics-Abfrage aus und blättert bei Bedarf durch alle
  * Zeilen. Ein einmaliger Retry bei 401 (Token gerade abgelaufen) mit frischem
- * Access Token; danach saubere, secret-freie Fehler.
+ * Access Token; danach saubere, secret-freie Fehler inklusive HTTP-Status und
+ * Googles message/reason für die Diagnose.
  */
 export async function querySearchAnalytics(
   query: SearchAnalyticsQuery,
 ): Promise<GscApiMetricRow[]> {
   const config = readGscConfig();
   const endpoint = `${API_BASE}/${encodeURIComponent(config.property)}/searchAnalytics/query`;
-  const dimensionFilterGroups = pageFilterGroup(query.pageUrls);
+  const filterGroups = dimensionFilterGroups(query.pageFilter);
 
   const rows: GscApiMetricRow[] = [];
   let startRow = 0;
@@ -187,7 +210,10 @@ export async function querySearchAnalytics(
         dimensions: query.dimensions,
         type: "web",
         dataState: "final",
-        ...(dimensionFilterGroups ? { dimensionFilterGroups } : {}),
+        // Nie "byProperty" bei page-Filter/-Dimension: "auto" lässt Google die
+        // korrekte Aggregation (byPage) wählen und verhindert HTTP 400.
+        aggregationType: "auto",
+        ...(filterGroups ? { dimensionFilterGroups: filterGroups } : {}),
         rowLimit: ROW_LIMIT,
         startRow,
       }),
@@ -203,13 +229,14 @@ export async function querySearchAnalytics(
     }
 
     if (!res.ok) {
+      const detail = await readGoogleError(res);
       if (res.status === 401 || res.status === 403) {
         throw new GscApiError(
-          `Kein Zugriff auf die konfigurierte Property (HTTP ${res.status}). ` +
+          `Kein Zugriff auf die konfigurierte Property (HTTP ${res.status}${detail}). ` +
             "Refresh Token, Scope oder Property-Berechtigung prüfen.",
         );
       }
-      throw new GscApiError(`GSC-Abfrage fehlgeschlagen (HTTP ${res.status}).`);
+      throw new GscApiError(`GSC-Abfrage fehlgeschlagen (HTTP ${res.status}${detail}).`);
     }
 
     const data = (await res.json()) as { rows?: GscApiMetricRow[] };
