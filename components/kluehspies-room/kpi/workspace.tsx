@@ -68,6 +68,7 @@ import type {
   KpiDefinitionRow,
   LevelDe,
   ManualCheckInRow,
+  QuickWinRow,
   TaskPriority,
   TaskRow,
   TaskStatus,
@@ -116,6 +117,18 @@ export interface TaskDraft {
   device?: string;
   metrics?: InsightContext["metrics"];
 }
+
+/** Editierbare Inhalte einer Quick-Win-Karte. */
+export interface QuickWinInput {
+  title: string;
+  what: string;
+  why: string;
+  /** Empfehlungstext, zeilenweise mit "\n" verbunden. */
+  recommendation: string;
+}
+
+/** Ziel des Quick-Win-Editor-Drawers: neue Karte oder eine bestehende. */
+export type QuickWinEditTarget = { mode: "create" } | { mode: "edit"; row: QuickWinRow };
 
 export interface CreateTaskInput {
   title: string;
@@ -308,6 +321,22 @@ interface WorkspaceContextValue {
   /** Mitgliederverwaltung, ausschließlich für SEESZN-Admins. */
   memberAdminOpen: boolean;
   setMemberAdminOpen: (open: boolean) => void;
+  // Quick Wins (editierbare AI-/SEO-Karten der QUICK-WINS-Section)
+  /** Gepflegte Karten aus der Datenbank; leer, solange nur Defaults gelten. */
+  quickWins: QuickWinRow[];
+  /** Ob die Tabelle existiert (Bearbeiten möglich). Sonst: Fallback-Defaults. */
+  quickWinsEnabled: boolean;
+  /** Aktuell im Editor geöffnete Karte bzw. „neu"; null = geschlossen. */
+  quickWinEdit: QuickWinEditTarget | null;
+  /** Wechselt bei jedem Öffnen; key für ein frisches Formular. */
+  quickWinEditNonce: number;
+  openQuickWinEdit: (target: QuickWinEditTarget) => void;
+  closeQuickWinEdit: () => void;
+  createQuickWin: (input: QuickWinInput) => Promise<ActionResult>;
+  updateQuickWin: (id: string, input: QuickWinInput) => Promise<ActionResult>;
+  deleteQuickWin: (id: string) => Promise<ActionResult>;
+  /** Karte um eine Position nach oben/unten verschieben (tauscht sort_order). */
+  moveQuickWin: (id: string, direction: "up" | "down") => Promise<ActionResult>;
 }
 
 export interface GoalInput {
@@ -422,6 +451,12 @@ export function WorkspaceProvider({
   const [createDraft, setCreateDraft] = useState<TaskDraft | null>(null);
   const [createNonce, setCreateNonce] = useState(0);
   const [pendingUndo, setPendingUndo] = useState<{ taskId: string; title: string } | null>(null);
+
+  // Quick Wins: editierbare Karten der QUICK-WINS-Section.
+  const [quickWins, setQuickWins] = useState(init.quickWins);
+  const quickWinsEnabled = init.quickWinsEnabled;
+  const [quickWinEdit, setQuickWinEdit] = useState<QuickWinEditTarget | null>(null);
+  const [quickWinEditNonce, setQuickWinEditNonce] = useState(0);
 
   const canWrite = viewer.role === "seeszn_admin" || viewer.role === "kluehspies_editor";
   const canEditTarget = viewer.role === "seeszn_admin";
@@ -1572,6 +1607,125 @@ export function WorkspaceProvider({
   }, []);
   const closeCreate = useCallback(() => setCreateDraft(null), []);
 
+  // ── Quick Wins: CRUD über den Browser-Client (RLS erzwingt die Rechte) ──────
+  const openQuickWinEdit = useCallback((target: QuickWinEditTarget) => {
+    setQuickWinEdit(target);
+    setQuickWinEditNonce((n) => n + 1);
+  }, []);
+  const closeQuickWinEdit = useCallback(() => setQuickWinEdit(null), []);
+
+  const createQuickWin = useCallback(
+    async (input: QuickWinInput): Promise<ActionResult> => {
+      const nextOrder = quickWins.reduce((max, w) => Math.max(max, w.sort_order), 0) + 1;
+      const inserted = await supabase
+        .from("kluehspies_quick_wins")
+        .insert({
+          organization_id: organizationId,
+          title: input.title,
+          what: input.what,
+          why: input.why,
+          recommendation: input.recommendation,
+          sort_order: nextOrder,
+          created_by: viewer.id,
+        })
+        .select("id, organization_id, title, what, why, recommendation, sort_order, created_at, updated_at")
+        .single();
+      if (inserted.error || !inserted.data) {
+        return { ok: false, message: "Der Quick Win konnte nicht gespeichert werden." };
+      }
+      const row = inserted.data as QuickWinRow;
+      setQuickWins((prev) => [...prev, row].sort((a, b) => a.sort_order - b.sort_order));
+      return { ok: true };
+    },
+    [supabase, organizationId, viewer.id, quickWins],
+  );
+
+  const updateQuickWin = useCallback(
+    async (id: string, input: QuickWinInput): Promise<ActionResult> => {
+      const before = quickWins.find((w) => w.id === id);
+      if (!before) return { ok: false, message: "Quick Win nicht gefunden." };
+      const patch = {
+        title: input.title,
+        what: input.what,
+        why: input.why,
+        recommendation: input.recommendation,
+      };
+      setQuickWins((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+
+      const updated = await supabase
+        .from("kluehspies_quick_wins")
+        .update(patch)
+        .eq("id", id)
+        .select("id, organization_id, title, what, why, recommendation, sort_order, created_at, updated_at")
+        .single();
+      if (updated.error || !updated.data) {
+        setQuickWins((prev) => prev.map((w) => (w.id === id ? before : w)));
+        return {
+          ok: false,
+          message:
+            updated.error?.code === "PGRST116"
+              ? "Keine Berechtigung für diese Änderung."
+              : "Die Änderung konnte nicht gespeichert werden.",
+        };
+      }
+      const row = updated.data as QuickWinRow;
+      setQuickWins((prev) => prev.map((w) => (w.id === id ? row : w)));
+      return { ok: true };
+    },
+    [supabase, quickWins],
+  );
+
+  const deleteQuickWin = useCallback(
+    async (id: string): Promise<ActionResult> => {
+      const before = quickWins;
+      setQuickWins((prev) => prev.filter((w) => w.id !== id));
+      const deleted = await supabase.from("kluehspies_quick_wins").delete().eq("id", id);
+      if (deleted.error) {
+        setQuickWins(before);
+        return { ok: false, message: "Der Quick Win konnte nicht gelöscht werden." };
+      }
+      return { ok: true };
+    },
+    [supabase, quickWins],
+  );
+
+  const moveQuickWin = useCallback(
+    async (id: string, direction: "up" | "down"): Promise<ActionResult> => {
+      const ordered = [...quickWins].sort((a, b) => a.sort_order - b.sort_order);
+      const index = ordered.findIndex((w) => w.id === id);
+      if (index === -1) return { ok: false, message: "Quick Win nicht gefunden." };
+      const swapWith = direction === "up" ? index - 1 : index + 1;
+      if (swapWith < 0 || swapWith >= ordered.length) return { ok: true };
+
+      const a = ordered[index];
+      const b = ordered[swapWith];
+      // sort_order-Werte tauschen; optimistisch spiegeln, dann persistieren.
+      const before = quickWins;
+      setQuickWins((prev) =>
+        prev
+          .map((w) =>
+            w.id === a.id
+              ? { ...w, sort_order: b.sort_order }
+              : w.id === b.id
+                ? { ...w, sort_order: a.sort_order }
+                : w,
+          )
+          .sort((x, y) => x.sort_order - y.sort_order),
+      );
+
+      const [ra, rb] = await Promise.all([
+        supabase.from("kluehspies_quick_wins").update({ sort_order: b.sort_order }).eq("id", a.id),
+        supabase.from("kluehspies_quick_wins").update({ sort_order: a.sort_order }).eq("id", b.id),
+      ]);
+      if (ra.error || rb.error) {
+        setQuickWins(before);
+        return { ok: false, message: "Die Reihenfolge konnte nicht gespeichert werden." };
+      }
+      return { ok: true };
+    },
+    [supabase, quickWins],
+  );
+
   const value: WorkspaceContextValue = {
     viewer,
     organizationId,
@@ -1620,6 +1774,16 @@ export function WorkspaceProvider({
     setKpiCreateOpen,
     memberAdminOpen,
     setMemberAdminOpen,
+    quickWins,
+    quickWinsEnabled,
+    quickWinEdit,
+    quickWinEditNonce,
+    openQuickWinEdit,
+    closeQuickWinEdit,
+    createQuickWin,
+    updateQuickWin,
+    deleteQuickWin,
+    moveQuickWin,
     taskDrawerId,
     setTaskDrawerId,
     createDraft,

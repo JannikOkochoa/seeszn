@@ -61,6 +61,7 @@ export async function loadWorkspace(
     goalVersions,
     manualKpis,
     manualCheckIns,
+    quickWins,
   ] = await Promise.all([
       supabase
         .from("kpi_definitions")
@@ -127,6 +128,14 @@ export async function loadWorkspace(
         )
         .eq("organization_id", organizationId)
         .order("measured_at", { ascending: false }),
+      // Editierbare Quick-Win-Karten. Fehlt die Tabelle noch (vor der
+      // Migration), liefert die Abfrage einen Fehler → quickWinsEnabled = false
+      // und der Room zeigt die kuratierten Standardinhalte als Fallback.
+      supabase
+        .from("kluehspies_quick_wins")
+        .select("id, organization_id, title, what, why, recommendation, sort_order, created_at, updated_at")
+        .eq("organization_id", organizationId)
+        .order("sort_order", { ascending: true }),
     ]);
 
   const kpiId = kpi.data?.id as string | undefined;
@@ -230,6 +239,8 @@ export async function loadWorkspace(
     annotations: (annotations.data as WorkspaceInit["annotations"]) ?? [],
     manualKpis: (manualKpis.data as WorkspaceInit["manualKpis"]) ?? [],
     manualCheckIns: (manualCheckIns.data as WorkspaceInit["manualCheckIns"]) ?? [],
+    quickWins: (quickWins.data as WorkspaceInit["quickWins"]) ?? [],
+    quickWinsEnabled: !quickWins.error,
     gsc: {
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
       batches: (batches.data as GscImportBatchRow[]) ?? [],

@@ -36,6 +36,7 @@ import KpiDetailDrawer from "./KpiDetailDrawer";
 import GoalDrawer from "./GoalDrawer";
 import TaskDetailDrawer from "./TaskDetailDrawer";
 import TaskCreateDrawer from "./TaskCreateDrawer";
+import QuickWinEditDrawer from "./intelligence/QuickWinEditDrawer";
 import UndoToast from "./UndoToast";
 
 function KpiToolbar() {
@@ -139,6 +140,7 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
       <MemberAdminDrawer />
       <TaskDetailDrawer />
       <TaskCreateDrawer />
+      <QuickWinEditDrawer />
       <UndoToast />
 
       <style>{`
@@ -1003,6 +1005,11 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           border-top: 1px solid var(--line-soft);
         }
         .kw-int-card .kw-int-qa { margin-bottom: 16px; }
+        /* Verwaltung der editierbaren Quick Wins (nur Schreibberechtigte) */
+        .kw-qw-manage { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .kw-qw-manage .kw-link[disabled] { opacity: 0.3; pointer-events: none; }
+        .kw-qw-delete { color: var(--text-muted); }
+        .kw-qw-add { margin: 16px 0 0; }
 
         /* Gewinner & Verlierer */
         .kw-int-cols {

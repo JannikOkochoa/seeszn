@@ -315,6 +315,20 @@ export interface WorkspaceViewer {
 
 
 /** Serverseitig geladener Initialzustand des KPI-Workspace. */
+/** Editierbare Quick-Win-Karte der QUICK-WINS-Section (kluehspies_quick_wins). */
+export interface QuickWinRow {
+  id: string;
+  organization_id: string;
+  title: string;
+  what: string;
+  why: string;
+  /** Empfehlungstext, zeilenweise mit "\n" verbunden. */
+  recommendation: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WorkspaceInit {
   viewer: WorkspaceViewer;
   organizationId: string;
@@ -334,6 +348,11 @@ export interface WorkspaceInit {
   manualKpis: KpiDefinitionRow[];
   /** Append-only Check-ins der manuellen KPIs (Ist-Werte). */
   manualCheckIns: ManualCheckInRow[];
+  /** Editierbare Quick-Win-Karten (kluehspies_quick_wins). Leer bis zum Seed. */
+  quickWins: QuickWinRow[];
+  /** Ob die Tabelle kluehspies_quick_wins existiert. Vor der Migration false;
+   *  dann zeigt der Room die kuratierten Standardinhalte als Fallback. */
+  quickWinsEnabled: boolean;
   /** Echte GSC-Daten: aktive Batches je Scope + deren tägliche Zeitreihen.
    *  Einzige Quelle der KPI-Berechnung; Demo-Daten fließen nicht mehr ein. */
   gsc: {
