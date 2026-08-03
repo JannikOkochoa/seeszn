@@ -27,7 +27,12 @@ const PRUEFSET_INTERPRETATION: Record<AiQuestionKind, string> = {
     "Diese Frage zeigt, ob deine Angebotsseite ein konkretes Problem direkt genug beantwortet.",
 };
 
+// Duldet bewusst auch Nicht-Strings. Das Scan-Ergebnis kommt aus dem
+// sessionStorage des Browsers und kann nach einem Deploy eine ältere Shape
+// haben; ein fehlendes Feld darf dann eine leere Zelle erzeugen, aber nie den
+// kompletten Mailversand werfen lassen.
 export function escapeHtml(s: string): string {
+  if (typeof s !== "string") return "";
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

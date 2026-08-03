@@ -1,7 +1,30 @@
+// ─── POST /api/brief-request ───────────────────────────────────────────────────
+// Anforderung des KI-Sichtbarkeits-Briefs. Gleiche Fehlerklasse wie
+// /api/contact: bis hierher wurde die Anfrage nur an einen optionalen Webhook
+// weitergereicht — war BRIEF_REQUEST_WEBHOOK_URL nicht gesetzt (so wie in
+// Production), landete die E-Mail lediglich in einem console.log, während der
+// Nutzer eine Erfolgsmeldung sah.
+//
+// Ablauf jetzt: validieren → Lead in Supabase speichern → optionalen Webhook
+// auslösen → Versandstatus nachtragen → antworten. `ok: true` nur, wenn die
+// Anfrage wirklich gespeichert oder zugestellt wurde.
+
+import { saveLead, updateLeadDelivery } from "@/lib/leads/store";
+import { clientIp, rateLimit } from "@/lib/rateLimit";
+
+export const runtime = "nodejs";
+
+const PAGE = "/brief/ki-sichtbarkeit";
+const SOURCE = "ki-sichtbarkeits-brief-2026";
+
+// Öffentliches Formular: Bursts pro IP begrenzen (no-op außerhalb Production).
+const BRIEF_LIMIT = 5;
+const BRIEF_WINDOW_MS = 10 * 60 * 1000;
+
 interface BriefPayload {
   email: string;
-  source: "ki-sichtbarkeits-brief-2026";
-  page: "/brief/ki-sichtbarkeit";
+  source: typeof SOURCE;
+  page: typeof PAGE;
   language: "de";
 }
 
@@ -14,26 +37,42 @@ export async function POST(request: Request) {
   }
 
   const { email } = (body ?? {}) as { email?: unknown };
+  const trimmed = typeof email === "string" ? email.trim() : "";
 
-  if (
-    !email ||
-    typeof email !== "string" ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  ) {
+  if (!trimmed || trimmed.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
     return Response.json(
       { error: "Bitte gib eine gültige E-Mail-Adresse ein." },
       { status: 400 }
     );
   }
 
+  const limit = rateLimit("brief", clientIp(request), BRIEF_LIMIT, BRIEF_WINDOW_MS);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } }
+    );
+  }
+
   const payload: BriefPayload = {
-    email: email.trim().toLowerCase(),
-    source: "ki-sichtbarkeits-brief-2026",
-    page: "/brief/ki-sichtbarkeit",
+    email: trimmed.toLowerCase(),
+    source: SOURCE,
+    page: PAGE,
     language: "de",
   };
 
+  // 1) Lead zuerst speichern — Source of Truth, unabhängig vom Webhook.
+  const { id: leadId, stored } = await saveLead({
+    email: payload.email,
+    source: "brief_ki_sichtbarkeit",
+    page: PAGE,
+    locale: "de",
+  });
+
+  // 2) Optionaler Webhook (Make/Zapier: Verteiler + PDF-Versand).
   const webhookUrl = process.env.BRIEF_REQUEST_WEBHOOK_URL;
+  let delivered = false;
+  let deliveryError: string | null = null;
 
   if (webhookUrl) {
     try {
@@ -42,25 +81,35 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      delivered = res.ok;
       if (!res.ok) {
-        console.error(`[brief-request] Webhook returned ${res.status}`);
+        deliveryError = `webhook returned ${res.status}`;
+        console.error(`[brief-request] Webhook returned ${res.status} leadStored=${stored}`);
       }
     } catch (err) {
-      console.error("[brief-request] Webhook error:", err);
-      // Do not surface webhook errors to the user
+      deliveryError = err instanceof Error ? err.message : "unknown error";
+      console.error(`[brief-request] Webhook error leadStored=${stored}: ${deliveryError}`);
     }
-  } else if (process.env.NODE_ENV === "development") {
-    console.log("[brief-request] Submission (dev, no webhook):", payload);
   } else {
-    // TODO: Connect email delivery
-    // Option A — Set BRIEF_REQUEST_WEBHOOK_URL to a Make or Zapier webhook
-    //             that handles subscription + transactional PDF email.
-    // Option B — Replace this block with a Brevo / MailerLite SDK call:
-    //   await brevo.contacts.createContact({ email: payload.email, listIds: [YOUR_LIST_ID] });
-    //   await brevo.transactional.sendTransacEmail({ ... }); // send PDF link
-    // Option C — Use a Resend transactional email like the /api/contact route.
-    console.log("[brief-request] Production submission (no webhook configured):", payload.email);
+    deliveryError = "BRIEF_REQUEST_WEBHOOK_URL missing";
+    console.warn(
+      `[brief-request] BRIEF_REQUEST_WEBHOOK_URL is not set — kein PDF-/Verteilerversand. Der Lead liegt nur in Supabase. leadStored=${stored}`
+    );
   }
 
-  return Response.json({ ok: true });
+  // 3) Versandstatus nachtragen.
+  await updateLeadDelivery(leadId, {
+    emailDeliveryStatus: delivered ? "sent" : "failed",
+    emailError: delivered ? null : deliveryError,
+  });
+
+  // 4) Nur echten Erfolg melden — kein ok:true auf eine verlorene Anfrage.
+  if (!stored && !delivered) {
+    return Response.json(
+      { error: "Das hat gerade nicht funktioniert. Bitte versuche es erneut." },
+      { status: 503 }
+    );
+  }
+
+  return Response.json({ ok: true, leadStored: stored, delivered });
 }

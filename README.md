@@ -30,6 +30,9 @@ Copy `.env.example` to `.env.local` and fill in:
 | `SEESZN_LEAD_EMAIL` | Internal lead recipient, e.g. `elana@seeszn.com`. |
 | `SEESZN_FROM_EMAIL` | From header for the user email, e.g. `Elana von SEESZN <elana@seeszn.com>`. |
 | `SEESZN_REPLY_TO_EMAIL` | Reply-to for the user email, e.g. `elana@seeszn.com`. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL — required for lead persistence. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key. |
+| `SUPABASE_SECRET_KEY` | Supabase secret key (service_role); writes `public.leads` server-side. |
 | `AI_ANSWER_PROVIDER` | `none` (default) or `google_cse`. |
 | `GOOGLE_CSE_API_KEY` / `GOOGLE_CSE_CX` | Google Custom Search credentials (only used when provider is `google_cse`). |
 
@@ -39,6 +42,25 @@ Copy `.env.example` to `.env.local` and fill in:
 
 The free scan runs without any of these. Email delivery requires Resend; the
 company-email requirement and the 3-query cap are enforced server-side.
+
+### Leads
+
+`public.leads` ist die Source of Truth für jede Anfrage aus dem Formular auf
+`/diagnosis/result` und aus `/brief/ki-sichtbarkeit`. Der Ablauf ist immer:
+validieren → Lead speichern → Mail versenden → Versandstatus nachtragen.
+
+Fällt der Mail-Provider aus, bleibt der Lead erhalten und steht mit
+`email_delivery_status = 'failed'` in der Tabelle. Offene Fälle findest du mit:
+
+```sql
+select created_at, email, company_domain, source, email_error
+from public.leads
+where email_delivery_status <> 'sent'
+order by created_at desc;
+```
+
+Zugriff hat ausschließlich Servercode mit dem Secret Key; `anon` und
+`authenticated` haben weder Grants noch Policies auf der Tabelle.
 
 ## Launch checklist
 
@@ -50,6 +72,7 @@ company-email requirement and the 3-query cap are enforced server-side.
 - [ ] `gmail.com` (and other freemail) is blocked at the gate
 - [ ] Internal lead email is received at `SEESZN_LEAD_EMAIL`
 - [ ] User email (from Elana) is received
+- [ ] Lead row appears in `public.leads` with `email_delivery_status = 'sent'`
 - [ ] Missing Google CSE falls back to "Nicht live geprüft" (questions still shown)
 - [ ] `.env.local` is not committed (`git check-ignore .env.local`)
 

@@ -441,6 +441,9 @@ function DiagnosisSection({
     "idle" | "loading" | "sentEmail" | "saved" | "error" | "freemail" | "rateLimited"
   >("idle");
   const revealRef = useRef<HTMLDivElement>(null);
+  // Zweiter Schutz gegen Doppel-Submit: das disabled-Attribut allein greift
+  // nicht, wenn Enter und Klick praktisch gleichzeitig kommen.
+  const inFlight = useRef(false);
 
   const emailSyntaxValid = /\S+@\S+\.\S+/.test(email);
   const companyValid = isCompanyEmail(email);
@@ -454,12 +457,14 @@ function DiagnosisSection({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (inFlight.current) return;
     if (!emailSyntaxValid) return;
     // Company-email requirement — checked here and again on the server.
     if (!companyValid) {
       setStatus("freemail");
       return;
     }
+    inFlight.current = true;
     setStatus("loading");
     try {
       const res = await fetch("/api/contact", {
@@ -468,10 +473,23 @@ function DiagnosisSection({
         body: JSON.stringify({ email, name, note, locale, market: locale, result, companyUrlConfirm }),
       });
       if (res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { userEmailSent?: boolean };
-        // Lead recorded. If the automatic email could not be delivered, we still
-        // unlock the page and show the "Analyse gespeichert" fallback.
-        setStatus(data.userEmailSent === false ? "saved" : "sentEmail");
+        const data = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          leadStored?: boolean;
+          leadNotified?: boolean;
+          userEmailSent?: boolean;
+        } | null;
+        // Ein HTTP 200 allein ist kein Erfolg: erst wenn die Anfrage
+        // serverseitig gespeichert oder zugestellt wurde, öffnen wir die
+        // Auswertung. Sonst bleibt es ein Fehler, den der Nutzer sieht.
+        const accepted = Boolean(data?.ok) && (data?.leadStored === true || data?.leadNotified === true);
+        if (!accepted) {
+          setStatus("error");
+          return;
+        }
+        // Kam die automatische Mail nicht raus, ist der Lead trotzdem sicher —
+        // dann zeigen wir den "Analyse gespeichert"-Zustand.
+        setStatus(data?.userEmailSent === true ? "sentEmail" : "saved");
         onUnlock();
       } else if (res.status === 422) {
         setStatus("freemail");
@@ -482,6 +500,9 @@ function DiagnosisSection({
       }
     } catch {
       setStatus("error");
+    } finally {
+      // Nie dauerhaft gesperrt: nach jedem Ausgang ist der Button wieder nutzbar.
+      inFlight.current = false;
     }
   }
 
@@ -585,17 +606,23 @@ function DiagnosisSection({
             <p className="rv-gate-privacy">{labels.gatePrivacy}</p>
           </div>
 
-          {/* Honeypot — hidden from people, off the tab order; bots may fill it. */}
+          {/* Honeypot — hidden from people, off the tab order; bots may fill it.
+              Feldname und Label bewusst neutral, damit Passwortmanager und
+              Browser-Autofill hier nichts eintragen: ein Falschpositiv würde
+              die Anfrage als Bot einstufen. */}
           <div className="rv-hp" aria-hidden="true">
-            <label htmlFor="rv-company-url">Company URL</label>
+            <label htmlFor="rv-confirm-field">Bitte leer lassen</label>
             <input
-              id="rv-company-url"
+              id="rv-confirm-field"
               type="text"
-              name="companyUrlConfirm"
+              name="rv-confirm-field"
               value={companyUrlConfirm}
               onChange={(e) => setCompanyUrlConfirm(e.target.value)}
               tabIndex={-1}
               autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
             />
           </div>
 
