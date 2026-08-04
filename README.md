@@ -62,6 +62,28 @@ order by created_at desc;
 Zugriff hat ausschließlich Servercode mit dem Secret Key; `anon` und
 `authenticated` haben weder Grants noch Policies auf der Tabelle.
 
+### Lead-CRM
+
+Das interne CRM liegt unter `/admin/leads` (Liste), `/admin/leads/[id]`
+(Detail) und `/admin/leads/export` (CSV). Es zeigt Eingang, Zustellstatus
+beider Mails und den Bearbeitungszustand; Scores und KI-Antwortfragen kommen
+aus `scan_result`, nicht aus eigenen Spalten.
+
+Zugang nur mit Supabase-Session und einer Membership mit der Rolle
+`seeszn_admin` — geprüft in jeder Seite, jeder Server Action und im
+CSV-Export. Es gibt kein Admin-Passwort und keine Lesepolicy für den Browser:
+gelesen wird ausschließlich serverseitig mit dem Secret Key.
+
+Code-Aufteilung in `lib/leads/`:
+
+| Datei | Zweck |
+| --- | --- |
+| `store.ts` | Writes aus den öffentlichen Formularen |
+| `admin.ts` | Reads und Updates des CRM |
+| `access.ts` | Rollenprüfung `seeszn_admin` |
+| `types.ts` | geteiltes Datenmodell |
+| `time.ts` | Wiedervorlage-Zeiten in Europe/Berlin |
+
 ## Launch checklist
 
 - [ ] `npm run build` passes

@@ -32,7 +32,8 @@ import {
   leadEmailSubject,
   userEmailSubject,
 } from "@/lib/email/diagnosis";
-import { saveLead, updateLeadDelivery, type DeliveryStatus } from "@/lib/leads/store";
+import { saveLead, updateLeadDelivery } from "@/lib/leads/store";
+import type { DeliveryStatus } from "@/lib/leads/types";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
 import type { ScanResult } from "@/lib/scan/types";
 

@@ -10,14 +10,22 @@
 //
 // Logging: nur E-Mail-Domain, Quelle und Lead-ID. Nie die Adresse selbst, nie
 // Name oder Notiz.
+//
+// Abgrenzung: hier stehen ausschließlich die Writes aus den öffentlichen
+// Formularen. Alles, was das interne CRM danach mit einem Lead macht — lesen,
+// Status setzen, Notizen anhängen — liegt in admin.ts. Beide teilen sich das
+// Datenmodell in types.ts.
 
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { emailDomain } from "@/lib/email/freemail";
+import type { DeliveryStatus, LeadSource, LeadStatus } from "./types";
 
-export type LeadSource = "diagnosis_result" | "brief_ki_sichtbarkeit";
-export type LeadStatus = "received" | "spam_suspected";
-export type DeliveryStatus = "pending" | "sent" | "failed" | "skipped";
+/**
+ * Der Eingangspfad vergibt nur diese beiden Zustände. Die übrigen Werte von
+ * LeadStatus sind CRM-Zustände und werden ausschließlich in admin.ts gesetzt.
+ */
+type IntakeStatus = Extract<LeadStatus, "new" | "spam_suspected">;
 
 export interface LeadInput {
   email: string;
@@ -28,7 +36,7 @@ export interface LeadInput {
   source: LeadSource;
   page: string;
   locale?: string;
-  status?: LeadStatus;
+  status?: IntakeStatus;
   /** Bereits sanitisiertes Scan-Ergebnis. */
   scanResult?: unknown;
 }
@@ -74,7 +82,7 @@ export async function saveLead(input: LeadInput): Promise<SaveLeadResult> {
         source: input.source,
         page: cut(input.page, MAX.page),
         locale: input.locale === "en" ? "en" : "de",
-        status: input.status ?? "received",
+        status: input.status ?? "new",
         email_delivery_status: "pending",
         user_email_status: "pending",
         scan_result: input.scanResult ?? null,

@@ -42,3 +42,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 private-imports/
+
+# Lokale Datenablage. Das frühere JSONL-Lead-System ist abgelöst — Leads liegen
+# in public.leads. Hier landet nichts mehr, was ins Repo gehört.
+/data/
