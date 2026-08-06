@@ -19,6 +19,42 @@ import {
   resolveWindowDays,
 } from "../lib/gsc/syncWindow.ts";
 
+import { isValidProperty, normalizeEnvValue } from "../lib/gsc/envConfig.ts";
+
+/* ── Env-Werte robust lesen ─────────────────────────────────────────────────── */
+
+test("Env: ein Wert, der seinen eigenen Namen enthält, wird bereinigt", () => {
+  // Genau dieser Fall stand in der Hosting-Umgebung und ließ jede
+  // Google-Abfrage mit HTTP 400 auflaufen.
+  assert.equal(
+    normalizeEnvValue("GOOGLE_GSC_PROPERTY", "GOOGLE_GSC_PROPERTY=https://www.example.de/"),
+    "https://www.example.de/",
+  );
+  assert.equal(
+    normalizeEnvValue("GOOGLE_GSC_PROPERTY", 'GOOGLE_GSC_PROPERTY="sc-domain:example.de"'),
+    "sc-domain:example.de",
+  );
+});
+
+test("Env: korrekte Werte bleiben unverändert", () => {
+  assert.equal(
+    normalizeEnvValue("GOOGLE_GSC_PROPERTY", "https://www.example.de/"),
+    "https://www.example.de/",
+  );
+  assert.equal(normalizeEnvValue("GOOGLE_GSC_PROPERTY", '  "sc-domain:example.de"  '), "sc-domain:example.de");
+  assert.equal(normalizeEnvValue("GOOGLE_GSC_PROPERTY", undefined), undefined);
+  assert.equal(normalizeEnvValue("GOOGLE_GSC_PROPERTY", "   "), undefined);
+});
+
+test("Property: nur Domain- und URL-Properties gelten als gültig", () => {
+  assert.equal(isValidProperty("sc-domain:example.de"), true);
+  assert.equal(isValidProperty("https://www.example.de/"), true);
+  assert.equal(isValidProperty("http://example.de/"), true);
+  assert.equal(isValidProperty("GOOGLE_GSC_PROPERTY=https://www.example.de/"), false);
+  assert.equal(isValidProperty("example.de"), false);
+  assert.equal(isValidProperty(undefined), false);
+});
+
 /* ── Self-Healing-Fenster ───────────────────────────────────────────────────── */
 
 test("Fenster: im Normalbetrieb bleibt es beim Standardfenster", () => {

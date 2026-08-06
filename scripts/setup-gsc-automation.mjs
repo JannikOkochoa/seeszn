@@ -78,11 +78,13 @@ loadEnvLocal();
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SECRET_KEY;
 const syncSecret = process.env.GSC_SYNC_SECRET;
+const property = process.env.GOOGLE_GSC_PROPERTY?.replace(/^GOOGLE_GSC_PROPERTY=/, "").trim();
 
 const missing = [
   ["NEXT_PUBLIC_SUPABASE_URL", supabaseUrl],
   ["SUPABASE_SECRET_KEY", serviceKey],
   ["GSC_SYNC_SECRET", syncSecret],
+  ["GOOGLE_GSC_PROPERTY", property],
 ]
   .filter(([, value]) => !value)
   .map(([name]) => name);
@@ -103,10 +105,17 @@ await rpc(supabaseUrl, serviceKey, "set_gsc_sync_config", {
   p_secret: syncSecret,
 });
 
+if (!/^(sc-domain:|https?:\/\/)/.test(property)) {
+  console.error(`GOOGLE_GSC_PROPERTY muss mit "sc-domain:" oder "https://" beginnen, ist aber: ${property}`);
+  process.exit(1);
+}
+await rpc(supabaseUrl, serviceKey, "set_gsc_property", { p_property: property });
+
 const status = await rpc(supabaseUrl, serviceKey, "gsc_sync_config_status", {});
 const row = Array.isArray(status) ? status[0] : status;
 
 console.log("Vault-Konfiguration gesetzt.");
 console.log(`  Endpoint          : ${row?.endpoint ?? "–"}`);
 console.log(`  Secret hinterlegt : ${row?.secret_configured ? "ja" : "nein"}`);
+console.log(`  GSC-Property      : ${row?.property ?? "–"}`);
 console.log("Der Scheduler (pg_cron) liest beides zur Laufzeit; Werte bleiben im Vault.");

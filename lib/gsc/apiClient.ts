@@ -12,6 +12,9 @@
 // Keine Fehlermeldung enthält Secrets oder rohe Google-Fehlerdetails.
 
 import "server-only";
+import { isValidProperty, normalizeEnvValue } from "./envConfig";
+
+export { isValidProperty, normalizeEnvValue };
 
 // Read-only-Scope (webmasters.readonly) ist an den Refresh Token gebunden und
 // muss beim Token-Refresh nicht erneut gesendet werden.
@@ -52,14 +55,30 @@ interface GscConfig {
 }
 
 /**
- * Liest die vier Pflicht-Variablen serverseitig. Fehlt etwas, wird nur der
+ * Liest die vier Pflichtwerte serverseitig. Fehlt etwas, wird nur der
  * Variablenname gemeldet – niemals ein Wert.
+ *
+ * Die Property darf zusätzlich aus dem Supabase Vault kommen: Sie ist kein
+ * Secret, aber umgebungsabhängig, und ein Fehler darin legt den gesamten Sync
+ * lahm. Der Vault ist die Stelle, die sich ohne Zugriff auf die
+ * Hosting-Oberfläche korrigieren lässt. Reihenfolge: gültige Env-Variable
+ * gewinnt, sonst der Vault-Wert.
  */
-export function readGscConfig(): GscConfig {
-  const clientId = process.env.GOOGLE_GSC_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_GSC_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_GSC_REFRESH_TOKEN;
-  const property = process.env.GOOGLE_GSC_PROPERTY;
+export async function resolveGscConfig(): Promise<GscConfig> {
+  const clientId = normalizeEnvValue("GOOGLE_GSC_CLIENT_ID", process.env.GOOGLE_GSC_CLIENT_ID);
+  const clientSecret = normalizeEnvValue(
+    "GOOGLE_GSC_CLIENT_SECRET",
+    process.env.GOOGLE_GSC_CLIENT_SECRET,
+  );
+  const refreshToken = normalizeEnvValue(
+    "GOOGLE_GSC_REFRESH_TOKEN",
+    process.env.GOOGLE_GSC_REFRESH_TOKEN,
+  );
+  let property = normalizeEnvValue("GOOGLE_GSC_PROPERTY", process.env.GOOGLE_GSC_PROPERTY);
+
+  if (!isValidProperty(property)) {
+    property = (await propertyFromVault()) ?? property;
+  }
 
   const missing = [
     ["GOOGLE_GSC_CLIENT_ID", clientId],
@@ -73,12 +92,31 @@ export function readGscConfig(): GscConfig {
   if (missing.length > 0) {
     throw new GscConfigError(`Fehlende GSC-Umgebungsvariablen: ${missing.join(", ")}`);
   }
+  if (!isValidProperty(property)) {
+    throw new GscConfigError(
+      "GOOGLE_GSC_PROPERTY ist unbrauchbar: erwartet wird 'sc-domain:…' oder 'https://…'. " +
+        "Korrigierbar über scripts/setup-gsc-automation.mjs (Supabase Vault).",
+    );
+  }
+
   return {
     clientId: clientId!,
     clientSecret: clientSecret!,
     refreshToken: refreshToken!,
-    property: property!,
+    property,
   };
+}
+
+/** Property aus dem Vault; still fehlschlagend, weil sie nur ein Rückfall ist. */
+async function propertyFromVault(): Promise<string | undefined> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase/server");
+    const { data, error } = await createSupabaseAdminClient().rpc("gsc_property");
+    const value = typeof data === "string" ? data : undefined;
+    return !error && isValidProperty(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Prozessweiter Access-Token-Cache. Nur im Speicher, nie persistiert. */
@@ -293,7 +331,7 @@ async function queryPage(
 export async function querySearchAnalytics(
   query: SearchAnalyticsQuery,
 ): Promise<GscApiMetricRow[]> {
-  const config = readGscConfig();
+  const config = await resolveGscConfig();
   const endpoint = `${API_BASE}/${encodeURIComponent(config.property)}/searchAnalytics/query`;
   const filterGroups = dimensionFilterGroups(query.pageFilter, query.queryFilter);
 
@@ -344,7 +382,7 @@ export interface GscAccessCheck {
 export async function verifyGscAccess(): Promise<GscAccessCheck> {
   let config: GscConfig;
   try {
-    config = readGscConfig();
+    config = await resolveGscConfig();
   } catch (err) {
     return {
       ok: false,

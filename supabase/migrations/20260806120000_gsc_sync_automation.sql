@@ -140,12 +140,62 @@ revoke all on function public.set_gsc_sync_config(text, text) from public, anon,
 grant execute on function public.set_gsc_sync_config(text, text) to service_role;
 
 /**
+ * Die Search-Console-Property (z. B. "sc-domain:example.de" oder
+ * "https://www.example.de/"). Kein Secret, aber umgebungsabhängig — und
+ * genau deshalb hier: Ein Tippfehler in der Hosting-Umgebung lässt sonst
+ * jede Google-Abfrage mit HTTP 400 auflaufen, ohne dass es sich von hier aus
+ * korrigieren ließe. Der Vault-Wert dient als verlässlicher Rückfall, wenn
+ * die Env-Variable fehlt oder offensichtlich unbrauchbar ist.
+ */
+create or replace function public.set_gsc_property(p_property text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if p_property !~ '^(sc-domain:|https?://)' then
+    raise exception 'Property muss mit sc-domain: oder http(s):// beginnen.';
+  end if;
+
+  select id into v_id from vault.secrets where name = 'gsc_property';
+  if v_id is null then
+    perform vault.create_secret(p_property, 'gsc_property', 'Search-Console-Property.');
+  else
+    perform vault.update_secret(v_id, p_property, 'gsc_property', 'Search-Console-Property.');
+  end if;
+end;
+$$;
+
+revoke all on function public.set_gsc_property(text) from public, anon, authenticated;
+grant execute on function public.set_gsc_property(text) to service_role;
+
+/** Nur die Property lesen (kein Secret). */
+create or replace function public.gsc_property()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select decrypted_secret from vault.decrypted_secrets where name = 'gsc_property';
+$$;
+
+revoke all on function public.gsc_property() from public, anon, authenticated;
+grant execute on function public.gsc_property() to service_role;
+
+/**
  * Zustand der Vault-Konfiguration, ohne die Werte preiszugeben. Damit lässt
  * sich prüfen, ob die Automatisierung eingerichtet ist, ohne ein Secret zu
- * lesen.
+ * lesen. Die Property ist kein Secret und wird deshalb im Klartext gemeldet.
  */
+-- Rückgabetyp hat sich um die Property erweitert; CREATE OR REPLACE kann das
+-- nicht, deshalb erst verwerfen.
+drop function if exists public.gsc_sync_config_status();
 create or replace function public.gsc_sync_config_status()
-returns table (endpoint text, secret_configured boolean)
+returns table (endpoint text, secret_configured boolean, property text)
 language sql
 stable
 security definer
@@ -153,7 +203,8 @@ set search_path = ''
 as $$
   select
     (select decrypted_secret from vault.decrypted_secrets where name = 'gsc_sync_endpoint'),
-    exists (select 1 from vault.secrets where name = 'gsc_sync_secret');
+    exists (select 1 from vault.secrets where name = 'gsc_sync_secret'),
+    (select decrypted_secret from vault.decrypted_secrets where name = 'gsc_property');
 $$;
 
 revoke all on function public.gsc_sync_config_status() from public, anon, authenticated;
