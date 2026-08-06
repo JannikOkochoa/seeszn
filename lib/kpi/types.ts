@@ -2,6 +2,8 @@
 // Spiegeln die Supabase-Tabellen; werden von Server-Loader und Client geteilt.
 // Kein server-only: reine Typen.
 
+import type { GscSyncStatus } from "./syncStatus";
+
 export type Role = "seeszn_admin" | "kluehspies_editor" | "viewer";
 
 export type TaskStatus =
@@ -251,7 +253,20 @@ export interface AuditEventRow {
 
 /* ── GSC-Export-Import (echte Search-Console-Daten) ─────────────────────────── */
 
-export type GscScopeType = "sitewide" | "path_prefix" | "product_page";
+/**
+ * "page" ist der generische Einzelseiten-Scope (scope_value = kanonische URL)
+ * für den wiederverwendbaren Seiten-Performance-Bereich. "page_segment"
+ * zerlegt eine solche Seite in Marken- und Nicht-Marken-Suchen
+ * (scope_value = "<seiten-key>:<branded|non_branded>"). "product_page" bleibt
+ * den drei Pilot-Stadtseiten vorbehalten, die die Winners/Losers-Ableitungen
+ * tragen. Siehe lib/gsc/pageScopes.ts.
+ */
+export type GscScopeType =
+  | "sitewide"
+  | "path_prefix"
+  | "product_page"
+  | "page"
+  | "page_segment";
 export type GscDimensionType = "query" | "page" | "device" | "country" | "search_appearance";
 export type GscBatchStatus = "pending" | "validating" | "imported" | "failed" | "archived";
 
@@ -353,6 +368,9 @@ export interface WorkspaceInit {
   /** Ob die Tabelle kluehspies_quick_wins existiert. Vor der Migration false;
    *  dann zeigt der Room die kuratierten Standardinhalte als Fallback. */
   quickWinsEnabled: boolean;
+  /** GA4-Zugangsdaten vollständig hinterlegt. Ohne sie bleibt Analytics
+   *  ehrlich "nicht verbunden"; es entstehen nie geschätzte Werte. */
+  ga4Configured: boolean;
   /** Echte GSC-Daten: aktive Batches je Scope + deren tägliche Zeitreihen.
    *  Einzige Quelle der KPI-Berechnung; Demo-Daten fließen nicht mehr ein. */
   gsc: {
@@ -364,6 +382,8 @@ export interface WorkspaceInit {
      *  und Darstellung in der Suche. Vollständige Tabellen lädt der
      *  Detail-Drawer weiterhin lazy nach. */
     dimensions: GscDimensionSnapshotRow[];
+    /** Ehrlicher Verbindungszustand: aktuell, veraltet oder fehlgeschlagen. */
+    syncStatus: GscSyncStatus;
   };
 }
 

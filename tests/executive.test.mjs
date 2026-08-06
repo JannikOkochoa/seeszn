@@ -16,6 +16,18 @@ import {
   comparePeriods,
   metricDailySeries,
 } from "../lib/kpi/gscData.ts";
+import { buildGscSyncStatus } from "../lib/kpi/syncStatus.ts";
+
+/** Ein protokollierter Sync-Lauf, kompakt. */
+function run(status, startedAt, errorMessage = null) {
+  return {
+    status,
+    started_at: startedAt,
+    completed_at: startedAt,
+    error_message: errorMessage,
+    records_processed: 1000,
+  };
+}
 
 function day(batch, date, clicks, impressions, position) {
   return {
@@ -155,17 +167,50 @@ test("Attention: ohne Vergleich keine erfundenen Beobachtungen", () => {
 /* ── Ehrliche Live-Quellen ──────────────────────────────────────────────────── */
 
 test("Live-Quellen: nicht Verbundenes heißt not_connected, nie live", () => {
-  const statuses = getLiveSourceStatuses({ gscDataAsOf: "2026-07-10", realtimeConnected: true });
+  const live = buildGscSyncStatus({
+    runs: [run("success", "2026-07-11T03:00:00Z")],
+    dataAsOf: "2026-07-10",
+    todayIso: "2026-07-12",
+  });
+  const statuses = getLiveSourceStatuses({ syncStatus: live, realtimeConnected: true });
   const byKind = Object.fromEntries(statuses.map((s) => [s.kind, s]));
   assert.equal(byKind.gsc_export.state, "verified");
   assert.equal(byKind.ga4_core.state, "not_connected");
   assert.equal(byKind.website_scanner.state, "not_connected");
-  assert.equal(byKind.gsc_api.state, "not_connected");
+  // GSC API ist tatsächlich verbunden und frisch -> "live"
+  assert.equal(byKind.gsc_api.state, "live");
   // Supabase-Realtime ist tatsächlich verbunden -> ehrliches "live"
   assert.equal(byKind.supabase_realtime.state, "live");
-  const offline = getLiveSourceStatuses({ gscDataAsOf: null, realtimeConnected: false });
+
+  const never = buildGscSyncStatus({ runs: [], dataAsOf: null, todayIso: "2026-07-12" });
+  const offline = getLiveSourceStatuses({ syncStatus: never, realtimeConnected: false });
   assert.equal(offline.find((s) => s.kind === "gsc_export").state, "not_connected");
+  assert.equal(offline.find((s) => s.kind === "gsc_api").state, "not_connected");
   assert.equal(offline.find((s) => s.kind === "supabase_realtime").state, "offline");
+});
+
+test("Live-Quellen: veraltete Daten heißen nicht mehr 'verifiziert'", () => {
+  const stale = buildGscSyncStatus({
+    runs: [run("success", "2026-07-11T03:00:00Z")],
+    dataAsOf: "2026-07-10",
+    todayIso: "2026-07-25",
+  });
+  const byKind = Object.fromEntries(
+    getLiveSourceStatuses({ syncStatus: stale, realtimeConnected: true }).map((s) => [s.kind, s]),
+  );
+  assert.equal(byKind.gsc_export.state, "degraded");
+  assert.equal(byKind.gsc_api.state, "degraded");
+
+  const failed = buildGscSyncStatus({
+    runs: [run("error", "2026-07-25T03:00:00Z", "invalid_grant")],
+    dataAsOf: "2026-07-24",
+    todayIso: "2026-07-25",
+  });
+  const failedByKind = Object.fromEntries(
+    getLiveSourceStatuses({ syncStatus: failed, realtimeConnected: true }).map((s) => [s.kind, s]),
+  );
+  assert.equal(failedByKind.gsc_api.state, "error");
+  assert.equal(failedByKind.gsc_export.state, "degraded");
 });
 
 /* ── Begrüßung ──────────────────────────────────────────────────────────────── */

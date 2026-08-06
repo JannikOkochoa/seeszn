@@ -15,6 +15,8 @@ import ExecutiveIntro from "./executive/ExecutiveIntro";
 import DataFreshnessBar from "./executive/DataFreshnessBar";
 import ExecutiveKpiGrid from "./executive/ExecutiveKpiGrid";
 import PerformanceCanvas from "./executive/PerformanceCanvas";
+import PagePerformance from "./executive/PagePerformance";
+import GscConnectionNotice from "./executive/GscConnectionNotice";
 import AttentionPanel from "./executive/AttentionPanel";
 import NextActionPanel from "./executive/NextActionPanel";
 import QuickWinsPanel from "./intelligence/QuickWinsPanel";
@@ -81,11 +83,13 @@ function ExecutiveCockpit() {
     <>
       <ExecutiveIntro />
       <DataFreshnessBar />
+      <GscConnectionNotice />
       <KpiToolbar />
       {hasRealData ? (
         <>
           <ExecutiveKpiGrid />
           <PerformanceCanvas />
+          <PagePerformance />
           <div className="kw-ex-row">
             <AttentionPanel />
             <NextActionPanel />
@@ -642,6 +646,8 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-freshness-text { flex: 1; min-width: 260px; line-height: 1.7; }
         .kw-ex-dot { color: var(--text-faint); }
         .kw-ex-freshness-link { font-size: 12px; white-space: nowrap; }
+        /* Gestörte Quellen treten aus der Zeile hervor, ohne Farbfläche. */
+        .kw-ex-freshness-warn { color: var(--ink-strong); font-weight: 500; }
 
         /* C · Vier zentrale KPIs */
         .kw-ex-kpis {
@@ -720,6 +726,86 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-ex-chart svg:focus-visible { outline: 1px solid var(--ink-strong); outline-offset: 4px; }
         .kw-ex-tip { top: 12px; }
         .kw-ex-tip-prev span:last-child { color: var(--text-muted); }
+
+        /* D2 · Verbindungshinweis (nur bei Störung sichtbar) */
+        .kw-conn {
+          border-left: 2px solid var(--line-strong);
+          padding: 14px 0 14px 18px;
+          margin: 0 0 clamp(28px, 4vw, 44px);
+          max-width: 68ch;
+        }
+        .kw-conn--error { border-left-color: var(--signal); }
+        .kw-conn-headline {
+          font-family: var(--serif); font-weight: 400; font-size: 17px; line-height: 1.35;
+          color: var(--ink-strong); margin: 0 0 6px;
+        }
+        .kw-conn-detail { font-size: 14px; line-height: 1.65; color: var(--text-body); margin: 0; }
+        .kw-conn-hint { margin-top: 8px; }
+        .kw-conn-link { display: inline-block; margin-top: 10px; font-size: 12px; }
+
+        /* D2b · Sync-Monitor im Datenquellen-Drawer */
+        .kw-sync-monitor .kw-ex-source-list { margin-bottom: 26px; }
+        .kw-sync-error { color: var(--ink-strong); }
+        .kw-chain-title { margin-bottom: 12px; }
+        .kw-chain { list-style: none; margin: 0; padding: 0; counter-reset: chain; }
+        .kw-chain-step {
+          display: flex; flex-direction: column; gap: 3px;
+          border-left: 1px solid var(--line); padding: 0 0 16px 18px; position: relative;
+        }
+        .kw-chain-step:last-child { border-left-color: transparent; padding-bottom: 0; }
+        /* Der Punkt trägt den Zustand: gefüllt = erledigt, hohl = offen,
+           Signalfarbe = hier ist die Kette abgerissen. */
+        .kw-chain-step::before {
+          content: ""; position: absolute; left: -4px; top: 4px;
+          width: 7px; height: 7px; border-radius: 50%;
+          border: 1px solid var(--line-strong); background: var(--paper);
+        }
+        .kw-chain-step[data-state="done"]::before { background: var(--ink); border-color: var(--ink); }
+        .kw-chain-step[data-state="broken"]::before { background: var(--signal); border-color: var(--signal); }
+        .kw-chain-label { font-size: 13px; color: var(--ink-strong); }
+        .kw-chain-value { line-height: 1.55; }
+
+        /* D3 · Seiten-Performance (wiederverwendbar je URL) */
+        .kw-page-perf { margin-bottom: clamp(36px, 5vw, 60px); }
+        .kw-page-url { font-size: 12px; white-space: nowrap; }
+        .kw-page-controls { margin-bottom: 8px; }
+        .kw-page-metric-explain { margin: 22px 0 10px; }
+        .kw-page-chart { margin: 0 0 8px; }
+        .kw-page-chart svg { width: 100%; height: auto; display: block; }
+        .kw-page-queries { margin-top: clamp(28px, 4vw, 44px); }
+        .kw-page-queries .kw-ex-canvas-title { margin-bottom: 16px; }
+        .kw-page-query-note { margin-top: 12px; }
+
+        /* D4 · Marken- vs. Nicht-Marken-Suchen */
+        .kw-brand-split { margin-top: clamp(36px, 5vw, 56px); }
+        .kw-brand-split .kw-ex-canvas-title { margin-bottom: 8px; }
+        .kw-brand-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: clamp(24px, 3vw, 48px); margin-top: 8px;
+        }
+        .kw-brand-card { border-top: 1px solid var(--line); padding-top: 18px; }
+        .kw-brand-card-title {
+          font-family: var(--serif); font-weight: 400; font-size: 16px;
+          color: var(--ink-strong); margin: 0 0 14px;
+        }
+        .kw-brand-share { margin: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .kw-brand-share-value {
+          font-family: var(--serif); font-size: clamp(30px, 3.6vw, 40px); line-height: 1;
+          color: var(--ink-strong); letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+        }
+        .kw-brand-share-second { margin: 6px 0 0; }
+        .kw-brand-metrics {
+          margin: 20px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px 20px;
+        }
+        .kw-brand-metrics dt { margin-bottom: 4px; }
+        .kw-brand-metrics dd { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+        .kw-brand-metric-value {
+          font-size: 17px; color: var(--ink-strong); font-variant-numeric: tabular-nums;
+        }
+        .kw-brand-metric-delta { font-size: 12px; }
+        .kw-brand-queries { margin-top: clamp(28px, 4vw, 40px); }
+        .kw-brand-note { margin-top: 16px; max-width: 68ch; }
 
         /* E · Aufmerksamkeit + nächste Handlung */
         .kw-ex-row {

@@ -8,6 +8,7 @@
 // Nicht verbundene Quellen stehen ehrlich als „Noch nicht verbunden“.
 
 import Drawer from "../Drawer";
+import SyncMonitor from "./SyncMonitor";
 import { getLiveSourceStatuses } from "@/lib/kpi/executive";
 import { formatDate, formatDateTime } from "@/lib/kpi/format";
 import { useWorkspace } from "../workspace";
@@ -20,10 +21,13 @@ export default function DataSourceDrawer() {
     activeScope,
     scopeOptions,
     realtime,
+    syncStatus,
+    ga4Configured,
   } = useWorkspace();
 
   const statuses = getLiveSourceStatuses({
-    gscDataAsOf: gscProvenance?.dataAsOf ?? null,
+    syncStatus,
+    ga4Configured,
     realtimeConnected: realtime === "live",
   });
 
@@ -84,6 +88,14 @@ export default function DataSourceDrawer() {
         )}
       </section>
 
+      {/* Automatische Aktualisierung: Zustand und Ablauf */}
+      <section className="kw-dsection" aria-label="Automatische Aktualisierung">
+        <div className="kw-dsection-head">
+          <h3 className="kw-dsection-title">Automatische Aktualisierung</h3>
+        </div>
+        <SyncMonitor />
+      </section>
+
       {/* Hinweise zur Interpretation */}
       <section className="kw-dsection" aria-label="Hinweise">
         <div className="kw-dsection-head">
@@ -125,9 +137,12 @@ export default function DataSourceDrawer() {
             <li key={status.kind} className="kw-ex-status-row">
               <span className="kw-ex-status-label">{status.label}</span>
               <span className="kr-meta">
-                {status.state === "verified" && `Export verifiziert${gscProvenance?.dataAsOf ? ` · bis ${formatDate(gscProvenance.dataAsOf)}` : ""}`}
+                {status.state === "verified" &&
+                  `Echte Search-Console-Daten${syncStatus.dataAsOf ? ` · bis ${formatDate(syncStatus.dataAsOf)}` : ""}`}
                 {status.state === "live" && status.detail}
                 {status.state === "offline" && status.detail}
+                {status.state === "degraded" && `Veraltet · ${status.detail ?? ""}`}
+                {status.state === "error" && `Fehler · ${status.detail ?? ""}`}
                 {status.state === "not_connected" && "Noch nicht verbunden · wird im nächsten Schritt eingerichtet"}
               </span>
             </li>

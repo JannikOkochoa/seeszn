@@ -22,6 +22,12 @@ import {
   type Role,
   type WorkspaceInit,
 } from "./types";
+import {
+  buildGscSyncStatus,
+  type SyncDispatchRow,
+  type SyncRunRow,
+} from "./syncStatus";
+import { readGa4Availability } from "@/lib/ga4/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function loadWorkspace(
@@ -143,7 +149,7 @@ export async function loadWorkspace(
     (d) => d.import_batch_id,
   );
 
-  const [annotations, batches, daily, dimensions] = await Promise.all([
+  const [annotations, batches, daily, dimensions, syncRuns, lastDispatch] = await Promise.all([
     kpiId
       ? supabase
           .from("annotations")
@@ -196,7 +202,46 @@ export async function loadWorkspace(
           .limit(40),
       ]),
     ),
+    // Letzte Sync-Läufe: die Grundlage dafür, dass ein ausgefallener oder
+    // fehlgeschlagener Sync im Dashboard sichtbar wird, statt sich hinter
+    // unverändert stehenden Zahlen zu verstecken. Mehrere Zeilen, damit auch
+    // der letzte *erfolgreiche* Lauf gezeigt werden kann, wenn der jüngste
+    // Versuch gescheitert ist.
+    supabase
+      .from("sync_runs")
+      .select(
+        "status, started_at, completed_at, error_message, records_processed, trigger_source, dispatch_id",
+      )
+      .eq("organization_id", organizationId)
+      .order("started_at", { ascending: false })
+      .limit(20),
+    // Jüngste Auslösung des Supabase-Schedulers. Fehlt die Tabelle noch (vor
+    // der Migration), bleibt data null → die Kette zeigt einfach keine
+    // Scheduler-Stufe, statt zu brechen.
+    supabase
+      .from("gsc_sync_dispatches")
+      .select("id, job_name, reason, scheduled_at, http_status, delivered, error_message, reconciled_at")
+      .eq("organization_id", organizationId)
+      .order("scheduled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const dailyRows = daily.flatMap((result) => (result.data as GscScopeDailyRow[]) ?? []);
+  // Datenstand = jüngster Tag über alle aktiven Scopes.
+  const dataAsOf =
+    dailyRows.map((row) => row.date).sort().at(-1) ?? null;
+  // GA4 ist eine reine Konfigurationsfrage: ohne Zugangsdaten bleibt der
+  // Eintrag "nicht verbunden", niemals ein geschätzter Wert.
+  const ga4Configured = readGa4Availability().configured;
+
+  const syncStatus = buildGscSyncStatus({
+    runs: (syncRuns.data as SyncRunRow[] | null) ?? [],
+    dataAsOf,
+    todayIso: new Date().toISOString().slice(0, 10),
+    scopeCount: ((activeDatasets.data ?? []) as GscActiveDatasetRow[]).length,
+    dispatch: (lastDispatch.data as SyncDispatchRow | null) ?? null,
+  });
 
   const me = (profiles.data ?? []).find((p) => p.id === user.id);
 
@@ -241,13 +286,15 @@ export async function loadWorkspace(
     manualCheckIns: (manualCheckIns.data as WorkspaceInit["manualCheckIns"]) ?? [],
     quickWins: (quickWins.data as WorkspaceInit["quickWins"]) ?? [],
     quickWinsEnabled: !quickWins.error,
+    ga4Configured,
     gsc: {
       activeDatasets: (activeDatasets.data as GscActiveDatasetRow[]) ?? [],
       batches: (batches.data as GscImportBatchRow[]) ?? [],
-      daily: daily.flatMap((result) => (result.data as GscScopeDailyRow[]) ?? []),
+      daily: dailyRows,
       dimensions: dimensions.flatMap(
         (result) => (result.data as GscDimensionSnapshotRow[]) ?? [],
       ),
+      syncStatus,
     },
   };
 }

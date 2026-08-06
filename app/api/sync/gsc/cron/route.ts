@@ -16,7 +16,11 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { GscApiError, GscAuthError, GscConfigError } from "@/lib/gsc/apiClient";
-import { runApiGscSync } from "@/lib/gsc/apiSync";
+import {
+  runApiGscSync,
+  SyncAlreadyRunningError,
+  type SyncTriggerSource,
+} from "@/lib/gsc/apiSync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,12 +47,33 @@ function providedSecret(request: Request): string | null {
   return key ?? null;
 }
 
-/** true = per Secret autorisiert. */
-function authorizedBySecret(request: Request): boolean {
-  const expected = process.env.GSC_SYNC_SECRET;
+/**
+ * true = per Secret autorisiert.
+ *
+ * Zwei gleichwertige Quellen, in dieser Reihenfolge:
+ *   1. GSC_SYNC_SECRET aus der Umgebung (kein Netzwerkweg, unveränderte
+ *      Bestandsfunktion für manuelle Aufrufe).
+ *   2. Der Vault-Eintrag gsc_sync_secret in Supabase. Genau von dort liest
+ *      auch der Scheduler. Damit gibt es für die Automatisierung eine einzige
+ *      Quelle der Wahrheit: Env-Variable und Scheduler können nicht mehr
+ *      auseinanderdriften und den Sync still ausfallen lassen.
+ *
+ * Der Vault-Wert verlässt die Datenbank dabei nie – verglichen wird dort.
+ */
+async function authorizedBySecret(request: Request): Promise<boolean> {
   const provided = providedSecret(request);
-  if (!expected || !provided) return false;
-  return secretMatches(provided, expected);
+  if (!provided) return false;
+
+  const expected = process.env.GSC_SYNC_SECRET;
+  if (expected && secretMatches(provided, expected)) return true;
+
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin.rpc("gsc_sync_secret_matches", { p_candidate: provided });
+    return !error && data === true;
+  } catch {
+    return false;
+  }
 }
 
 /** Gibt die Actor-User-ID zurück, wenn ein seeszn_admin angemeldet ist. */
@@ -68,24 +93,68 @@ async function authorizedAdminActorId(): Promise<string | null> {
   return membership.data ? user.id : null;
 }
 
+/**
+ * Der Supabase-Scheduler schickt {"dispatchId","triggerSource"} mit. Damit
+ * lässt sich der Lauf später eindeutig der Auslösung zuordnen: erst dadurch
+ * ist im Nachhinein erkennbar, ob der Scheduler ausgelöst hat und der Aufruf
+ * die App auch wirklich erreicht hat.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function readDispatch(
+  request: Request,
+): Promise<{ dispatchId: string | null; triggerSource: SyncTriggerSource | null }> {
+  try {
+    const body = (await request.json()) as { dispatchId?: unknown; triggerSource?: unknown };
+    const dispatchId =
+      typeof body?.dispatchId === "string" && UUID.test(body.dispatchId) ? body.dispatchId : null;
+    const triggerSource =
+      body?.triggerSource === "self_heal"
+        ? ("self_heal" as const)
+        : body?.triggerSource === "scheduled"
+          ? ("scheduler" as const)
+          : null;
+    return { dispatchId, triggerSource };
+  } catch {
+    // Leerer Body ist erlaubt (z. B. einfacher curl-Aufruf).
+    return { dispatchId: null, triggerSource: null };
+  }
+}
+
 async function handle(request: Request): Promise<Response> {
   // 1) Autorisierung: Secret (Cron) ODER angemeldeter seeszn_admin.
   let actorId: string | null = null;
-  if (authorizedBySecret(request)) {
+  let triggerSource: SyncTriggerSource;
+  if (await authorizedBySecret(request)) {
     actorId = null; // automatischer Lauf
+    triggerSource = "manual";
   } else {
     actorId = await authorizedAdminActorId();
     if (!actorId) {
       return fail("Nicht autorisiert.", 401);
     }
+    triggerSource = "admin";
   }
+
+  const { dispatchId, triggerSource: dispatchTrigger } = await readDispatch(request);
+  if (dispatchTrigger) triggerSource = dispatchTrigger;
 
   // 2) Sync ausführen (Admin-Client, nur Servercode).
   const admin = createSupabaseAdminClient();
   try {
-    const result = await runApiGscSync({ admin, actorId });
-    return Response.json({ ok: true, ...result });
+    const result = await runApiGscSync({ admin, actorId, triggerSource, dispatchId });
+    // Ein teilweise fehlgeschlagener Lauf darf nicht wie ein erfolgreicher
+    // aussehen: ok spiegelt die Scope-Fehler, und wenn kein einziger Scope
+    // durchkam, ist das ein Fehlerstatus (502), damit ein Cron-Monitor anschlägt.
+    const ok = result.failed === 0;
+    const status = result.activated === 0 && result.failed > 0 ? 502 : 200;
+    return Response.json({ ok, ...result }, { status });
   } catch (err) {
+    // Bereits laufender Sync ist kein Fehler, sondern der Lock, der genau das
+    // verhindern soll: 409 statt 500, damit ein Monitor nicht Alarm schlägt.
+    if (err instanceof SyncAlreadyRunningError) {
+      return Response.json({ ok: true, skipped: "already_running" }, { status: 409 });
+    }
     // Fehlende Env-Variablen: Namen dürfen genannt werden, Werte nie.
     if (err instanceof GscConfigError) {
       console.error("[sync/gsc/cron] Konfiguration unvollständig.");

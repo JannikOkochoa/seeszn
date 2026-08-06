@@ -53,6 +53,8 @@ import {
   type ScopeComparison,
   type ScopeMovement,
 } from "@/lib/kpi/intelligence";
+import { buildPageOptions, type PageOption } from "@/lib/kpi/pagePerformance";
+import type { GscSyncStatus } from "@/lib/kpi/syncStatus";
 import type {
   AnnotationRow,
   ApprovalRow,
@@ -197,6 +199,18 @@ interface WorkspaceContextValue {
   scopeKey: string | null;
   setScopeKey: (key: string) => void;
   scopeOptions: ScopeOption[];
+  /**
+   * Getrackte Einzelseiten mit aktivem Datensatz (Homepage, Berlin, …), in der
+   * Reihenfolge von TRACKED_PAGES. Grundlage des Seiten-Performance-Bereichs;
+   * eine neue Seite erscheint hier automatisch nach dem ersten Sync.
+   */
+  pageOptions: PageOption[];
+  /** GA4-Zugangsdaten vorhanden; ohne sie bleibt Analytics "nicht verbunden". */
+  ga4Configured: boolean;
+  /** Rohe Tageszeilen aller aktiven Batches (für seitenweise Auswertungen). */
+  gscDaily: GscScopeDailyRow[];
+  /** Dimensions-Snapshots aller aktiven Batches. */
+  gscDimensions: GscDimensionSnapshotRow[];
   // Echte GSC-Daten (einzige KPI-Quelle)
   hasRealData: boolean;
   activeScope: ScopeOption | null;
@@ -207,6 +221,11 @@ interface WorkspaceContextValue {
   /** Vorperiodenvergleich; null beim Gesamtzeitraum. */
   gscComparison: PeriodComparison | null;
   gscProvenance: DatasetProvenance | null;
+  /**
+   * Verbindungszustand der Search-Console-Anbindung: aktuell, veraltet oder
+   * fehlgeschlagen. Serverseitig aus sync_runs + Datenstand abgeleitet.
+   */
+  syncStatus: GscSyncStatus;
   /**
    * Stabile Basis des Executive Intro: 28-Tage-Vergleich des Standard-Scopes
    * (alle Städtereisen), unabhängig von den gewählten Filtern.
@@ -439,6 +458,15 @@ export function WorkspaceProvider({
     [init.gsc.activeDatasets, init.gsc.batches],
   );
   const [scopeKey, setScopeKey] = useState<string | null>(() => defaultScopeKey(scopeOptions));
+
+  // Getrackte Einzelseiten mit aktivem Datensatz – unabhängig von der
+  // Scope-Auswahl des Cockpits, weil der Seiten-Bereich eine eigene Frage
+  // beantwortet ("wie läuft genau diese URL?").
+  const pageOptions = useMemo(
+    () => buildPageOptions(init.gsc.activeDatasets, init.gsc.batches),
+    [init.gsc.activeDatasets, init.gsc.batches],
+  );
+
   const [dataSourceDrawerOpen, setDataSourceDrawerOpen] = useState(false);
 
   const [kpiDrawerOpen, setKpiDrawerOpen] = useState(false);
@@ -1748,9 +1776,14 @@ export function WorkspaceProvider({
     scopeKey,
     setScopeKey,
     scopeOptions,
+    pageOptions,
+    gscDaily: init.gsc.daily,
+    gscDimensions: init.gsc.dimensions,
     dimensionsByBatch,
     loadDimensions,
     intelligence,
+    syncStatus: init.gsc.syncStatus,
+    ga4Configured: init.ga4Configured,
     ...derived,
     kpiTasks,
     activeTaskCount,

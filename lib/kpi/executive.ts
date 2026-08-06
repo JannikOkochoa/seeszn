@@ -5,6 +5,7 @@
 // Die UI-Komponenten rendern nur, was hier berechnet wurde.
 
 import type { PeriodComparison, PeriodTotals, ScopeOption } from "./gscData";
+import type { GscSyncStatus } from "./syncStatus";
 
 /* ── Schwellen (dokumentiert, deterministisch) ──────────────────────────────── */
 
@@ -328,28 +329,73 @@ export type LiveSourceKind =
 export interface LiveSourceStatus {
   kind: LiveSourceKind;
   label: string;
-  /** Ehrlicher Zustand; "live" nur für tatsächlich verbundene Live-Kanäle. */
-  state: "verified" | "live" | "offline" | "not_connected";
+  /**
+   * Ehrlicher Zustand.
+   *   verified      – echte, geprüfte Daten liegen vor
+   *   live          – laufende Verbindung, Daten im erwarteten Takt
+   *   degraded      – Daten sind echt, aber veraltet
+   *   error         – letzter Versuch ist fehlgeschlagen
+   *   offline       – Kanal getrennt
+   *   not_connected – nie verbunden
+   */
+  state: "verified" | "live" | "degraded" | "error" | "offline" | "not_connected";
   /** Kurztext für die Freshness-Zeile, z. B. "bis 10.07.2026". */
   detail: string | null;
 }
 
 /**
  * Zentrale Wahrheit über verbundene und (noch) nicht verbundene Quellen.
- * Neue Quellen (GSC API, GA4, Scanner, TYPO3) werden hier ergänzt, ohne die
+ * Neue Quellen (GA4, Scanner, TYPO3) werden hier ergänzt, ohne die
  * Freshness-Bar oder den Drawer umzubauen. Keine Fake-Zustände: alles, was
- * nicht verbunden ist, heißt "Noch nicht verbunden".
+ * nicht verbunden ist, heißt "Noch nicht verbunden" – und eine Anbindung, die
+ * seit Tagen nichts mehr liefert, heißt nicht mehr "verifiziert".
  */
 export function getLiveSourceStatuses(input: {
-  gscDataAsOf: string | null;
+  syncStatus: GscSyncStatus;
   realtimeConnected: boolean;
+  /** true = GA4-Zugangsdaten vollständig hinterlegt (lib/ga4/config.ts). */
+  ga4Configured?: boolean;
 }): LiveSourceStatus[] {
+  const { syncStatus } = input;
+
+  // Der GSC-Eintrag beschreibt die Datenbasis, der GSC-API-Eintrag die
+  // Aktualisierungsstrecke. Beide leiten sich aus demselben geprüften Zustand
+  // ab, damit sie sich nie widersprechen können.
+  const dataState: LiveSourceStatus["state"] =
+    syncStatus.state === "never"
+      ? "not_connected"
+      : syncStatus.state === "failed" || syncStatus.state === "stale"
+        ? "degraded"
+        : "verified";
+
+  const apiState: LiveSourceStatus["state"] = {
+    live: "live" as const,
+    stale: "degraded" as const,
+    failed: "error" as const,
+    unlogged: "not_connected" as const,
+    never: "not_connected" as const,
+  }[syncStatus.state];
+
+  const apiDetail: string | null = {
+    live: "täglicher Abruf aktiv",
+    stale: syncStatus.ageDays !== null ? `seit ${syncStatus.ageDays} Tagen keine neuen Daten` : "veraltet",
+    failed: "letzter Lauf fehlgeschlagen",
+    unlogged: null,
+    never: null,
+  }[syncStatus.state];
+
   return [
     {
       kind: "gsc_export",
       label: "GSC",
-      state: input.gscDataAsOf ? "verified" : "not_connected",
-      detail: input.gscDataAsOf ? "Export verifiziert" : null,
+      state: dataState,
+      detail: syncStatus.dataAsOf ? "echte Search-Console-Daten" : null,
+    },
+    {
+      kind: "gsc_api",
+      label: "GSC API",
+      state: apiState,
+      detail: apiDetail,
     },
     {
       kind: "supabase_realtime",
@@ -359,8 +405,14 @@ export function getLiveSourceStatuses(input: {
         ? "interne Änderungen live"
         : "Live-Verbindung getrennt",
     },
-    { kind: "ga4_core", label: "Analytics", state: "not_connected", detail: null },
+    // GA4 bleibt "not_connected", solange keine Zugangsdaten hinterlegt sind.
+    // Es gibt keinen Zwischenzustand, in dem geschätzte Werte erscheinen.
+    {
+      kind: "ga4_core",
+      label: "Analytics",
+      state: input.ga4Configured ? "verified" : "not_connected",
+      detail: input.ga4Configured ? "GA4 verbunden" : null,
+    },
     { kind: "website_scanner", label: "Website-Prüfung", state: "not_connected", detail: null },
-    { kind: "gsc_api", label: "GSC API", state: "not_connected", detail: null },
   ];
 }

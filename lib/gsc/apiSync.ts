@@ -21,23 +21,21 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GscDimensionType, GscScopeType } from "@/lib/kpi/types";
 import { API_SCOPES, type ApiScope } from "./apiScopes";
-import { querySearchAnalytics, type GscApiMetricRow } from "./apiClient";
+import { baseWindowDays, resolveWindowDays } from "./syncWindow";
+import {
+  GscAuthError,
+  GscConfigError,
+  querySearchAnalytics,
+  type GscApiMetricRow,
+} from "./apiClient";
 
 const ORG_SLUG = "kluehspies";
 const GSC_PROVIDER_NAME = "google_search_console";
 export const API_SYNC_SOURCE = "gsc_api_sync";
 const CHUNK = 500;
 
-/**
- * Ladefenster in Tagen. 200 deckt die 7/28/90-Tage-Ansichten inklusive der
- * jeweiligen Vorperiode ab (90 + 90 + Puffer) – ohne vollständigen 16-Monats-
- * Backfill. Optional über GSC_SYNC_WINDOW_DAYS anpassbar (30..480).
- */
-function windowDays(): number {
-  const raw = Number(process.env.GSC_SYNC_WINDOW_DAYS);
-  if (!Number.isFinite(raw)) return 200;
-  return Math.min(480, Math.max(30, Math.round(raw)));
-}
+// Die Fensterrechnung lebt in lib/gsc/syncWindow.ts – dort ohne server-only
+// und damit einzeln testbar.
 
 /** GSC-Dimensionstabellen → interner Dimensionstyp (wie im Export-Import). */
 const DIMENSION_QUERIES: ReadonlyArray<{ dimension: string; type: GscDimensionType }> = [
@@ -87,12 +85,39 @@ export interface ScopeSyncResult {
   message?: string;
 }
 
+/** Wer den Lauf ausgelöst hat; spiegelt sync_runs.trigger_source. */
+export type SyncTriggerSource = "scheduler" | "self_heal" | "admin" | "manual";
+
+/**
+ * Es läuft bereits ein Sync für diese Organisation. Kein Fehlerfall im
+ * eigentlichen Sinn: der Aufrufer bricht ab, statt parallel dieselben Batches
+ * zu schreiben.
+ */
+export class SyncAlreadyRunningError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SyncAlreadyRunningError";
+  }
+}
+
 export interface ApiSyncResult {
-  window: { startDate: string; endDate: string };
+  window: {
+    startDate: string;
+    endDate: string;
+    days: number;
+    /** true = Fenster wurde geweitet, um eine echte Datenlücke zu schließen. */
+    catchUp: boolean;
+  };
   scopes: ScopeSyncResult[];
   activated: number;
   skipped: number;
   failed: number;
+  /** Neuester Tag mit Daten über alle Scopes; Grundlage des Datenstands. */
+  dataAvailableUntil: string | null;
+  /** ID des protokollierten Laufs in sync_runs; null ohne Datenquelle. */
+  syncRunId: string | null;
+  triggerSource: SyncTriggerSource;
+  dispatchId: string | null;
 }
 
 /* ── Datenbeschaffung ───────────────────────────────────────────────────────── */
@@ -122,6 +147,7 @@ async function fetchScopeData(
     endDate,
     dimensions: ["date"],
     pageFilter: scope.pageFilter,
+    queryFilter: scope.queryFilter,
   });
   const daily = toDaily(dailyRaw);
 
@@ -134,6 +160,7 @@ async function fetchScopeData(
         endDate,
         dimensions: [dimension],
         pageFilter: scope.pageFilter,
+        queryFilter: scope.queryFilter,
       });
     } catch {
       // search_appearance ist nicht für jede Property verfügbar; solche
@@ -252,6 +279,7 @@ async function syncScope(
   scope: ApiScope,
   startDate: string,
   endDate: string,
+  windowDays: number,
 ): Promise<ScopeSyncResult> {
   const base: ScopeSyncResult = {
     scopeType: scope.scopeType,
@@ -311,7 +339,7 @@ async function syncScope(
       period_end: periodEnd,
       imported_by: actorId,
       status: "validating",
-      metadata: { source: API_SYNC_SOURCE, window_days: windowDays() },
+      metadata: { source: API_SYNC_SOURCE, window_days: windowDays },
     })
     .select("id")
     .single();
@@ -403,17 +431,36 @@ async function syncScope(
 
 /* ── Öffentlicher Einstieg ──────────────────────────────────────────────────── */
 
+/** Kurzfassung der fehlgeschlagenen Scopes für sync_runs.error_message. */
+function failureSummary(scopes: ScopeSyncResult[]): string | null {
+  const failed = scopes.filter((s) => s.status === "error");
+  if (failed.length === 0) return null;
+  return failed
+    .map((s) => `${s.scopeType}${s.scopeValue ? `/${s.scopeValue}` : ""}: ${s.message ?? "Fehler"}`)
+    .join(" | ")
+    .slice(0, 500);
+}
+
 /**
  * Führt den vollständigen API-Sync über alle Scopes aus. Wirft nur bei
  * globalen Problemen (fehlende Org, Config-/Auth-Fehler aus dem Client);
  * einzelne Scope-Fehler werden im Ergebnis gesammelt und lassen die übrigen
  * Scopes und deren zuletzt aktive Daten unberührt.
+ *
+ * Jeder Lauf wird in sync_runs protokolliert (running → success/error) und
+ * schreibt bei Erfolg data_sources.data_available_until fort. Das ist die
+ * Grundlage dafür, dass das Dashboard einen fehlenden oder fehlgeschlagenen
+ * Sync erkennen kann, statt stillschweigend alte Zahlen zu zeigen.
  */
 export async function runApiGscSync(opts: {
   admin: SupabaseClient;
   actorId: string | null;
+  /** Wer den Lauf ausgelöst hat; landet in sync_runs.trigger_source. */
+  triggerSource?: SyncTriggerSource;
+  /** Auslösung des Schedulers, die zu diesem Lauf geführt hat. */
+  dispatchId?: string | null;
 }): Promise<ApiSyncResult> {
-  const { admin, actorId } = opts;
+  const { admin, actorId, triggerSource = "manual", dispatchId = null } = opts;
 
   const org = await admin
     .from("organizations")
@@ -426,42 +473,130 @@ export async function runApiGscSync(opts: {
 
   const dataSource = await admin
     .from("data_sources")
-    .select("id")
+    .select("id, data_available_until")
     .eq("organization_id", organizationId)
     .eq("provider", GSC_PROVIDER_NAME)
     .maybeSingle();
   const dataSourceId = (dataSource.data?.id as string | undefined) ?? null;
+  const dataAvailableUntil = (dataSource.data?.data_available_until as string | null) ?? null;
 
-  // GSC liefert für den laufenden Tag keine finalen Werte → bis gestern (UTC).
-  const endDate = addDays(isoDate(new Date()), -1);
-  const startDate = addDays(endDate, -(windowDays() - 1));
-
-  const scopes: ScopeSyncResult[] = [];
-  for (const scope of API_SCOPES) {
-    try {
-      scopes.push(
-        await syncScope(admin, organizationId, dataSourceId, actorId, scope, startDate, endDate),
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unbekannter Scope-Fehler";
-      scopes.push({
-        scopeType: scope.scopeType,
-        scopeValue: scope.scopeValue,
-        status: "error",
-        periodStart: null,
-        periodEnd: null,
-        dailyRows: 0,
-        dimensionRows: 0,
-        message,
-      });
+  // Lauf beanspruchen. claim_gsc_sync_run serialisiert über einen Advisory
+  // Lock und gibt NULL zurück, wenn bereits ein Lauf aktiv ist – Scheduler und
+  // manueller Anstoß können sich damit nicht in die Quere kommen.
+  let syncRunId: string | null = null;
+  if (dataSourceId) {
+    const claim = await admin.rpc("claim_gsc_sync_run", {
+      p_organization_id: organizationId,
+      p_data_source_id: dataSourceId,
+      p_trigger_source: triggerSource,
+      p_dispatch_id: dispatchId,
+    });
+    if (claim.error) throw new Error(`Lauf konnte nicht beansprucht werden: ${claim.error.message}`);
+    syncRunId = (claim.data as string | null) ?? null;
+    if (!syncRunId) {
+      throw new SyncAlreadyRunningError("Für diese Organisation läuft bereits ein GSC-Sync.");
     }
   }
 
+  const finishRun = async (
+    status: "success" | "error",
+    recordsProcessed: number,
+    errorMessage: string | null,
+  ): Promise<void> => {
+    if (!syncRunId) return;
+    await admin
+      .from("sync_runs")
+      .update({
+        status,
+        completed_at: new Date().toISOString(),
+        records_processed: recordsProcessed,
+        error_message: errorMessage,
+      })
+      .eq("id", syncRunId);
+  };
+
+  // GSC liefert für den laufenden Tag keine finalen Werte → bis gestern (UTC).
+  const endDate = addDays(isoDate(new Date()), -1);
+  const { days: windowDays, catchUp } = resolveWindowDays({
+    baseDays: baseWindowDays(process.env.GSC_SYNC_WINDOW_DAYS),
+    dataAvailableUntil,
+    endDate,
+  });
+  const startDate = addDays(endDate, -(windowDays - 1));
+
+  const scopes: ScopeSyncResult[] = [];
+  try {
+    for (const scope of API_SCOPES) {
+      try {
+        scopes.push(
+          await syncScope(
+            admin,
+            organizationId,
+            dataSourceId,
+            actorId,
+            scope,
+            startDate,
+            endDate,
+            windowDays,
+          ),
+        );
+      } catch (err) {
+        // Konfigurations- und Anmeldefehler betreffen jeden Scope gleichermaßen.
+        // Sie als Scope-Fehler zu sammeln, hätte einen widerrufenen Token als
+        // "5 Scopes fehlgeschlagen" mit HTTP 200 getarnt – deshalb Abbruch.
+        if (err instanceof GscConfigError || err instanceof GscAuthError) throw err;
+        const message = err instanceof Error ? err.message : "Unbekannter Scope-Fehler";
+        scopes.push({
+          scopeType: scope.scopeType,
+          scopeValue: scope.scopeValue,
+          status: "error",
+          periodStart: null,
+          periodEnd: null,
+          dailyRows: 0,
+          dimensionRows: 0,
+          message,
+        });
+      }
+    }
+  } catch (err) {
+    await finishRun(
+      "error",
+      scopes.reduce((sum, s) => sum + s.dailyRows, 0),
+      err instanceof Error ? err.message.slice(0, 500) : "Unbekannter Fehler",
+    );
+    throw err;
+  }
+
+  const failed = scopes.filter((s) => s.status === "error").length;
+  const recordsProcessed = scopes.reduce((sum, s) => sum + s.dailyRows + s.dimensionRows, 0);
+
+  // Datenstand = neuester Tag, den irgendein erfolgreicher Scope mitbringt.
+  const newDataAvailableUntil =
+    scopes
+      .filter((s) => s.status === "activated" || s.status === "unchanged")
+      .map((s) => s.periodEnd)
+      .filter((d): d is string => d !== null)
+      .sort()
+      .at(-1) ?? null;
+
+  if (dataSourceId && newDataAvailableUntil) {
+    await admin
+      .from("data_sources")
+      .update({ data_available_until: newDataAvailableUntil })
+      .eq("id", dataSourceId);
+  }
+
+  await finishRun(failed > 0 ? "error" : "success", recordsProcessed, failureSummary(scopes));
+
   return {
-    window: { startDate, endDate },
+    window: { startDate, endDate, days: windowDays, catchUp },
     scopes,
     activated: scopes.filter((s) => s.status === "activated" || s.status === "unchanged").length,
     skipped: scopes.filter((s) => s.status === "skipped_empty").length,
-    failed: scopes.filter((s) => s.status === "error").length,
+    failed,
+    dataAvailableUntil: newDataAvailableUntil,
+    syncRunId,
+    triggerSource,
+    dispatchId,
   };
 }

@@ -37,7 +37,9 @@ export interface ScopeOption {
 /**
  * Auswahlbare Scopes für den primären KPI, in fachlicher Reihenfolge:
  * erst alle Städtereisen (path_prefix), dann die einzelnen Produktseiten.
- * Der Sitewide-Export bleibt bewusst außen vor (Kontext, kein KPI-Filter).
+ * Der Sitewide-Export bleibt bewusst außen vor (Kontext, kein KPI-Filter),
+ * ebenso die generischen "page"-Scopes: die haben mit dem
+ * Seiten-Performance-Bereich eine eigene, passendere Ansicht.
  */
 export function buildScopeOptions(
   activeDatasets: GscActiveDatasetRow[],
@@ -46,7 +48,8 @@ export function buildScopeOptions(
   const batchById = new Map(batches.map((b) => [b.id, b]));
   const options: ScopeOption[] = [];
   for (const ds of activeDatasets) {
-    if (ds.scope_type === "sitewide") continue;
+    if (ds.scope_type === "sitewide" || ds.scope_type === "page" || ds.scope_type === "page_segment")
+      continue;
     if (!batchById.has(ds.import_batch_id)) continue;
     options.push({
       key: scopeKeyOf(ds.scope_type, ds.scope_value),

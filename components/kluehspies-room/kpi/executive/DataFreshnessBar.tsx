@@ -14,33 +14,41 @@ import { useWorkspace } from "../workspace";
 /** Kurztext eines Eintrags für die Zeile. */
 function segmentText(status: LiveSourceStatus, gscDataAsOf: string | null): string {
   if (status.kind === "gsc_export") {
-    return gscDataAsOf
-      ? `GSC bis ${formatDate(gscDataAsOf)} · Export verifiziert`
-      : "GSC noch nicht verbunden";
+    if (!gscDataAsOf) return "GSC noch nicht verbunden";
+    const suffix = status.state === "degraded" ? "nicht mehr aktuell" : "echte Daten";
+    return `GSC bis ${formatDate(gscDataAsOf)} · ${suffix}`;
   }
   if (status.state === "not_connected") return `${status.label} noch nicht verbunden`;
-  if (status.state === "offline") return `${status.label}: ${status.detail}`;
   return `${status.label}: ${status.detail}`;
 }
 
 export default function DataFreshnessBar() {
-  const { gscProvenance, realtime, setDataSourceDrawerOpen } = useWorkspace();
-  const gscDataAsOf = gscProvenance?.dataAsOf ?? null;
+  const { gscProvenance, realtime, syncStatus, ga4Configured, setDataSourceDrawerOpen } =
+    useWorkspace();
+  const gscDataAsOf = gscProvenance?.dataAsOf ?? syncStatus.dataAsOf;
 
   const statuses = getLiveSourceStatuses({
-    gscDataAsOf,
+    syncStatus,
+    ga4Configured,
     realtimeConnected: realtime === "live",
   });
   // Die Zeile bleibt bewusst kompakt; die vollständige Liste steht im Drawer.
   const visible = statuses.filter((s) =>
-    ["gsc_export", "ga4_core", "website_scanner", "supabase_realtime"].includes(s.kind),
+    ["gsc_export", "gsc_api", "ga4_core", "website_scanner", "supabase_realtime"].includes(s.kind),
   );
 
   return (
     <div className="kw-ex-freshness" role="status">
       <span className="kw-ex-freshness-text">
         {visible.map((status, index) => (
-          <span key={status.kind}>
+          <span
+            key={status.kind}
+            className={
+              status.state === "error" || status.state === "degraded"
+                ? "kw-ex-freshness-warn"
+                : undefined
+            }
+          >
             {index > 0 && (
               <span className="kw-ex-dot" aria-hidden="true">
                 {" · "}

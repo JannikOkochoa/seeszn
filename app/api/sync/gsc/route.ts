@@ -10,7 +10,7 @@
 // Endpoint unabhängig. Es gibt keine Client-Schaltfläche mehr.
 
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { getGscProvider } from "@/lib/gsc";
+import { getGscProvider, GscProviderUnavailableError } from "@/lib/gsc";
 import { GSC_PROVIDER_NAME, runGscSync, SyncConflictError } from "@/lib/gsc/sync";
 
 export const runtime = "nodejs";
@@ -102,6 +102,9 @@ export async function POST(request: Request): Promise<Response> {
   } catch (err) {
     if (err instanceof SyncConflictError) {
       return fail("Für diese Datenquelle läuft bereits ein Sync.", 409);
+    }
+    if (err instanceof GscProviderUnavailableError) {
+      return fail(err.message, 500);
     }
     console.error("[sync/gsc]", err);
     return fail("Der Sync ist fehlgeschlagen.", 500);
