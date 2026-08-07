@@ -313,7 +313,9 @@ export default function PagePerformance() {
             )}
           </div>
 
-          {model.brandSplit && <BrandSplitPanel split={model.brandSplit} />}
+          {model.brandSplit && (
+            <BrandSplitPanel split={model.brandSplit} rangeLabel={model.rangeLabel} />
+          )}
         </>
       )}
     </section>

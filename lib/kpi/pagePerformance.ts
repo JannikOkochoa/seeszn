@@ -134,6 +134,15 @@ export interface BrandSegmentModel {
   shareOfClicks: number | null;
   shareOfImpressions: number | null;
   topQueries: PageQueryRow[];
+  /**
+   * Zeitraum der Query-Tabelle. Zwingend zusammen mit topQueries anzuzeigen:
+   * Dimensionswerte sind Aggregate über den gesamten Batch-Zeitraum und folgen
+   * dem 7/28/90-Schalter NICHT. Ohne diese Angabe stehen Kennzahlen aus 28
+   * Tagen direkt neben Query-Zahlen aus ~200 Tagen, und eine einzelne Zeile
+   * kann dann mehr Impressionen ausweisen als das Segment insgesamt — was
+   * unmöglich aussieht, obwohl beide Zahlen stimmen.
+   */
+  queryPeriod: { start: string; end: string } | null;
 }
 
 export interface BrandSplitModel {
@@ -170,8 +179,10 @@ function buildBrandSegment(input: {
   if (!computed) return null;
 
   const asOf = dataAsOf(rows);
-  const topQueries = [...dimensions]
-    .filter((d) => d.import_batch_id === segment.batchId && d.dimension_type === "query")
+  const queryRows = dimensions.filter(
+    (d) => d.import_batch_id === segment.batchId && d.dimension_type === "query",
+  );
+  const topQueries = [...queryRows]
     .sort((a, b) => Number(b.clicks) - Number(a.clicks) || Number(b.impressions) - Number(a.impressions))
     .slice(0, TOP_QUERY_LIMIT)
     .map((d) => ({
@@ -181,6 +192,7 @@ function buildBrandSegment(input: {
       ctr: Number(d.ctr),
       position: Number(d.position),
     }));
+  const firstQueryRow = queryRows[0];
 
   return {
     kind: segment.kind,
@@ -196,6 +208,9 @@ function buildBrandSegment(input: {
     shareOfClicks: share(computed.totals.clicks, input.attributedClicks),
     shareOfImpressions: share(computed.totals.impressions, input.attributedImpressions),
     topQueries,
+    queryPeriod: firstQueryRow
+      ? { start: firstQueryRow.period_start, end: firstQueryRow.period_end }
+      : null,
   };
 }
 
@@ -230,6 +245,19 @@ export function buildBrandSplit(input: {
 
   const attributedClicks = brandedTotals.clicks + nonBrandedTotals.clicks;
   const attributedImpressions = brandedTotals.impressions + nonBrandedTotals.impressions;
+
+  // Die Segmente sind per Query-Filter echte Teilmengen der Seite; sie können
+  // sie nie übertreffen. Tun sie es doch, stammen Seite und Segmente aus
+  // unterschiedlichen Ständen — etwa weil ein Scope beim letzten Sync nicht
+  // aktiviert wurde und noch ältere Zahlen trägt. Ein Split auf dieser Basis
+  // wäre still falsch: die Anteile bezögen sich auf eine Grundmenge, die es so
+  // nicht gibt. Lieber gar keinen Split zeigen als einen unstimmigen.
+  if (
+    attributedClicks > pageTotals.clicks ||
+    attributedImpressions > pageTotals.impressions
+  ) {
+    return null;
+  }
 
   const common = {
     daily,

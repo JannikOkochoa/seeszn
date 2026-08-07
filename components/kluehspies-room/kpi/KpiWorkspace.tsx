@@ -804,7 +804,9 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
           font-size: 17px; color: var(--ink-strong); font-variant-numeric: tabular-nums;
         }
         .kw-brand-metric-delta { font-size: 12px; }
+        .kw-brand-range { margin: 14px 0 0; }
         .kw-brand-queries { margin-top: clamp(28px, 4vw, 40px); }
+        .kw-brand-query-period { margin: 0 0 14px; max-width: 68ch; }
         .kw-brand-note { margin-top: 16px; max-width: 68ch; }
 
         /* E · Aufmerksamkeit + nächste Handlung */

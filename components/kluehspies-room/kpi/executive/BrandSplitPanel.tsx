@@ -14,7 +14,7 @@
 // stillschweigend schönzurechnen.
 
 import type { BrandSegmentModel, BrandSplitModel } from "@/lib/kpi/pagePerformance";
-import { formatNumber, formatPercent } from "@/lib/kpi/format";
+import { formatDate, formatNumber, formatPercent } from "@/lib/kpi/format";
 
 function shareText(value: number | null): string {
   return value === null ? "–" : formatPercent(value * 100, 1);
@@ -66,7 +66,14 @@ function SegmentCard({ segment }: { segment: BrandSegmentModel }) {
   );
 }
 
-export default function BrandSplitPanel({ split }: { split: BrandSplitModel }) {
+export default function BrandSplitPanel({
+  split,
+  rangeLabel,
+}: {
+  split: BrandSplitModel;
+  /** Zeitraum der Kennzahlen — steht bewusst sichtbar an den Karten. */
+  rangeLabel: string;
+}) {
   const { branded, nonBranded, unattributed, attributed } = split;
 
   return (
@@ -78,6 +85,7 @@ export default function BrandSplitPanel({ split }: { split: BrandSplitModel }) {
         Marken-Suchen enthalten den Namen Klühspies in irgendeiner Schreibweise. Wer so sucht,
         kennt das Unternehmen bereits. Nicht-Marken-Suchen sind neu gewonnene Nachfrage.
       </p>
+      <p className="kr-eyebrow kw-brand-range">Kennzahlen für {rangeLabel}</p>
 
       <div className="kw-brand-grid">
         <SegmentCard segment={branded} />
@@ -87,6 +95,17 @@ export default function BrandSplitPanel({ split }: { split: BrandSplitModel }) {
       {nonBranded.topQueries.length > 0 && (
         <div className="kw-brand-queries">
           <h5 className="kw-brand-card-title">Top Nicht-Marken-Suchanfragen</h5>
+          {/* Der Zeitraum steht VOR der Tabelle, nicht darunter: die Zahlen
+              hier stammen aus einem anderen, längeren Zeitraum als die
+              Kennzahlen oben. Ohne diesen Satz liest sich eine Zeile mit mehr
+              Impressionen als das Segment insgesamt wie ein Fehler. */}
+          {nonBranded.queryPeriod && (
+            <p className="kr-meta kw-brand-query-period">
+              Aggregat über {formatDate(nonBranded.queryPeriod.start)} bis{" "}
+              {formatDate(nonBranded.queryPeriod.end)}. Diese Tabelle folgt dem Zeitraum-Schalter
+              oben nicht — die Werte sind deshalb höher als die Kennzahlen der aktuellen Periode.
+            </p>
+          )}
           <div className="kw-table-wrap">
             <table className="kw-table">
               <thead>
