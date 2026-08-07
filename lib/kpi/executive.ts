@@ -355,6 +355,8 @@ export function getLiveSourceStatuses(input: {
   realtimeConnected: boolean;
   /** true = GA4-Zugangsdaten vollständig hinterlegt (lib/ga4/config.ts). */
   ga4Configured?: boolean;
+  /** Zustand der GA4-Anbindung; eigenständig, unabhängig von der Search Console. */
+  ga4SyncStatus?: GscSyncStatus;
 }): LiveSourceStatus[] {
   const { syncStatus } = input;
 
@@ -405,13 +407,33 @@ export function getLiveSourceStatuses(input: {
         ? "interne Änderungen live"
         : "Live-Verbindung getrennt",
     },
-    // GA4 bleibt "not_connected", solange keine Zugangsdaten hinterlegt sind.
-    // Es gibt keinen Zwischenzustand, in dem geschätzte Werte erscheinen.
+    // GA4 meldet seinen Zustand eigenständig: ein Analytics-Ausfall darf nicht
+    // wie ein Search-Console-Ausfall aussehen und umgekehrt. Ohne Zugangsdaten
+    // bleibt es "nicht verbunden" – es gibt keinen Zwischenzustand mit
+    // geschätzten Werten.
     {
       kind: "ga4_core",
       label: "Analytics",
-      state: input.ga4Configured ? "verified" : "not_connected",
-      detail: input.ga4Configured ? "GA4 verbunden" : null,
+      state: !input.ga4Configured
+        ? "not_connected"
+        : input.ga4SyncStatus
+          ? ({
+              live: "live" as const,
+              stale: "degraded" as const,
+              failed: "error" as const,
+              unlogged: "verified" as const,
+              never: "not_connected" as const,
+            }[input.ga4SyncStatus.state])
+          : "verified",
+      detail: !input.ga4Configured
+        ? null
+        : input.ga4SyncStatus?.state === "live"
+          ? "täglicher Abruf aktiv"
+          : input.ga4SyncStatus?.state === "stale"
+            ? `seit ${input.ga4SyncStatus.ageDays ?? "?"} Tagen keine neuen Daten`
+            : input.ga4SyncStatus?.state === "failed"
+              ? "letzter Lauf fehlgeschlagen"
+              : "GA4 verbunden",
     },
     { kind: "website_scanner", label: "Website-Prüfung", state: "not_connected", detail: null },
   ];

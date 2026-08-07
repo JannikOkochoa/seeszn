@@ -116,8 +116,21 @@ function SyncChainList({ status }: { status: GscSyncStatus }) {
   );
 }
 
-export default function SyncMonitor() {
-  const { syncStatus } = useWorkspace();
+/**
+ * Zeigt eine Datenquelle. Beide Quellen nutzen dieselbe Darstellung, melden
+ * ihren Zustand aber vollständig eigenständig: ein GA4-Ausfall darf nicht wie
+ * ein GSC-Ausfall aussehen und umgekehrt.
+ */
+export default function SyncMonitor({
+  status,
+  extra,
+}: {
+  status?: GscSyncStatus;
+  /** Zusätzliche Zeilen der Quelle, z. B. GA4-Property und Zeitzone. */
+  extra?: Array<{ label: string; value: string }>;
+}) {
+  const workspace = useWorkspace();
+  const syncStatus = status ?? workspace.syncStatus;
 
   return (
     <div className="kw-sync-monitor">
@@ -127,7 +140,7 @@ export default function SyncMonitor() {
           <dd data-state={syncStatus.state}>{STATE_LABEL[syncStatus.state]}</dd>
         </div>
         <div>
-          <dt className="kr-eyebrow">GSC-Daten verfügbar bis</dt>
+          <dt className="kr-eyebrow">Daten verfügbar bis</dt>
           <dd>
             {syncStatus.dataAsOf ? formatDate(syncStatus.dataAsOf) : "–"}
             {syncStatus.ageDays !== null && ` (vor ${syncStatus.ageDays} Tagen)`}
@@ -159,6 +172,12 @@ export default function SyncMonitor() {
               : "Keine"}
           </dd>
         </div>
+        {(extra ?? []).map((row) => (
+          <div key={row.label}>
+            <dt className="kr-eyebrow">{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
         {syncStatus.lastError && (
           <div>
             <dt className="kr-eyebrow">Letzter Fehler</dt>

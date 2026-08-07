@@ -54,6 +54,7 @@ import {
   type ScopeMovement,
 } from "@/lib/kpi/intelligence";
 import { buildPageOptions, type PageOption } from "@/lib/kpi/pagePerformance";
+import type { Ga4DailyRow } from "@/lib/kpi/ga4Data";
 import type { GscSyncStatus } from "@/lib/kpi/syncStatus";
 import type {
   AnnotationRow,
@@ -207,6 +208,11 @@ interface WorkspaceContextValue {
   pageOptions: PageOption[];
   /** GA4-Zugangsdaten vorhanden; ohne sie bleibt Analytics "nicht verbunden". */
   ga4Configured: boolean;
+  /** GA4-Tageswerte aller Scopes; eigener Zustand, unabhängig von GSC. */
+  ga4Daily: Ga4DailyRow[];
+  ga4SyncStatus: GscSyncStatus;
+  ga4TimeZone: string | null;
+  ga4PropertyId: string | null;
   /** Rohe Tageszeilen aller aktiven Batches (für seitenweise Auswertungen). */
   gscDaily: GscScopeDailyRow[];
   /** Dimensions-Snapshots aller aktiven Batches. */
@@ -1784,6 +1790,10 @@ export function WorkspaceProvider({
     intelligence,
     syncStatus: init.gsc.syncStatus,
     ga4Configured: init.ga4Configured,
+    ga4Daily: init.ga4.daily,
+    ga4SyncStatus: init.ga4.syncStatus,
+    ga4TimeZone: init.ga4.timeZone,
+    ga4PropertyId: init.ga4.propertyId,
     ...derived,
     kpiTasks,
     activeTaskCount,

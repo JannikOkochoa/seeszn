@@ -3,6 +3,7 @@
 // Kein server-only: reine Typen.
 
 import type { GscSyncStatus } from "./syncStatus";
+import type { Ga4DailyRow } from "./ga4Data";
 
 export type Role = "seeszn_admin" | "kluehspies_editor" | "viewer";
 
@@ -384,6 +385,17 @@ export interface WorkspaceInit {
     dimensions: GscDimensionSnapshotRow[];
     /** Ehrlicher Verbindungszustand: aktuell, veraltet oder fehlgeschlagen. */
     syncStatus: GscSyncStatus;
+  };
+  /** Google Analytics: eigene Tageswerte, eigener Zustand. Ein GA4-Ausfall
+   *  lässt die GSC-Zahlen unberührt und umgekehrt. */
+  ga4: {
+    daily: Ga4DailyRow[];
+    syncStatus: GscSyncStatus;
+    /** Zeitzone der Property – bestimmt, was ein "Tag" in diesen Zahlen ist. */
+    timeZone: string | null;
+    propertyId: string | null;
+    /** true = Google hat Werte aus Datenschutzgründen zurückgehalten. */
+    subjectToThresholding: boolean;
   };
 }
 

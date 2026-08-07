@@ -174,8 +174,20 @@ export function buildGscSyncStatus(input: {
   scopeCount?: number;
   /** Jüngste Scheduler-Auslösung. */
   dispatch?: SyncDispatchRow | null;
+  /** Name der Quelle in den Texten; GA4 nutzt dieselbe Logik. */
+  sourceLabel?: string;
+  /** Ab welchem Alter der Datenstand als veraltet gilt. */
+  staleAfterDays?: number;
 }): GscSyncStatus {
-  const { runs, dataAsOf, todayIso, scopeCount = 0, dispatch = null } = input;
+  const {
+    runs,
+    dataAsOf,
+    todayIso,
+    scopeCount = 0,
+    dispatch = null,
+    sourceLabel = "Search-Console",
+    staleAfterDays = STALE_AFTER_DAYS,
+  } = input;
 
   const lastAttempt = runs[0] ?? null;
   const lastSuccess = runs.find((r) => r.status === "success") ?? null;
@@ -196,7 +208,7 @@ export function buildGscSyncStatus(input: {
     return {
       ...base,
       state: "never",
-      headline: "Noch keine Search-Console-Daten geladen.",
+      headline: `Noch keine ${sourceLabel}-Daten geladen.`,
       detail:
         "Es liegt kein aktiver Datensatz vor. Bis der erste Sync durchgelaufen ist, zeigt das " +
         "Dashboard bewusst keine Kennzahlen statt Platzhalter.",
@@ -216,7 +228,7 @@ export function buildGscSyncStatus(input: {
     };
   }
 
-  if (ageDays !== null && ageDays > STALE_AFTER_DAYS) {
+  if (ageDays !== null && ageDays > staleAfterDays) {
     return {
       ...base,
       state: "stale",

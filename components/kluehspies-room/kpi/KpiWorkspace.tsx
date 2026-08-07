@@ -776,6 +776,30 @@ export default function KpiWorkspace({ init }: { init: WorkspaceInit }) {
         .kw-page-queries .kw-ex-canvas-title { margin-bottom: 16px; }
         .kw-page-query-note { margin-top: 12px; }
 
+        /* D3b · Traffic und Geschäftsergebnis (GA4) */
+        .kw-ga4-block { margin-top: clamp(36px, 5vw, 56px); }
+        .kw-ga4-block .kw-ex-canvas-title { margin-bottom: 8px; }
+        .kw-ga4-empty { border: 1px solid var(--line); padding: 24px; }
+        .kw-ga4-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: clamp(24px, 3vw, 48px);
+        }
+        .kw-ga4-column-label { border-top: 1px solid var(--line); padding-top: 14px; margin-bottom: 14px; }
+        .kw-ga4-metrics { margin: 0; }
+        .kw-ga4-metric {
+          display: flex; flex-direction: column; gap: 3px;
+          border-bottom: 1px solid var(--line-soft); padding: 11px 0 13px;
+        }
+        .kw-ga4-metric:last-child { border-bottom: none; }
+        .kw-ga4-metric dd { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+        .kw-ga4-metric-value {
+          font-family: var(--serif); font-size: 24px; line-height: 1.1;
+          color: var(--ink-strong); font-variant-numeric: tabular-nums;
+        }
+        .kw-ga4-metric-delta { font-size: 12px; }
+        .kw-ga4-metric-hint { font-size: 12px; line-height: 1.5; margin-top: 3px; }
+        .kw-ga4-note { margin-top: 18px; max-width: 72ch; }
+
         /* D4 · Marken- vs. Nicht-Marken-Suchen */
         .kw-brand-split { margin-top: clamp(36px, 5vw, 56px); }
         .kw-brand-split .kw-ex-canvas-title { margin-bottom: 8px; }

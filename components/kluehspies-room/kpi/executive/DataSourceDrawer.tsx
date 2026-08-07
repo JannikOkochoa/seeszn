@@ -23,11 +23,15 @@ export default function DataSourceDrawer() {
     realtime,
     syncStatus,
     ga4Configured,
+    ga4SyncStatus,
+    ga4TimeZone,
+    ga4PropertyId,
   } = useWorkspace();
 
   const statuses = getLiveSourceStatuses({
     syncStatus,
     ga4Configured,
+    ga4SyncStatus,
     realtimeConnected: realtime === "live",
   });
 
@@ -88,12 +92,25 @@ export default function DataSourceDrawer() {
         )}
       </section>
 
-      {/* Automatische Aktualisierung: Zustand und Ablauf */}
-      <section className="kw-dsection" aria-label="Automatische Aktualisierung">
+      {/* Automatische Aktualisierung je Quelle: getrennte Zustände */}
+      <section className="kw-dsection" aria-label="Search Console: automatische Aktualisierung">
         <div className="kw-dsection-head">
-          <h3 className="kw-dsection-title">Automatische Aktualisierung</h3>
+          <h3 className="kw-dsection-title">Search Console · Aktualisierung</h3>
         </div>
-        <SyncMonitor />
+        <SyncMonitor status={syncStatus} />
+      </section>
+
+      <section className="kw-dsection" aria-label="Analytics: automatische Aktualisierung">
+        <div className="kw-dsection-head">
+          <h3 className="kw-dsection-title">Analytics · Aktualisierung</h3>
+        </div>
+        <SyncMonitor
+          status={ga4SyncStatus}
+          extra={[
+            { label: "Property", value: ga4PropertyId ?? "–" },
+            { label: "Zeitzone der Property", value: ga4TimeZone ?? "–" },
+          ]}
+        />
       </section>
 
       {/* Hinweise zur Interpretation */}

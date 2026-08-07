@@ -25,6 +25,9 @@ import { cockpitRangeLabel, type CanvasMetric } from "@/lib/kpi/gscData";
 import { formatDate, formatDateShort, formatNumber } from "@/lib/kpi/format";
 import ExecutiveKpi from "./ExecutiveKpi";
 import BrandSplitPanel from "./BrandSplitPanel";
+import PageTrafficPanel from "./PageTrafficPanel";
+import { buildGa4PageModel } from "@/lib/kpi/ga4Data";
+import { ga4PageScopeKey } from "@/lib/ga4/pageMapping";
 import { METRIC_EXPLAIN, METRIC_LABEL } from "./PerformanceControls";
 import { useWorkspace } from "../workspace";
 
@@ -167,7 +170,8 @@ function PageChart({ model, metric }: { model: PagePerformanceModel; metric: Can
 }
 
 export default function PagePerformance() {
-  const { pageOptions, gscDaily, gscDimensions, range } = useWorkspace();
+  const { pageOptions, gscDaily, gscDimensions, range, ga4Daily, ga4TimeZone } =
+    useWorkspace();
   const [pageKey, setPageKey] = useState<string | null>(null);
   const [metric, setMetric] = useState<CanvasMetric>("clicks");
 
@@ -186,6 +190,19 @@ export default function PagePerformance() {
         : null,
     [activePage, gscDaily, gscDimensions, range, metric],
   );
+
+  // GA4 rechnet über EXAKT den Zeitraum, den das SEO-Modell ermittelt hat.
+  // Würde Analytics sein Fenster am eigenen Datenstand verankern, verglichen
+  // die beiden Blöcke unbemerkt unterschiedliche Zeiträume.
+  const ga4Model = useMemo(() => {
+    if (!activePage || !model) return null;
+    return buildGa4PageModel({
+      rows: ga4Daily,
+      scopeKey: ga4PageScopeKey(activePage.key),
+      range: model.currentRange,
+      previousRange: model.previousRange,
+    });
+  }, [activePage, model, ga4Daily]);
 
   // Keine einzige getrackte Seite hat einen aktiven Datensatz: ehrlich sagen,
   // statt einen leeren Bereich zu zeigen.
@@ -312,6 +329,12 @@ export default function PagePerformance() {
               </>
             )}
           </div>
+
+          <PageTrafficPanel
+            model={ga4Model}
+            timeZone={ga4TimeZone}
+            pageLabel={model.page.label}
+          />
 
           {model.brandSplit && (
             <BrandSplitPanel split={model.brandSplit} rangeLabel={model.rangeLabel} />

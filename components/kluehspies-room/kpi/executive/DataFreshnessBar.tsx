@@ -23,13 +23,20 @@ function segmentText(status: LiveSourceStatus, gscDataAsOf: string | null): stri
 }
 
 export default function DataFreshnessBar() {
-  const { gscProvenance, realtime, syncStatus, ga4Configured, setDataSourceDrawerOpen } =
-    useWorkspace();
+  const {
+    gscProvenance,
+    realtime,
+    syncStatus,
+    ga4Configured,
+    ga4SyncStatus,
+    setDataSourceDrawerOpen,
+  } = useWorkspace();
   const gscDataAsOf = gscProvenance?.dataAsOf ?? syncStatus.dataAsOf;
 
   const statuses = getLiveSourceStatuses({
     syncStatus,
     ga4Configured,
+    ga4SyncStatus,
     realtimeConnected: realtime === "live",
   });
   // Die Zeile bleibt bewusst kompakt; die vollständige Liste steht im Drawer.

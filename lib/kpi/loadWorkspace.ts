@@ -27,6 +27,7 @@ import {
   type SyncDispatchRow,
   type SyncRunRow,
 } from "./syncStatus";
+import type { Ga4DailyRow } from "./ga4Data";
 import { readGa4Availability } from "@/lib/ga4/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -67,6 +68,7 @@ export async function loadWorkspace(
     goalVersions,
     manualKpis,
     manualCheckIns,
+    dataSources,
     quickWins,
   ] = await Promise.all([
       supabase
@@ -137,6 +139,12 @@ export async function loadWorkspace(
       // Editierbare Quick-Win-Karten. Fehlt die Tabelle noch (vor der
       // Migration), liefert die Abfrage einen Fehler → quickWinsEnabled = false
       // und der Room zeigt die kuratierten Standardinhalte als Fallback.
+      // Datenquellen: nötig, um sync_runs eindeutig GSC bzw. GA4 zuzuordnen.
+      // Ohne diese Trennung würde ein GA4-Lauf als GSC-Lauf gelesen.
+      supabase
+        .from("data_sources")
+        .select("id, provider")
+        .eq("organization_id", organizationId),
       supabase
         .from("kluehspies_quick_wins")
         .select("id, organization_id, title, what, why, recommendation, sort_order, created_at, updated_at")
@@ -149,7 +157,17 @@ export async function loadWorkspace(
     (d) => d.import_batch_id,
   );
 
-  const [annotations, batches, daily, dimensions, syncRuns, lastDispatch] = await Promise.all([
+  const [
+    annotations,
+    batches,
+    daily,
+    dimensions,
+    syncRuns,
+    lastDispatch,
+    ga4Daily,
+    ga4State,
+    ga4Dispatch,
+  ] = await Promise.all([
     kpiId
       ? supabase
           .from("annotations")
@@ -210,11 +228,11 @@ export async function loadWorkspace(
     supabase
       .from("sync_runs")
       .select(
-        "status, started_at, completed_at, error_message, records_processed, trigger_source, dispatch_id",
+        "status, started_at, completed_at, error_message, records_processed, trigger_source, dispatch_id, data_source_id",
       )
       .eq("organization_id", organizationId)
       .order("started_at", { ascending: false })
-      .limit(20),
+      .limit(60),
     // Jüngste Auslösung des Supabase-Schedulers. Fehlt die Tabelle noch (vor
     // der Migration), bleibt data null → die Kette zeigt einfach keine
     // Scheduler-Stufe, statt zu brechen.
@@ -222,6 +240,30 @@ export async function loadWorkspace(
       .from("gsc_sync_dispatches")
       .select("id, job_name, reason, scheduled_at, http_status, delivered, error_message, reconciled_at")
       .eq("organization_id", organizationId)
+      .eq("source", "gsc")
+      .order("scheduled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // ── Google Analytics ──────────────────────────────────────────────────
+    // Eigene Tabellen, eigener Zustand. Fehlt die Migration noch, liefern die
+    // Abfragen einen Fehler und data bleibt null → leere Listen statt Crash.
+    supabase
+      .from("ga4_daily_metrics")
+      .select(
+        "scope_key, date, sessions, active_users, total_users, new_users, engaged_sessions, user_engagement_duration, screen_page_views, primary_conversions, secondary_conversions",
+      )
+      .eq("organization_id", organizationId)
+      .order("date", { ascending: true }),
+    supabase
+      .from("ga4_property_state")
+      .select("property_id, time_zone, currency_code, subject_to_thresholding")
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    supabase
+      .from("gsc_sync_dispatches")
+      .select("id, job_name, reason, scheduled_at, http_status, delivered, error_message, reconciled_at")
+      .eq("organization_id", organizationId)
+      .eq("source", "ga4")
       .order("scheduled_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -231,17 +273,59 @@ export async function loadWorkspace(
   // Datenstand = jüngster Tag über alle aktiven Scopes.
   const dataAsOf =
     dailyRows.map((row) => row.date).sort().at(-1) ?? null;
-  // GA4 ist eine reine Konfigurationsfrage: ohne Zugangsdaten bleibt der
-  // Eintrag "nicht verbunden", niemals ein geschätzter Wert.
-  const ga4Configured = readGa4Availability().configured;
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  // Läufe je Datenquelle trennen: sync_runs führt beide Quellen.
+  const sourceIdByProvider = new Map(
+    ((dataSources.data ?? []) as Array<{ id: string; provider: string }>).map((r) => [
+      r.provider,
+      r.id,
+    ]),
+  );
+  const allRuns = ((syncRuns.data ?? []) as Array<SyncRunRow & { data_source_id?: string }>) ?? [];
+  const runsFor = (provider: string): SyncRunRow[] => {
+    const sourceId = sourceIdByProvider.get(provider);
+    return sourceId ? allRuns.filter((r) => r.data_source_id === sourceId) : [];
+  };
 
   const syncStatus = buildGscSyncStatus({
-    runs: (syncRuns.data as SyncRunRow[] | null) ?? [],
+    runs: runsFor("google_search_console"),
     dataAsOf,
-    todayIso: new Date().toISOString().slice(0, 10),
+    todayIso,
     scopeCount: ((activeDatasets.data ?? []) as GscActiveDatasetRow[]).length,
     dispatch: (lastDispatch.data as SyncDispatchRow | null) ?? null,
   });
+
+  // ── Google Analytics ─────────────────────────────────────────────────────
+  // GA4 verarbeitet Daten mit bis zu 48 h Verzug; die Schwelle für "veraltet"
+  // liegt deshalb höher als bei der Search Console.
+  const ga4Rows = ((ga4Daily.data ?? []) as Ga4DailyRow[]) ?? [];
+  const ga4State_ = (ga4State.data ?? null) as {
+    property_id: string | null;
+    time_zone: string | null;
+    subject_to_thresholding: boolean;
+  } | null;
+  const ga4DataAsOfValue =
+    ga4Rows
+      .filter((r) => r.scope_key === "site" && Number(r.sessions) > 0)
+      .map((r) => r.date)
+      .sort()
+      .at(-1) ?? null;
+  const ga4ScopeCount = new Set(ga4Rows.map((r) => r.scope_key)).size;
+
+  const ga4SyncStatus = buildGscSyncStatus({
+    runs: runsFor("google_analytics_4"),
+    dataAsOf: ga4DataAsOfValue,
+    todayIso,
+    scopeCount: ga4ScopeCount,
+    dispatch: (ga4Dispatch.data as SyncDispatchRow | null) ?? null,
+    sourceLabel: "Analytics",
+    staleAfterDays: 4,
+  });
+
+  // Verbunden ist GA4, sobald echte Zahlen vorliegen — die Zugangsdaten
+  // stecken im Vault, nicht zwingend in der Umgebung.
+  const ga4Configured = ga4Rows.length > 0 || readGa4Availability().configured;
 
   const me = (profiles.data ?? []).find((p) => p.id === user.id);
 
@@ -295,6 +379,13 @@ export async function loadWorkspace(
         (result) => (result.data as GscDimensionSnapshotRow[]) ?? [],
       ),
       syncStatus,
+    },
+    ga4: {
+      daily: ga4Rows,
+      syncStatus: ga4SyncStatus,
+      timeZone: ga4State_?.time_zone ?? null,
+      propertyId: ga4State_?.property_id ?? null,
+      subjectToThresholding: Boolean(ga4State_?.subject_to_thresholding),
     },
   };
 }
