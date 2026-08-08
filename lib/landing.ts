@@ -342,7 +342,7 @@ export const LANDING_PAGES: Record<string, LandingPage> = {
     related: [
       { label: "B2B SEO Agentur: für Hidden Champions", href: "/b2b-seo-agentur" },
       { label: "KI-Sichtbarkeit Agentur", href: "/ki-sichtbarkeit-agentur" },
-      { label: "Case: RISCHO (Stahl- & Metallbau, Bremen)", href: "/cases/rischo" },
+      { label: "Unsere Arbeit: dokumentierte Cases", href: "/work" },
       { label: "KI-Sichtbarkeits-Audit anfragen", href: "/ki-sichtbarkeits-audit" },
     ],
     meta: {

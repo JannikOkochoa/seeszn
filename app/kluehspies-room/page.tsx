@@ -15,15 +15,21 @@ const sourceSans = Source_Sans_3({
   display: "swap",
 });
 
-// Privater Client Room: nicht indexieren, nicht in der Sitemap.
-export const metadata: Metadata = buildMetadata({
-  title: "Klühspies Website Lab | SEESZN",
-  description:
-    "Privater Arbeitsraum für Klühspies Reisen: Website-Empfehlungen, Homepage-Mockup, H-Struktur und Freigaben. Powered by SEESZN.",
-  path: "/kluehspies-room",
-  locale: "de",
-  noindex: true,
-});
+// Privater Client Room: nicht indexieren, nicht in der Sitemap, nicht in der
+// robots.txt genannt. Der Ausschluss läuft über das robots-Meta hier und den
+// X-Robots-Tag-Header in next.config.ts — beides wirkt nur auf diese Route und
+// verändert weder Auth, Session noch das Verhalten der Seite.
+export const metadata: Metadata = {
+  ...buildMetadata({
+    title: "Klühspies Website Lab | SEESZN",
+    description:
+      "Privater Arbeitsraum für Klühspies Reisen: Website-Empfehlungen, Homepage-Mockup, H-Struktur und Freigaben. Powered by SEESZN.",
+    path: "/kluehspies-room",
+    locale: "de",
+    noindex: true,
+  }),
+  robots: { index: false, follow: false, nocache: true },
+};
 
 // Session-abhängig, nie vorrendern.
 export const dynamic = "force-dynamic";

@@ -5,7 +5,6 @@ import ScrollReset from "@/components/ScrollReset";
 import TheShift from "@/components/TheShift";
 import Services from "@/components/Services";
 import AbsenceIndex from "@/components/AbsenceIndex";
-import Cases from "@/components/Cases";
 import BuiltFor from "@/components/home/BuiltFor";
 import Manifesto from "@/components/Manifesto";
 import Contact from "@/components/Contact";
@@ -31,7 +30,6 @@ export default function Home() {
         <TheShift />
         <Services />
         <AbsenceIndex />
-        <Cases />
         <BuiltFor />
         <Manifesto />
         <Contact />

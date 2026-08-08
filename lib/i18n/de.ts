@@ -11,7 +11,7 @@ export const de: Translations = {
   nav: {
     utilityBar: "AI Search Sichtbarkeit für Marken, die gefunden, zitiert und gewählt werden wollen",
     services: "ENTDECKEN",
-    work: "UNSERE ARBEIT",
+    work: "ERGEBNISSE",
     insights: "INSIGHTS",
     about: "STUDIO",
     cta: "SICHTBARKEIT PRÜFEN",
@@ -154,16 +154,6 @@ export const de: Translations = {
     note: "Nicht sicher, ob das passt? Die Diagnose ist der richtige erste Schritt.",
   },
 
-  // ── Cases ───────────────────────────────────────────────────────────────────
-  cases: {
-    chip: "AUSGEWÄHLTE NACHWEISE",
-    viewAll: "ALLE FÄLLE",
-    cards: [
-      { index: "01", sector: "METALL & STAHL", headline: "Handwerk bekannt.\nModelle blind.", trace: "RISCHO GMBH" },
-      { index: "02", sector: "IMMOBILIEN", headline: "Quartiere gebaut.\nModelle leer.", trace: "SIVIUS GROUP" },
-      { index: "03", sector: "CONTENT MARKETING", headline: "Content produziert.\nNicht zitiert.", trace: "CONTENTKUECHE" },
-    ],
-  },
 
   // ── Manifesto ───────────────────────────────────────────────────────────────
   manifesto: {
@@ -198,7 +188,7 @@ export const de: Translations = {
     cta: "SICHTBARKEIT PRÜFEN",
     nav: [
       { name: "ENTDECKEN", href: "/services" },
-      { name: "ARBEIT",    href: "/work" },
+      { name: "ERGEBNISSE", href: "/work" },
       { name: "INSIGHTS",  href: "/insights" },
       { name: "STUDIO",    href: "/about" },
     ],
@@ -325,86 +315,6 @@ export const de: Translations = {
   },
 
   // ── Work page ────────────────────────────────────────────────────────────────
-  workPage: {
-    hero: {
-      room: "ARBEIT / EVIDENCE ARCHIVE",
-      accession: "SZN-AR-02",
-      roman: ["BEWEIS IST, WAS", "DAS SYSTEM"],
-      italic: "enthüllt.",
-      sub: ["DREI LIVE-SYSTEME · GEBAUT, GEMESSEN", "UND IN LAUFENDER BETREUUNG.", "ABGELEGT ALS CASE FILES."],
-      note: ["CLIENT READINGS BLEIBEN VERTRAULICH.", "DIE OBERFLÄCHEN SIND LIVE."],
-      meta: "THE EVIDENCE ARCHIVE",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
-    },
-    archive: {
-      chip1: "EVIDENCE ARCHIVE",
-      chip2: "AUSGEWÄHLTE INSTRUMENTE",
-    },
-    caseFiles: {
-      sectionLabel: "CASE FILES",
-      headline: "Drei Systeme",
-      headlineItalic: "im Betrieb.",
-      intro: "Gebaut, gemessen und in Betreuung. Die Readings bleiben vertraulich, die Oberflächen sind live.",
-      visitLabel: "LIVE SURFACE ANSEHEN",
-      caseLabel: "VOLLSTÄNDIGER CASE",
-      surfaceKey: "SURFACE",
-      sectorKey: "BRANCHE",
-      scopeKey: "SCOPE",
-      statusKey: "STATUS",
-      cases: [
-        {
-          id: "SZN-CF-01",
-          index: "01",
-          name: "RISCHO",
-          fullName: "Rischo GmbH",
-          domain: "rischo-gmbh.de",
-          url: "https://rischo-gmbh.de",
-          sector: "STAHL- & METALLBAU · BREMEN",
-          scope: ["WEBSITE BUILD", "SEO CARE"],
-          status: "LIVE · IN BETREUUNG",
-          statementRoman: "Ein Handwerksbetrieb seit 1981.",
-          statementItalic: "Jetzt gebaut, um gefunden zu werden.",
-          body: "Wir haben die digitale Oberfläche für einen Bremer Stahl- und Metallbau-Spezialisten gebaut und halten sie in laufender SEO-Betreuung: saubere Struktur, lokale Sichtbarkeit und Seiten, die beantworten, was Kunden wirklich suchen.",
-        },
-        {
-          id: "SZN-CF-02",
-          index: "02",
-          name: "SIVIUS",
-          fullName: "SIVIUS Group",
-          domain: "sivius.net",
-          url: "https://www.sivius.net/de/",
-          sector: "IMMOBILIEN & ASSET MANAGEMENT",
-          scope: ["WEBSITE BUILD", "SOFTWARE DEVELOPMENT", "GEO / AIO CARE"],
-          status: "LIVE · IN BETREUUNG",
-          statementRoman: "Echte Assets brauchen",
-          statementItalic: "abrufbare Evidenz.",
-          body: "Wir haben die Oberfläche gebaut, entwickeln die Software dahinter und bereiten die Marke auf AI Retrieval vor: Entity-Klarheit, zitierfähige Struktur und Inhalte, die Maschinen übernehmen können.",
-        },
-        {
-          id: "SZN-CF-03",
-          index: "03",
-          name: "CONTENTKÜCHE",
-          fullName: "Contentkueche GmbH",
-          domain: "contentkueche.de",
-          url: "https://contentkueche.de",
-          sector: "CONTENT MARKETING · MÜNCHEN",
-          scope: ["GEO / AIO CARE", "SEO CARE"],
-          status: "IN BETREUUNG",
-          statementRoman: "Wer Content produziert,",
-          statementItalic: "sollte die Quelle sein, die Maschinen zitieren.",
-          body: "Wir halten eine Münchner Content-Agentur in GEO/AIO- und SEO-Betreuung: Suchstruktur, Sichtbarkeit in AI-Antworten und die Quellsignale, die aus Output Evidenz machen.",
-        },
-      ],
-    },
-    closer: {
-      index: "03",
-      label: "NÄCHSTER SCHRITT",
-      roman: "Das nächste Case File",
-      italic: "könnte deins sein.",
-      sub: ["WIR KARTIEREN DIE LÜCKE, BEVOR WIR BAUEN.", "DER SCAN KOMMT ZUERST."],
-      closing: "Wir bauen die Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
-    },
-  },
 
   // ── Insights page ────────────────────────────────────────────────────────────
   insightsPage: {

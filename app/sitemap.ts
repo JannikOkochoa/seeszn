@@ -26,13 +26,10 @@ const deRoutes: Entry[] = [
   // Rooms
   { path: "/services", priority: 0.8, changeFrequency: "monthly" },
   { path: "/work", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/case-studies/seo-aio-tourismus", priority: 0.9, changeFrequency: "monthly" },
   { path: "/insights", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about", priority: 0.6, changeFrequency: "monthly" },
   { path: "/diagnosis", priority: 0.9, changeFrequency: "monthly" },
-  // Cases
-  { path: "/cases/rischo", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/cases/sivius", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/cases/contentkueche", priority: 0.6, changeFrequency: "monthly" },
   // Insights / research
   { path: "/insights/was-ist-ki-sichtbarkeit", priority: 0.7, changeFrequency: "monthly" },
   { path: "/insights/was-ist-geo", priority: 0.7, changeFrequency: "monthly" },
@@ -51,6 +48,7 @@ const enRoutes: Entry[] = [
   { path: "/en", priority: 0.7, changeFrequency: "weekly" },
   { path: "/en/services", priority: 0.5, changeFrequency: "monthly" },
   { path: "/en/work", priority: 0.4, changeFrequency: "monthly" },
+  { path: "/en/case-studies/seo-aio-tourism", priority: 0.6, changeFrequency: "monthly" },
   { path: "/en/insights", priority: 0.4, changeFrequency: "monthly" },
   { path: "/en/about", priority: 0.3, changeFrequency: "monthly" },
   { path: "/en/diagnosis", priority: 0.5, changeFrequency: "monthly" },

@@ -11,7 +11,12 @@ import { SITE_URL } from "@/lib/seo";
 // product. Only training-only/aggressive scrapers are left to the default rule.
 
 export default function robots(): MetadataRoute.Robots {
-  const disallow = ["/api/", "/admin/", "/brief/ki-sichtbarkeit/print", "/kluehspies-room"];
+  // Der private Client Room steht bewusst NICHT hier. robots.txt ist öffentlich
+  // lesbar, und ein Disallow-Eintrag hätte den Kundennamen neben einer
+  // anonymisierten Case Study verraten. Ausgeschlossen wird er stattdessen über
+  // `noindex, nofollow` auf der Route selbst plus X-Robots-Tag-Header in
+  // next.config.ts. Der eigentliche Zugangsschutz ist und bleibt die Auth.
+  const disallow = ["/api/", "/admin/", "/brief/ki-sichtbarkeit/print"];
 
   return {
     rules: [
