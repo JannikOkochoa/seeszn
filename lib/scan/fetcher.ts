@@ -11,11 +11,17 @@ const USER_AGENT =
   "Mozilla/5.0 (compatible; SEESZN-Sichtbarkeitspruefung/1.0; +https://seeszn.com)";
 
 export class SafeFetchError extends Error {
+  // Als eigenes Feld statt als Konstruktor-Parameter-Property: Nodes
+  // Type-Stripping unterstützt Parameter-Properties nicht, und Entwicklungs-
+  // und Testwerkzeuge importieren dieses Modul direkt. Verhalten identisch.
+  readonly code: "invalid_domain" | "blocked_target" | "unreachable" | "timeout";
+
   constructor(
     message: string,
-    readonly code: "invalid_domain" | "blocked_target" | "unreachable" | "timeout",
+    code: "invalid_domain" | "blocked_target" | "unreachable" | "timeout",
   ) {
     super(message);
+    this.code = code;
     this.name = "SafeFetchError";
   }
 }

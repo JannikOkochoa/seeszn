@@ -1,8 +1,11 @@
 // ─── Test-Loader: Projekt-Imports auflösen ────────────────────────────────────
-// Zwei Dinge, die der Bundler kann und Nodes Type-Stripping nicht:
+// Drei Dinge, die der Bundler kann und Nodes Type-Stripping nicht:
 //   1. "@/…" ist der tsconfig-Alias auf das Projektwurzelverzeichnis.
 //   2. Relative Imports stehen ohne Endung; Type-Stripping verlangt ".ts".
-// Beides wird hier nur ergänzt, wenn die Datei tatsächlich existiert.
+//   3. "server-only" wirft außerhalb einer Server-Umgebung. Im Test wird das
+//      Paket auf ein leeres Modul gelegt. Die Schutzwirkung im Build bleibt
+//      unverändert, sie gilt weiterhin für jeden Client-Import.
+// Alles wird nur ergänzt, wenn die Datei tatsächlich existiert.
 // Ausschließlich für `node --test`.
 
 import { registerHooks } from "node:module";
@@ -18,8 +21,13 @@ function withTsExtension(url) {
   return existsSync(fileURLToPath(candidate)) ? candidate : url;
 }
 
+const SERVER_ONLY_STUB = "data:text/javascript,export{}";
+
 registerHooks({
   resolve(specifier, context, next) {
+    if (specifier === "server-only") {
+      return { url: SERVER_ONLY_STUB, shortCircuit: true };
+    }
     if (specifier.startsWith("@/")) {
       const target = withTsExtension(new URL(specifier.slice(2), ROOT));
       if (existsSync(fileURLToPath(target))) return next(target.href, context);

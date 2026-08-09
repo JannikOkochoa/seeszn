@@ -416,7 +416,7 @@ export const de: CaseContent = {
     label: "Nächster Schritt",
     headline: "Wie sichtbar ist dein Unternehmen?",
     copy: "Finde heraus, wo deine Marke heute in Google und AI Search steht – und welches Potenzial du liegen lässt.",
-    primary: { label: "Sichtbarkeit prüfen", href: "/diagnosis" },
+    primary: { label: "First Move starten", href: "/first-move" },
     systems: `Google · ${AI_SYSTEMS_LINE}`,
     relatedLabel: "Weiterlesen",
     related: [

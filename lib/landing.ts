@@ -35,7 +35,9 @@ export interface LandingPage {
   serviceType: string;
 }
 
-const DIAGNOSIS = "/diagnosis";
+// Der Haupt-CTA der kommerziellen Landingpages führt in den Produkt-Kaufweg.
+// /diagnosis bleibt als Werkzeug erreichbar, ist aber nicht mehr das Angebot.
+const DIAGNOSIS = "/first-move";
 
 export const LANDING_PAGES: Record<string, LandingPage> = {
   // ───────────────────────────────────────────────────────────────────────────
@@ -465,7 +467,7 @@ export const LANDING_PAGES: Record<string, LandingPage> = {
       { q: "Wie lange dauert das Audit?", a: "In der Regel einige Werktage nach Intake, abhängig von Umfang und Komplexität der Oberfläche." },
     ],
     related: [
-      { label: "Diagnose anfragen", href: "/diagnosis" },
+      { label: "First Move starten", href: "/first-move" },
       { label: "KI-Sichtbarkeit Agentur", href: "/ki-sichtbarkeit-agentur" },
       { label: "Absence Index: die Methodik", href: "/research/absence-index" },
       { label: "Was ist KI-Sichtbarkeit?", href: "/insights/was-ist-ki-sichtbarkeit" },
@@ -482,6 +484,6 @@ export const LANDING_SLUGS = Object.keys(LANDING_PAGES);
 
 // Final-CTA copy shared by landing pages.
 export const LANDING_CTA = {
-  primary: { label: "KI-Sichtbarkeit prüfen", href: DIAGNOSIS },
+  primary: { label: "First Move starten", href: DIAGNOSIS },
   secondary: { label: "Cases ansehen", href: "/work" },
 };

@@ -6,7 +6,9 @@ import { useTranslations } from "@/lib/i18n/context";
 export default function Footer() {
   const t = useTranslations();
   const f = t.footer;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  // Gleiche Logik wie im Header: deutsch in den Produkt-Kaufweg, englisch weiter
+  // auf die Sichtbarkeitsprüfung, solange es dort keine First-Move-Seite gibt.
+  const ctaHref = t.locale === "de" ? "/first-move" : "/en/diagnosis";
 
   return (
     <footer className="ft-root" role="contentinfo">
@@ -34,7 +36,7 @@ export default function Footer() {
           <a href="mailto:hello@seeszn.com" className="ft-email">
             {f.email}
           </a>
-          <Link href={diagHref} className="ft-cta">
+          <Link href={ctaHref} className="ft-cta">
             {f.cta}
             <span className="ft-cta-arrow" aria-hidden="true">→</span>
           </Link>

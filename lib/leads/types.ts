@@ -9,8 +9,26 @@
 
 import type { ScanResult } from "@/lib/scan/types";
 
-/** Formular-Herkunft eines Leads. */
-export type LeadSource = "diagnosis_result" | "brief_ki_sichtbarkeit";
+/**
+ * Formular-Herkunft eines Leads. `first_move_request` ist die verbindliche
+ * Anfrage aus dem First-Move-Kaufweg, `first_move_result_email` der sekundäre
+ * Wunsch, den Befund per Mail zu bekommen. Die Spalte hat DB-seitig keine
+ * Check-Constraint, neue Werte brauchen deshalb keine Migration.
+ *
+ * Bis August 2026 hieß die Anfrage `first_move_checkout`. Der Name war falsch:
+ * es gibt keinen Online-Checkout, der Kaufweg endet mit einer verbindlichen
+ * Anfrage. Neue Leads schreiben ausschließlich `first_move_request`. Der alte
+ * Wert wird nicht mehr erzeugt und bleibt nur als Label für Altbestand
+ * bestehen, damit historische Zeilen im CRM lesbar bleiben.
+ */
+export type LeadSource =
+  | "diagnosis_result"
+  | "brief_ki_sichtbarkeit"
+  | "first_move_request"
+  | "first_move_result_email";
+
+/** Nicht mehr geschriebene Quellen. Nur für die Anzeige von Altbestand. */
+export type LegacyLeadSource = "first_move_checkout";
 
 /**
  * Bearbeitungszustand im CRM. 'new' ist der Eingangszustand (bis August 2026
@@ -105,6 +123,10 @@ export const DELIVERY_LABEL: Record<DeliveryStatus, string> = {
 export const LEAD_SOURCE_LABEL: Record<string, string> = {
   diagnosis_result: "Sichtbarkeitsprüfung",
   brief_ki_sichtbarkeit: "KI-Sichtbarkeits-Brief",
+  first_move_request: "First Move Anfrage",
+  first_move_result_email: "First Move Ergebnisversand",
+  // Altbestand vor der Umbenennung im August 2026. Wird nicht mehr geschrieben.
+  first_move_checkout: "First Move Anfrage (alt)",
 };
 
 /** Ist `value` ein gültiger CRM-Status? */

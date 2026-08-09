@@ -8,6 +8,15 @@ import { de } from "@/lib/i18n/de";
 import type { Metadata } from "next";
 import { buildMetadata, serviceSchema, breadcrumbSchema, faqSchema } from "@/lib/seo";
 
+// Die deutsche Sichtbarkeitsprüfung bleibt als eigenständiges Werkzeug live und
+// voll funktionsfähig: eigene API, eigenes Ergebnis-Cockpit, eigener Lead-Pfad.
+// Sie ist aber nicht mehr indexierbar, weil /first-move seit August 2026 die
+// deutsche Produktseite für dieselbe Suchintention ist und zwei konkurrierende
+// indexierbare Produktseiten sich gegenseitig schwächen würden.
+//
+// follow bleibt an, damit die vorhandene Linkkraft weiter fließt. Die englische
+// Fassung unter /en/diagnosis ist unverändert indexierbar: dort gibt es keine
+// First-Move-Seite, also auch keine Konkurrenz.
 export const metadata: Metadata = buildMetadata({
   title: "Sichtbarkeit prüfen: KI-Sichtbarkeits-Diagnose | SEESZN",
   description:
@@ -15,6 +24,7 @@ export const metadata: Metadata = buildMetadata({
   path: "/diagnosis",
   locale: "de",
   altPath: "/en/diagnosis",
+  noindex: true,
 });
 
 export default function DeDiagnosisPage() {

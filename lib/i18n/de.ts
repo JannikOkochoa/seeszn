@@ -14,7 +14,7 @@ export const de: Translations = {
     work: "ERGEBNISSE",
     insights: "INSIGHTS",
     about: "STUDIO",
-    cta: "SICHTBARKEIT PRÜFEN",
+    cta: "FIRST MOVE",
     servicesTagline: "Wir bauen die Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
     enterOperatingRoom: "SYSTEM ENTDECKEN",
     allServices: "ENTDECKEN",
@@ -185,7 +185,7 @@ export const de: Translations = {
   footer: {
     tagline: "Wir bauen die Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
     email: "HELLO@SEESZN.COM",
-    cta: "SICHTBARKEIT PRÜFEN",
+    cta: "FIRST MOVE",
     nav: [
       { name: "ENTDECKEN", href: "/services" },
       { name: "ERGEBNISSE", href: "/work" },
@@ -326,7 +326,7 @@ export const de: Translations = {
       sub: ["FIELD NOTES AUS DER RETRIEVAL-SCHICHT:", "WAS AI SEARCH LIEST, ZITIERT UND IGNORIERT,", "AUFGEZEICHNET IM BETRIEB."],
       note: ["KEINE TREND-ESSAYS. KEIN VORHERSAGE-THEATER.", "NUR WAS WIR VERIFIZIEREN."],
       meta: "THE INTELLIGENCE ROOM",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
+      cta: { label: "FIRST MOVE", href: "/first-move" },
     },
     cinema: {
       decode: "SIGNAL ERFASST · AUFZEICHNUNG LÄUFT",
@@ -488,7 +488,7 @@ export const de: Translations = {
       sub: ["SEESZN IST EIN SICHTBARKEITSSTUDIO:", "STRATEGIE, SEARCH, DESIGN UND ENGINEERING", "ALS EIN SYSTEM."],
       note: ["DIESES DOKUMENT IST DAS HANDBUCH.", "DEINE OBERFLÄCHEN-LESUNG BLEIBT PRIVAT."],
       meta: "THE OPERATING MANUAL",
-      cta: { label: "SICHTBARKEIT PRÜFEN", href: "/diagnosis" },
+      cta: { label: "FIRST MOVE", href: "/first-move" },
     },
     scanCta: {
       roman: "Das Handbuch ist öffentlich.",

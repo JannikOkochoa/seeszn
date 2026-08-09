@@ -23,13 +23,16 @@ function CtaButton({
 }) {
   const [hovered, setHovered] = useState(false);
   const t = useTranslations();
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  // Der deutsche Haupt-CTA führt in den Kaufweg des Produkts (First Move). Die
+  // englische Oberfläche hat noch keine First-Move-Seite und bleibt deshalb auf
+  // der Sichtbarkeitsprüfung, statt auf eine deutsche Seite zu springen.
+  const ctaHref = t.locale === "de" ? "/first-move" : "/en/diagnosis";
 
   return (
     <Link
-      href={diagHref}
+      href={ctaHref}
       onClick={onClick}
-      aria-label="Book a diagnosis"
+      aria-label={t.nav.cta}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{

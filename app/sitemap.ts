@@ -15,6 +15,11 @@ type Entry = {
 // ── German surface (primary, at root) ────────────────────────────────────────
 const deRoutes: Entry[] = [
   { path: "/", priority: 1.0, changeFrequency: "weekly" },
+  // Produkt: SEESZN First Move. /first-move ist die Master-Produktseite,
+  // /google-ads/first-move der kontextspezifische Einstieg aus bezahlter Suche.
+  // Beide sind self-canonical und index,follow.
+  { path: "/first-move", priority: 1.0, changeFrequency: "weekly" },
+  { path: "/google-ads/first-move", priority: 0.9, changeFrequency: "monthly" },
   // Commercial landing pages
   { path: "/ki-sichtbarkeit-agentur", priority: 0.9, changeFrequency: "monthly" },
   { path: "/ki-sichtbarkeits-audit", priority: 0.9, changeFrequency: "monthly" },
@@ -29,7 +34,9 @@ const deRoutes: Entry[] = [
   { path: "/case-studies/seo-aio-tourismus", priority: 0.9, changeFrequency: "monthly" },
   { path: "/insights", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/diagnosis", priority: 0.9, changeFrequency: "monthly" },
+  // /diagnosis ist bewusst nicht mehr gelistet: die Seite bleibt als Werkzeug
+  // live, trägt aber seit der First-Move-Einführung noindex, damit es nur eine
+  // indexierbare deutsche Produktseite für diese Suchintention gibt.
   // Insights / research
   { path: "/insights/was-ist-ki-sichtbarkeit", priority: 0.7, changeFrequency: "monthly" },
   { path: "/insights/was-ist-geo", priority: 0.7, changeFrequency: "monthly" },
