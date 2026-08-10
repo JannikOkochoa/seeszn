@@ -66,9 +66,11 @@ export const PROOF_CASES: Record<ProofCase["id"], ProofCase> = {
     descriptor: "E-Commerce · International · SEO + GEO",
     leadValue: "3.59K",
     leadCaption: "Organic Clicks in 3 Monaten",
-    // Ø 8,3 steht bewusst nicht mehr auf der Karte: eine durchschnittliche
-    // Position über alle Queries hinweg ist als Marketingzahl schwach und lenkt
-    // vom Leitwert ab. Als Kontext bleibt sie in der Methodik erhalten.
+    // Ø 7,1 steht bewusst nicht auf der Karte: eine durchschnittliche Position
+    // über alle Queries hinweg ist als Marketingzahl schwach und lenkt vom
+    // Leitwert ab. Als Kontext bleibt sie in der Methodik erhalten. Derselbe
+    // Wert steht in der öffentlichen Case Study unter
+    // /case-studies/french-beret-ecommerce-seo.
     secondary: [{ value: "752K", caption: "Google Impressions" }],
     image: ASSETS.build,
     imageAlt: "Produktaufnahme aus dem French-Beret-Sortiment.",
@@ -77,7 +79,7 @@ export const PROOF_CASES: Record<ProofCase["id"], ProofCase> = {
       {
         label: "Messgröße",
         value:
-          "Organische Klicks als Leitwert, Impressionen als Kontext. Die durchschnittliche Position über alle Queries lag bei 8,3 und ist nur als Kontextwert dokumentiert.",
+          "Organische Klicks als Leitwert, Impressionen als Kontext. Die durchschnittliche Position über alle Queries lag bei 7,1 und ist nur als Kontextwert dokumentiert.",
       },
       { label: "Quelle", value: "Google Search Console, Property des Shops" },
       {

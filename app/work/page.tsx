@@ -4,16 +4,18 @@ import Footer from "@/components/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import Archive from "@/components/case-studies/Archive";
 import { de as study } from "@/lib/case-studies/de";
+import { FB_H1_TEXT, FB_PATH } from "@/lib/case-studies/french-beret";
 import { buildMetadata, breadcrumbSchema, SITE_URL } from "@/lib/seo";
 
 // ─── Ergebnisse ──────────────────────────────────────────────────────────────
-// Eine öffentliche Case Study. Bewusst ein Register mit einem Eintrag statt
-// eines Rasters, das mit Platzhaltern aufgefüllt wird.
+// Ein Register mit drei Einträgen entlang der strategischen Logik BUILD /
+// TRANSFORM / SCALE. Zwei Case Studies sind veröffentlicht, der dritte Eintrag
+// ist als solcher gekennzeichnet — und steht deshalb auch nicht im Schema.
 
 export const metadata: Metadata = buildMetadata({
-  title: "Ergebnisse: SEO & AIO Case Studies | SEESZN",
+  title: "Ergebnisse: SEO, AI Search & E-Commerce Case Studies | SEESZN",
   description:
-    "Dokumentierte SEESZN-Ergebnisse. Eine Case Study aus dem Tourismus: Ausgangslage, Maßnahmen, Ergebnis in Google und AI Search sowie der Messaufbau dahinter.",
+    "Dokumentierte SEESZN-Ergebnisse aus SEO, AI Search, E-Commerce und Google Ads. Ausgangslage, Maßnahmen, Ergebnis und Messmethodik je Case Study nachvollziehbar offengelegt.",
   path: "/work",
   locale: "de",
   altPath: "/en/work",
@@ -29,6 +31,13 @@ const collectionSchema = {
   isPartOf: { "@id": `${SITE_URL}/#website` },
   about: { "@id": `${SITE_URL}/#organization` },
   hasPart: [
+    {
+      "@type": "Article",
+      "@id": `${SITE_URL}${FB_PATH}#article`,
+      name: FB_H1_TEXT,
+      about: "E-Commerce",
+      url: `${SITE_URL}${FB_PATH}`,
+    },
     {
       "@type": "Article",
       "@id": `${SITE_URL}${study.path}#article`,

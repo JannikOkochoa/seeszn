@@ -164,7 +164,9 @@ test("die Paid-FAQ ist kurz und paid-spezifisch", () => {
 test("der öffentliche French-Beret-Case zeigt keine Durchschnittsposition", () => {
   const card = PROOF_CASES.build;
   const visible = [card.leadValue, card.leadCaption, ...card.secondary.flatMap((s) => [s.value, s.caption])];
-  assert.ok(!visible.some((v) => v.includes("8,3")));
+  // Weder der aktuelle Wert (7,1) noch der historische (8,3) gehören auf die
+  // Karte: eine Durchschnittsposition ist Methodik-Kontext, kein Leitwert.
+  assert.ok(!visible.some((v) => v.includes("7,1") || v.includes("8,3")));
   assert.equal(card.leadValue, "3.59K");
   assert.ok(card.secondary.some((s) => s.value === "752K"));
 });
