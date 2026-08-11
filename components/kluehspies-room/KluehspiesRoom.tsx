@@ -30,13 +30,18 @@ const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 // unten auskommentierten NAV-Einträge wieder aufnehmen.
 const CUSTOMER_KPI_ONLY = true;
 
-// Bereichs-Navigation in der Kopfleiste; die IDs sitzen auf den Sektionen.
-// Vorläufig ausgeblendet (Launch-Scope): Übersicht, Mockups, SEO Pipeline,
-// Experimente, Freigaben. Nur das KPI Dashboard bleibt navigierbar und ist die
+// Bereichs-Navigation in der Kopfleiste. Einträge ohne `href` springen per
+// Anker auf eine Sektion dieser Seite; die IDs sitzen auf den Sektionen und
+// treiben den Scroll-Spy. Einträge mit `href` führen auf eine eigene Route und
+// nehmen am Scroll-Spy nicht teil.
+//
+// Vorläufig ausgeblendet (Launch-Scope): Übersicht, SEO Pipeline, Experimente,
+// Freigaben. Nur das KPI Dashboard bleibt als Sektion navigierbar und ist die
 // Standardansicht nach dem Login.
 const NAV = [
   { id: "kpi-monitoring", label: "KPI Dashboard" },
-] as const;
+  { id: "mockups", label: "Mockups", href: "/mockups" },
+] as const satisfies readonly { id: string; label: string; href?: string }[];
 
 type ItemState = { status: RecStatus; note: string | null };
 
@@ -148,17 +153,21 @@ export default function KluehspiesRoom({ workspace }: KluehspiesRoomProps) {
           </div>
         </div>
         <nav className="kr-nav" aria-label="Bereiche">
-          {NAV.map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              className="kr-nav-link"
-              data-active={activeNav === item.id || undefined}
-              aria-current={activeNav === item.id ? "true" : undefined}
-            >
-              {item.label}
-            </a>
-          ))}
+          {NAV.map((item) => {
+            const isRoute = "href" in item && item.href;
+            const active = !isRoute && activeNav === item.id;
+            return (
+              <a
+                key={item.id}
+                href={isRoute ? item.href : `#${item.id}`}
+                className="kr-nav-link"
+                data-active={active || undefined}
+                aria-current={active ? "true" : undefined}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </nav>
       </header>
 

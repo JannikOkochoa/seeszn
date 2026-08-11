@@ -16,6 +16,23 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
         ],
       },
+      // Die interne Mockup Library und alle Detail-Mockups darunter. Gleiches
+      // Prinzip wie beim Client Room: kein Eintrag in der öffentlichen
+      // robots.txt (das würde den Kundennamen preisgeben), sondern ein
+      // X-Robots-Tag auf genau diesen Routen, zusätzlich zum robots-Meta der
+      // Seiten. Die Routen stehen ebenfalls nicht in app/sitemap.ts.
+      {
+        source: "/mockups/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+      {
+        source: "/mockups",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
     ];
   },
 
