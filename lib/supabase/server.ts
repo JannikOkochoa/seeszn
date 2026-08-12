@@ -11,12 +11,43 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+/** Variablen, ohne die kein Session-Client gebaut werden kann. */
+const SESSION_ENV = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+] as const;
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Fehlende Environment-Variable: ${name}`);
   }
   return value;
+}
+
+/**
+ * Prüft die Session-Konfiguration, ohne zu werfen.
+ *
+ * Hintergrund: `createSupabaseServerClient` wirft bei fehlender Variable, und in
+ * einer Server Component beendet das die ganze Antwort mit einem 500 plus
+ * undurchsichtigem Error-Digest. Für Seiten, die ohne Session ohnehin nur die
+ * Zugangstür zeigen, ist das die falsche Reaktion: sie sollen erreichbar
+ * bleiben und benennen, dass die Konfiguration fehlt.
+ *
+ * Für Route Handler bleibt das Werfen richtig — dort ist ein 500 die ehrliche
+ * Antwort, und niemand liest eine gerenderte Seite.
+ *
+ * `.env.local` ist nicht im Repository. Auf Servern, die per Git deployt werden,
+ * ist genau das die typische Ursache: das Deployment ersetzt das
+ * Arbeitsverzeichnis, die lokale Env-Datei ist weg, und alle Auth-Routen
+ * fallen gleichzeitig aus.
+ */
+export function missingSessionEnv(): string[] {
+  return SESSION_ENV.filter((name) => !process.env[name]);
+}
+
+export function isSupabaseConfigured(): boolean {
+  return missingSessionEnv().length === 0;
 }
 
 export async function createSupabaseServerClient() {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import KluehspiesRoom from "@/components/kluehspies-room/KluehspiesRoom";
 import KluehspiesLogin from "@/components/kluehspies-room/KluehspiesLogin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, missingSessionEnv } from "@/lib/supabase/server";
 import { loadWorkspace } from "@/lib/kpi/loadWorkspace";
 import { buildMetadata } from "@/lib/seo";
 
@@ -35,6 +35,21 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function KluehspiesRoomPage() {
+  // Fehlt die Supabase-Konfiguration, warf der Client-Aufbau und die Route
+  // endete mit einem 500. Für den Kundenraum ist das die schlechteste aller
+  // Antworten: Klühspies sieht eine nackte Fehlerseite statt einer Auskunft.
+  const missing = missingSessionEnv();
+  if (missing.length > 0) {
+    console.error(
+      `[kluehspies-room] Supabase nicht konfiguriert, fehlende Variablen: ${missing.join(", ")}`,
+    );
+    return (
+      <div className={sourceSans.variable}>
+        <KluehspiesLogin unavailable />
+      </div>
+    );
+  }
+
   // Cookie-Session serverseitig validieren; ohne Session gibt es keine
   // Kundendaten, nur die Login-Ansicht.
   const supabase = await createSupabaseServerClient();

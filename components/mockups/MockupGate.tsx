@@ -1,7 +1,7 @@
 import { Source_Sans_3 } from "next/font/google";
 import KluehspiesLogin from "@/components/kluehspies-room/KluehspiesLogin";
 import { hasKluehspiesAccess } from "@/lib/kpi/access";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, missingSessionEnv } from "@/lib/supabase/server";
 
 // Die Login-Ansicht ist dieselbe Komponente wie im Klühspies Room und erwartet
 // dort die CI-Schrift über diese Variable. Sie wird hier genauso gesetzt, damit
@@ -25,6 +25,21 @@ const sourceSans = Source_Sans_3({
  * Die Kinder werden nur dann gerendert, wenn beide Prüfungen bestanden sind.
  */
 export default async function MockupGate({ children }: { children: React.ReactNode }) {
+  // Ohne Supabase-Konfiguration kann niemand angemeldet sein. Vor dieser
+  // Prüfung warf der Client-Aufbau, was die Route mit einem 500 beendete statt
+  // die Zugangstür zu zeigen. Die Tür bleibt zu, aber die Seite antwortet.
+  const missing = missingSessionEnv();
+  if (missing.length > 0) {
+    console.error(
+      `[MockupGate] Supabase nicht konfiguriert, fehlende Variablen: ${missing.join(", ")}`,
+    );
+    return (
+      <div className={sourceSans.variable}>
+        <KluehspiesLogin unavailable />
+      </div>
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

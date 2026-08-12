@@ -15,9 +15,16 @@ const AFTER_LOGIN = "/kluehspies-room#kpi-monitoring";
 interface KluehspiesLoginProps {
   /** Gesetzt, wenn jemand angemeldet ist, aber keine Membership besitzt. */
   noAccessEmail?: string;
+  /**
+   * Gesetzt, wenn die Anmeldung serverseitig gar nicht möglich ist, weil die
+   * Supabase-Konfiguration fehlt. Dann wird kein Formular gezeigt: ein
+   * Login-Feld, das nicht funktionieren kann, ist irreführender als eine klare
+   * Auskunft. Die genaue Ursache steht im Serverlog, nicht auf der Seite.
+   */
+  unavailable?: boolean;
 }
 
-export default function KluehspiesLogin({ noAccessEmail }: KluehspiesLoginProps) {
+export default function KluehspiesLogin({ noAccessEmail, unavailable }: KluehspiesLoginProps) {
   const reduced = useReducedMotion();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -90,7 +97,14 @@ export default function KluehspiesLogin({ noAccessEmail }: KluehspiesLoginProps)
         </h1>
         <p className="kg-sub">Anmeldung nur für eingeladene Konten von Klühspies Reisen und SEESZN.</p>
 
-        {noAccessEmail ? (
+        {unavailable ? (
+          <div className="kg-noaccess">
+            <p className="kg-error" role="alert">
+              Die Anmeldung ist derzeit nicht verfügbar. Der Server erreicht den
+              Authentifizierungsdienst nicht. Bitte bei SEESZN melden.
+            </p>
+          </div>
+        ) : noAccessEmail ? (
           <div className="kg-noaccess">
             <p className="kg-error" role="alert">
               Für {noAccessEmail} ist noch kein Zugang zu diesem Arbeitsraum freigeschaltet.
