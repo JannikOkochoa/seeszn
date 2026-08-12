@@ -150,6 +150,19 @@ export function IconSupport({ className }: IconProps) {
 /* ── Flächige Icons ──────────────────────────────────────────────────────── */
 
 /** Gefüllter Haken — Best-Fit Mini Cards. */
+/** Freiplatzregelung: ein Sitzplatz, auf der Lehne als „frei" abgehakt. */
+export function IconSeat({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6.5 3.6h11v8.4h-11z" />
+      <path d="M4.6 12h14.8v3.6H4.6z" />
+      <path d="M7 15.6v4.8" />
+      <path d="M17 15.6v4.8" />
+      <path d="M9.2 7.8l2 2 3.6-3.6" />
+    </Svg>
+  );
+}
+
 export function IconCheck({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true" focusable="false">

@@ -5,6 +5,16 @@ Status: Mockup / Konzept, nicht live
 Stand: 11.08.2026  
 Zielgruppe: Lehrkräfte, Schulleitungen und organisierende Personen für Klassenfahrten
 
+> **Achtung, teilweise überholt (12.08.2026).** Die Überarbeitung vom 12.08.2026
+> holt bewusst Fakten der Bestandsseite zurück, die §1 und §7 hier noch
+> ausschließen, namentlich den Claim „europaweit die Nr. 1 für Schulskifahrten"
+> und die Freiplatzregelung. Beides ist auf der Bestandsseite wörtlich belegt.
+> Ebenfalls abweichend: Hero-H1, Fließtext-Anker unter der Trust Bar, fünf statt
+> vier USP-Karten, ausgebauter Frage-Block und ausgebaute Siegel-Texte.
+> Die vollständige Liste der Abweichungen steht in `OPEN_FACTS.md` §B3.
+> Dieses Dokument muss dort nachgezogen werden, bevor es wieder als
+> alleinige Vorgabe verwendet wird.
+
 ---
 
 # 1. Verbindliche Regeln

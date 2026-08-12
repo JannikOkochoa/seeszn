@@ -26,7 +26,7 @@ export const mockups: MockupEntry[] = [
     badge: "Konzept",
     subline: "SEO / GEO / UX Redesign",
     client: "Klühspies Reisen",
-    stand: "11.08.2026",
+    stand: "12.08.2026",
     preview: {
       src: "/mockups/ueber-kluehspies/kluehspies-ueber-uns-redesign-mockup-v1.png",
       alt: "Verkleinerte Vorschau des Über-Klühspies-Redesign-Mockups",

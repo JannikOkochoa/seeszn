@@ -3,40 +3,51 @@
 import { useId, useState } from "react";
 import { IconArrowRight } from "./Icons";
 
+type Variant = "button" | "button-outline" | "link";
+
 interface MockCtaProps {
   label: string;
-  /** "button" = gefüllter Primär-CTA, "link" = textueller Card-Link. */
-  variant: "button" | "link";
+  /** "button" = gefüllter Primär-CTA, "button-outline" = sekundärer Button,
+   *  "link" = textueller Card-Link. */
+  variant: Variant;
   /** Warum dieser CTA noch nicht verlinkt. Erscheint erst nach Klick. */
   note: string;
+  /** Optionales führendes Icon, nur für die Button-Varianten. */
+  icon?: (p: { className?: string }) => React.ReactElement;
 }
+
+const BUTTON_CLASS: Record<Variant, string> = {
+  button: "kb-btn kb-btn-primary kb-r8",
+  "button-outline": "kb-btn kb-btn-outline kb-r8",
+  link: "kb-cardlink",
+};
 
 /**
  * CTA ohne freigegebene Ziel-URL.
  *
- * CONTENT.md verbietet ausdrücklich, für den Klassenfahrtanbieter-Vergleich und
- * für die Qualitäts-Karten Links zu erfinden. Gleichzeitig soll die CTA-Hierarchie
- * des Entwurfs sichtbar bleiben. Lösung: ein echter Button mit identischer Optik,
- * der nicht navigiert, sondern den offenen Punkt benennt. Damit gibt es weder
- * eine Fantasie-URL noch einen toten Link noch eine gefakte Affordanz.
+ * Für den Klassenfahrtanbieter-Vergleich existiert noch keine Produktionsseite.
+ * Gleichzeitig soll die CTA-Hierarchie des Entwurfs sichtbar bleiben. Lösung:
+ * ein echter Button mit identischer Optik, der nicht navigiert, sondern den
+ * offenen Punkt benennt. Damit gibt es weder eine Fantasie-URL noch einen toten
+ * Link noch eine gefakte Affordanz.
  */
-export default function MockCta({ label, variant, note }: MockCtaProps) {
+export default function MockCta({ label, variant, note, icon: Icon }: MockCtaProps) {
   const [shown, setShown] = useState(false);
   const noteId = useId();
+  const isLink = variant === "link";
 
   return (
-    <div className={variant === "button" ? "kb-mockcta" : "kb-mockcta kb-mockcta-inline"}>
+    <div className={isLink ? "kb-mockcta kb-mockcta-inline" : "kb-mockcta"}>
       <button
         type="button"
-        className={
-          variant === "button" ? "kb-btn kb-btn-primary kb-r8" : "kb-cardlink"
-        }
+        className={BUTTON_CLASS[variant]}
         onClick={() => setShown((v) => !v)}
         aria-expanded={shown}
         aria-controls={noteId}
       >
+        {Icon && !isLink ? <Icon className="kb-btn-icon kb-btn-icon-lead" /> : null}
         {label}
-        <IconArrowRight className={variant === "button" ? "kb-btn-icon" : "kb-cardlink-icon"} />
+        <IconArrowRight className={isLink ? "kb-cardlink-icon" : "kb-btn-icon"} />
       </button>
       <p id={noteId} className="kb-mockcta-note" hidden={!shown}>
         {note}

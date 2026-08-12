@@ -4,16 +4,20 @@ import {
   bestFitSection,
   compareSection,
   contactSection,
+  contentMeta,
   footer,
   headerNav,
   hero,
   trustSection,
   trustStats,
+  trustStatsAnchor,
   uspSection,
+  TELEFON_LABEL,
   URLS,
   type TrustStatIcon,
   type UspIcon,
 } from "./content";
+import { jsonLdString } from "./schema";
 import {
   CompareIllustration,
   IconAdvice,
@@ -33,6 +37,7 @@ import {
   IconNoPayment,
   IconPhone,
   IconPortal,
+  IconSeat,
   IconSupport,
   IconYears,
 } from "./Icons";
@@ -57,6 +62,14 @@ import {
 export default function UeberKluehspiesMockup() {
   return (
     <div className="kb">
+      {/* Strukturierte Daten der späteren Produktionsseite. Siehe ./schema.ts:
+          ein @graph aus TravelAgency, FAQPage und BreadcrumbList, dessen Werte
+          aus denselben Konstanten stammen wie der sichtbare Text. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString() }}
+      />
+
       <KluehspiesHeader />
 
       <main className="kb-main">
@@ -68,6 +81,7 @@ export default function UeberKluehspiesMockup() {
         <TrustSection />
         <CompareTeaser />
         <ContactSection />
+        <ContentMeta />
       </main>
 
       <KluehspiesFooter />
@@ -89,7 +103,7 @@ function KluehspiesHeader() {
           </span>
           <a className="kb-service-item kb-service-phone" href={URLS.telefon}>
             <IconPhone className="kb-service-icon" />
-            +49 (0) 2351 / 97 86-0
+            {TELEFON_LABEL}
           </a>
           <a className="kb-service-btn kb-r6" href={URLS.kontakt}>
             Kontakt
@@ -159,22 +173,34 @@ function Hero() {
   return (
     <section className="kb-hero" aria-labelledby="kb-h1">
       <div className="kb-hero-media">
+        {/* LCP-Element. Deshalb kein Lazy-Load, hohe Ladepriorität und feste
+            Maße: mit width/height kennt der Browser das Seitenverhältnis vor
+            dem Laden und reserviert den Platz, statt den Inhalt darunter
+            wegzuschieben. Zur Formatfrage siehe HANDOVER.md §B4: WebP/AVIF
+            erzeugt die TYPO3-Bildpipeline, nicht dieses Repository. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={hero.image.src} alt={hero.image.alt} width={1920} height={800} />
+        <img
+          src={hero.image.src}
+          alt={hero.image.alt}
+          width={1920}
+          height={800}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
         <span className="kb-hero-veil" aria-hidden="true" />
       </div>
 
       <div className="kb-wrap kb-hero-inner">
         <div className="kb-hero-copy">
-          <p className="kb-eyebrow">{hero.eyebrow}</p>
-          {/* Der Umbruch ist im Zielbild gesetzt und bleibt auf großen Schirmen
-              erhalten. Auf schmalen Schirmen wird das br ausgeblendet, deshalb
-              steht hier ein echtes Leerzeichen davor: sonst klebten die beiden
-              Zeilen im mobilen Umbruch aneinander. */}
+          {/* Genau eine H1, und sie trägt die vollständige Seitenaussage. Die
+              frühere Eyebrow war ein eigenes p über der Überschrift: optisch
+              Teil des Titels, semantisch aber losgelöst davon. Sie ist jetzt
+              die erste Zeile der H1 und behält ihre Optik über die Spanklasse,
+              der Rest der Hero-Komposition bleibt unverändert. */}
           <h1 className="kb-h1" id="kb-h1">
-            {hero.h1[0]}{" "}
-            <br />
-            {hero.h1[1]}
+            <span className="kb-h1-lead">{hero.h1.lead}</span>{" "}
+            <span className="kb-h1-main">{hero.h1.main}</span>
           </h1>
           {hero.intro.map((p) => (
             <p className="kb-hero-lead" key={p}>
@@ -182,23 +208,27 @@ function Hero() {
             </p>
           ))}
 
+          {/* Ein primärer CTA, ein sekundärer. Der dritte Hero-CTA
+              („Bezahlservice ansehen") ist in die Bezahlservice-Karte gewandert,
+              wo er ohnehin steht. Drei gleichrangige Angebote im Hero zwingen
+              zu einer Entscheidung, die die Seite an dieser Stelle noch gar
+              nicht vorbereitet hat. */}
           <div className="kb-hero-actions">
             <a className="kb-btn kb-btn-primary kb-r8" href={hero.primaryCta.href}>
               <IconMail className="kb-btn-icon kb-btn-icon-lead" />
               {hero.primaryCta.label}
             </a>
-            <a className="kb-btn kb-btn-outline kb-r8" href={hero.secondaryCta.href}>
-              <IconHandCard className="kb-btn-icon kb-btn-icon-lead" />
-              {hero.secondaryCta.label}
-            </a>
+            <MockCta
+              variant="button-outline"
+              label={hero.secondaryCta.label}
+              icon={IconHandCard}
+              note="Ziel-URL offen: Der Anbieter-Vergleich bekommt eine eigene Seite, deren Adresse noch nicht freigegeben ist. Siehe HANDOVER.md §7.1."
+            />
           </div>
 
-          <p className="kb-hero-tertiary">
-            <a className="kb-textlink" href="#kb-vergleich">
-              {hero.tertiaryCta.label}
-              <IconArrowRight className="kb-textlink-icon" />
-            </a>
-          </p>
+          {/* Die Reibung benennen, wo sie niedrig ist: die häufigste ungestellte
+              Frage vor einer Anfrage ist „binde ich mich damit schon?". */}
+          <p className="kb-hero-note">{hero.primaryNote}</p>
         </div>
       </div>
     </section>
@@ -234,6 +264,11 @@ function TrustBar() {
             );
           })}
         </ul>
+        {/* Vier Kacheln, vier Zahlen, aber ohne Satzbau. Aus dem Kontext
+            gerissen ergibt „110.000+ / Gäste pro Jahr" keine zitierfähige
+            Aussage. Dieser Absatz bindet dieselben Zahlen in ganze Sätze und
+            stellt die Verknüpfung zur Entity Klühspies her. */}
+        <p className="kb-trustbar-anchor">{trustStatsAnchor}</p>
       </div>
     </section>
   );
@@ -245,6 +280,7 @@ const USP_ICONS: Record<UspIcon, (p: { className?: string }) => React.ReactEleme
   noPayment: IconNoPayment,
   portal: IconPortal,
   chart: IconChart,
+  seat: IconSeat,
   support: IconSupport,
 };
 
@@ -257,10 +293,14 @@ function UspSection() {
         </h2>
         {/* CONTENT.md führt hier ein Intro als ausdrücklich optional. Das
             Referenz-PNG zeigt unter dieser H2 keinen Fließtext, und das PNG ist
-            für die Komposition verbindlich — deshalb bleibt es weg. Der Text
+            für die Komposition verbindlich, deshalb bleibt es weg. Der Text
             steht weiterhin in content.ts, falls er später gewünscht ist. */}
 
-        <div className="kb-grid-4">
+        {/* Fünf Karten. Das Vierergrid hätte die fünfte allein in eine zweite
+            Reihe gestellt; ein sechster Eintrag wäre nur durch einen erfundenen
+            Vorteil zu füllen gewesen. Deshalb 3 + 2 mit zentrierter zweiter
+            Reihe: keine bestehende Karte weicht, nichts wird dazuerfunden. */}
+        <div className="kb-grid-5">
           {uspSection.cards.map((card) => {
             const Icon = USP_ICONS[card.icon];
             return (
@@ -270,10 +310,17 @@ function UspSection() {
                 </span>
                 <h3 className="kb-h3">{card.heading}</h3>
                 <p className="kb-card-text">{card.text}</p>
-                <a className="kb-cardlink" href={card.href}>
-                  {card.linkLabel}
-                  <IconArrowRight className="kb-cardlink-icon" />
-                </a>
+                {/* Linktexte benennen das Ziel. Fünfmal „Mehr erfahren" auf
+                    einer Seite ist für Screenreader-Nutzung wertlos, weil die
+                    Linkliste dann fünf identische Einträge zeigt. Die
+                    Freiplatz-Karte trägt keinen Link: zu ihr existiert keine
+                    Zielseite, und ein toter Link ist schlechter als keiner. */}
+                {card.href && card.linkLabel ? (
+                  <a className="kb-cardlink" href={card.href}>
+                    {card.linkLabel}
+                    <IconArrowRight className="kb-cardlink-icon" />
+                  </a>
+                ) : null}
               </article>
             );
           })}
@@ -292,6 +339,11 @@ function BestFitSection() {
         <h2 className="kb-h2" id="kb-bestfit">
           {bestFitSection.heading}
         </h2>
+        {/* Die H2 stellt eine echte Suchanfrage. Eine Liste aus Fragmenten
+            beantwortet sie für Lehrkräfte, für ein Antwortsystem aber nicht:
+            zitierfähig ist erst ein vollständiger Satz. Der Lead liefert ihn,
+            die Liste bleibt die scanbare Fassung darunter. */}
+        <p className="kb-section-lead">{bestFitSection.lead}</p>
         <ul className="kb-grid-3">
           {bestFitSection.items.map((item) => (
             <li className="kb-fit kb-r14" key={item}>
@@ -315,20 +367,28 @@ function TrustSection() {
           {trustSection.heading}
         </h2>
 
+        {/* Zwei bis drei Sätze pro Siegel statt Einzeiler plus „Mehr erfahren":
+            wer prüft, was geprüft wird und was daraus folgt. Das ist das
+            E-E-A-T-Material der Seite, und es steht hier vollständig, statt
+            hinter einen Link zu verweisen, den es nicht gibt. Die früheren
+            CTAs sind entfallen, weil zu keiner der vier Auszeichnungen eine
+            Zielseite existiert. */}
         <div className="kb-grid-4">
           {trustSection.cards.map((card) => (
             <article className="kb-card kb-card-seal kb-r18" key={card.heading}>
               <span className="kb-seal">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={card.logo.src} alt={card.logo.alt} width={256} height={134} />
+                <img
+                  src={card.logo.src}
+                  alt={card.logo.alt}
+                  width={256}
+                  height={134}
+                  loading="lazy"
+                  decoding="async"
+                />
               </span>
               <h3 className="kb-h3 kb-h3-seal">{card.heading}</h3>
               <p className="kb-card-text">{card.text}</p>
-              <MockCta
-                variant="link"
-                label={card.cta}
-                note="Mockup-Interaktion: Für diese Auszeichnung ist noch keine Ziel-URL freigegeben."
-              />
             </article>
           ))}
         </div>
@@ -352,10 +412,22 @@ function CompareTeaser() {
               {compareSection.heading}
             </h2>
             <p className="kb-compare-text">{compareSection.text}</p>
+            {/* Echte Vorschau statt reinem Versprechen: die vier Kriterien
+                stehen sichtbar auf der Seite, der CTA führt später auf die
+                ausgeführte Vergleichsseite. Bewusst ohne Wettbewerbernamen,
+                die gehören laut CONTENT.md §1 nicht auf die Über-uns-Seite. */}
+            <ul className="kb-compare-criteria">
+              {compareSection.criteria.map((criterion) => (
+                <li key={criterion}>
+                  <IconCheck className="kb-compare-check" />
+                  <span>{criterion}</span>
+                </li>
+              ))}
+            </ul>
             <MockCta
               variant="button"
               label={compareSection.cta}
-              note="Mockup-Interaktion: Der Anbieter-Vergleich hat noch keine Produktions-URL, deshalb verlinkt der CTA bewusst noch nicht."
+              note="Ziel-URL offen: Der Anbieter-Vergleich hat noch keine Produktions-Adresse, deshalb verlinkt dieser CTA bewusst noch nicht. Siehe HANDOVER.md §7.1."
             />
           </div>
         </div>
@@ -380,6 +452,8 @@ function ContactSection() {
               alt={contactSection.person.photo.alt}
               width={300}
               height={300}
+              loading="lazy"
+              decoding="async"
             />
             <span className="kb-person-badge kb-round" aria-hidden="true">
               <IconChat className="kb-person-badge-icon" />
@@ -392,8 +466,6 @@ function ContactSection() {
         </figure>
 
         <div className="kb-contact-copy">
-          {/* Eyebrow ist laut CONTENT.md optional und im Referenz-PNG nicht
-              vorhanden. Weggelassen, damit die H2 der einzige Einstieg bleibt. */}
           <h2 className="kb-h2 kb-h2-left kb-h2-light" id="kb-contact-h">
             {contactSection.heading}
           </h2>
@@ -403,18 +475,59 @@ function ContactSection() {
               <IconMail className="kb-btn-icon kb-btn-icon-lead" />
               {contactSection.primaryCta.label}
             </a>
-            <a className="kb-btn kb-btn-ghost kb-r8" href={contactSection.secondaryCta.href}>
+            {/* Tap-to-call. Der Button ist mindestens 58 px hoch und damit auch
+                mit dem Daumen sicher zu treffen. */}
+            <a className="kb-btn kb-btn-ghost kb-r8" href={contactSection.phoneCta.href}>
               <IconPhone className="kb-btn-icon kb-btn-icon-lead" />
-              {contactSection.secondaryCta.label}
+              {contactSection.phoneCta.label}
             </a>
           </div>
+          {/* Eine Telefonnummer ohne Zeiten erzeugt Unsicherheit, und ein Teil
+              der Zielgruppe ruft grundsätzlich nicht an. Beides steht deshalb
+              direkt unter den Buttons. */}
+          <p className="kb-contact-meta">
+            <span>{contactSection.availability}</span>
+            <span className="kb-contact-meta-sep" aria-hidden="true">
+              ·
+            </span>
+            <a className="kb-contact-mail" href={contactSection.email.href}>
+              <IconMail className="kb-contact-mail-icon" />
+              {contactSection.email.label}
+            </a>
+          </p>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── 10 · Footer ─────────────────────────────────────────────────────────── */
+/* ── 10 · Aktualitätssignal ──────────────────────────────────────────────── */
+
+/**
+ * Stand und inhaltliche Verantwortung, sichtbar am Ende der Content-Sektion.
+ *
+ * Beides ist bewusst echter Seitentext und nicht nur Schema: dieselbe Person
+ * steht als reviewedBy im FAQPage-Knoten, dasselbe Datum als dateModified.
+ * Ein Aktualitätssignal, das nur im JSON-LD steht, ist für Leserinnen und
+ * Leser wertlos und für Prüfer nicht belegt.
+ */
+function ContentMeta() {
+  return (
+    <section className="kb-contentmeta" aria-label="Stand der Inhalte">
+      <div className="kb-wrap">
+        <p className="kb-contentmeta-line">
+          <span>{contentMeta.standLabel}</span>
+          <span className="kb-contentmeta-sep" aria-hidden="true">
+            ·
+          </span>
+          <span>{contentMeta.responsibleLabel}</span>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ── 11 · Footer ─────────────────────────────────────────────────────────── */
 
 function KluehspiesFooter() {
   return (
@@ -429,6 +542,8 @@ function KluehspiesFooter() {
               alt="Klühspies"
               width={425}
               height={85}
+              loading="lazy"
+              decoding="async"
             />
             <p className="kb-footer-company">{footer.company}</p>
             <address className="kb-footer-address">
@@ -519,6 +634,24 @@ function Styles() {
         line-height: 1.65;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
+        /* Deutsche Komposita wie „Klassenfahrtanbieter" sind länger als eine
+           320px-Spalte. Ohne diese Regel schiebt ein einziges Wort die Seite
+           in den horizontalen Scroll. */
+        overflow-wrap: break-word;
+      }
+
+      /* Die Seite animiert nichts, was Inhalt aufbaut; es gibt nur Hover- und
+         Fokusübergänge. Wer Bewegung reduziert haben will, bekommt sie hier
+         abgeschaltet, statt sich auf die Kürze der Übergänge zu verlassen. */
+      @media (prefers-reduced-motion: reduce) {
+        .kb *,
+        .kb *::before,
+        .kb *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+        }
       }
 
       /* Rundungen: globales border-radius:0 gilt projektweit, hier bewusst
@@ -648,14 +781,19 @@ function Styles() {
         z-index: 0;
       }
       .kb-hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: 52% 38%; }
+      /* Der Verlauf beginnt jetzt mit einer deckenden Zone statt sofort
+         abzufallen. Der Textblock links kann je nach Fensterbreite bis in die
+         ersten Prozent der Bildfläche hineinragen; dort stand er vorher auf
+         einem zu 97 % deckenden Weiß, der Kontrast hing also an der Bildstelle
+         darunter. Mit der deckenden Zone ist er unabhängig vom Motiv. */
       .kb-hero-veil {
         position: absolute;
         inset: 0;
         background: linear-gradient(
           90deg,
           #ffffff 0%,
-          rgba(255, 255, 255, 0.97) 16%,
-          rgba(255, 255, 255, 0.72) 38%,
+          #ffffff 20%,
+          rgba(255, 255, 255, 0.72) 40%,
           rgba(255, 255, 255, 0.18) 66%,
           rgba(255, 255, 255, 0) 86%
         );
@@ -666,20 +804,30 @@ function Styles() {
          um — im Zielbild stehen beide CTAs nebeneinander. */
       .kb-hero-copy { max-width: 600px; }
 
-      .kb-eyebrow {
-        margin: 0;
-        font-size: 17px;
-        font-weight: 600;
-        color: var(--kb-blue);
-      }
+      /* Die H1 trägt beide Zeilen. Damit die Optik des Zielbilds erhalten
+         bleibt, setzt die erste Zeile die frühere Eyebrow-Typo fort; die
+         Titelgröße lebt auf der zweiten Zeile. Ein Blockelement je Zeile
+         ersetzt das frühere br und braucht keine Mobil-Ausnahme. */
       .kb-h1 {
-        margin: 18px 0 0;
+        margin: 0;
         max-width: 540px;
-        font-size: clamp(33px, 3.45vw, 50px);
         font-weight: 700;
-        line-height: 1.12;
         letter-spacing: -0.015em;
         color: var(--kb-ink);
+      }
+      .kb-h1-lead {
+        display: block;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 1.3;
+        letter-spacing: 0;
+        color: var(--kb-blue);
+      }
+      .kb-h1-main {
+        display: block;
+        margin-top: 18px;
+        font-size: clamp(33px, 3.45vw, 50px);
+        line-height: 1.12;
       }
       .kb-hero-lead {
         margin: 0;
@@ -692,7 +840,16 @@ function Styles() {
       .kb-hero-lead + .kb-hero-lead { margin-top: 14px; }
 
       .kb-hero-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 34px; }
-      .kb-hero-tertiary { margin: 30px 0 0; }
+      /* Mikrotext unter der Buttonzeile: kleiner als der Fließtext, aber mit
+         demselben Textton. 14px auf Weiß ergibt 7,4:1 und bleibt damit auch
+         als Kleintext deutlich über der Anforderung. */
+      .kb-hero-note {
+        margin: 14px 0 0;
+        max-width: 52ch;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--kb-ink-soft);
+      }
 
       /* ══ Buttons und Links ════════════════════════════════════════════ */
       .kb-btn {
@@ -725,7 +882,9 @@ function Styles() {
       .kb-btn-onblue { background: #ffffff; color: var(--kb-blue); }
       .kb-btn-onblue:hover { background: var(--kb-blue-tint); }
 
-      .kb-btn-ghost { color: #ffffff; border-color: rgba(255, 255, 255, 0.6); }
+      /* Rand bei 0,6 Alpha lag auf dem Klühspies-Blau bei 2,7:1 und damit unter
+         den 3:1, die eine Bedienelement-Begrenzung braucht. 0,85 ergibt 3,7:1. */
+      .kb-btn-ghost { color: #ffffff; border-color: rgba(255, 255, 255, 0.85); }
       .kb-btn-ghost:hover { background: rgba(255, 255, 255, 0.14); border-color: #ffffff; }
 
       .kb-textlink {
@@ -804,6 +963,17 @@ function Styles() {
       }
       .kb-stat-label { font-size: 16px; line-height: 1.4; color: var(--kb-ink-soft); }
 
+      /* Fließtext-Anker unter der Kachelreihe. Ruhiger gesetzt als der Rest,
+         damit er die Kacheln stützt statt mit ihnen zu konkurrieren. */
+      .kb-trustbar-anchor {
+        margin: 22px auto 0;
+        max-width: 88ch;
+        text-align: center;
+        font-size: 16.5px;
+        line-height: 1.7;
+        color: var(--kb-ink-soft);
+      }
+
       /* ══ Sections ═════════════════════════════════════════════════════ */
       .kb-section { padding-top: var(--kb-section-y); }
       .kb-h2 {
@@ -826,11 +996,22 @@ function Styles() {
         color: var(--kb-ink-soft);
       }
       .kb-h2 + .kb-grid-4,
+      .kb-h2 + .kb-grid-5,
       .kb-h2 + .kb-grid-3 { margin-top: 30px; }
-      .kb-section-lead + .kb-grid-4 { margin-top: 32px; }
+      .kb-section-lead + .kb-grid-4,
+      .kb-section-lead + .kb-grid-5,
+      .kb-section-lead + .kb-grid-3 { margin-top: 32px; }
 
       .kb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
       .kb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+      /* Fünf Karten als 3 + 2 mit zentrierter zweiter Reihe. Sechs Spalten,
+         jede Karte über zwei: dann lässt sich die zweite Reihe um eine halbe
+         Kartenbreite einrücken, ohne die Kartenbreite zu verändern. */
+      .kb-grid-5 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
+      .kb-grid-5 > * { grid-column: span 2; }
+      .kb-grid-5 > :nth-child(4) { grid-column: 2 / span 2; }
+      .kb-grid-5 > :nth-child(5) { grid-column: 4 / span 2; }
 
       /* ══ Cards ════════════════════════════════════════════════════════ */
       .kb-card {
@@ -915,6 +1096,20 @@ function Styles() {
         line-height: 1.65;
         color: var(--kb-ink-soft);
       }
+      .kb-compare-criteria {
+        display: grid;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .kb-compare-criteria li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 16px;
+        line-height: 1.45;
+        color: var(--kb-ink);
+      }
+      .kb-compare-check { width: 22px; height: 22px; flex: none; color: var(--kb-blue); }
       .kb-compare-copy .kb-mockcta { margin-top: 28px; }
 
       /* ══ Kontakt-CTA ══════════════════════════════════════════════════ */
@@ -983,18 +1178,56 @@ function Styles() {
       .kb-person-badge-icon { width: 26px; height: 26px; }
       .kb-person-caption { margin-top: 14px; text-align: center; line-height: 1.35; }
       .kb-person-name { display: block; font-size: 15.5px; font-weight: 700; }
-      .kb-person-role { display: block; font-size: 15px; color: rgba(255, 255, 255, 0.86); }
+      /* Weiß mit Alpha lag auf dem Klühspies-Blau zwischen 3,9:1 und 4,3:1 und
+         damit unter den 4,5:1 für Fließtext. Volles Weiß ergibt 4,7:1. Die
+         Transparenz war reine Abstufung und ist als Hierarchiemittel durch
+         Schriftgrad und Gewicht ersetzt. Gilt für alle Texte auf Blau. */
+      .kb-person-role { display: block; font-size: 15px; color: #ffffff; }
 
-      .kb-eyebrow-light { color: rgba(255, 255, 255, 0.92); font-size: 15px; }
-      .kb-eyebrow-light + .kb-h2 { margin-top: 8px; }
       .kb-contact-text {
         margin: 16px 0 0;
         max-width: 52ch;
         font-size: 17px;
         line-height: 1.65;
-        color: rgba(255, 255, 255, 0.92);
+        color: #ffffff;
       }
       .kb-contact-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 30px; }
+      .kb-contact-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        margin: 18px 0 0;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #ffffff;
+      }
+      .kb-contact-meta-sep { opacity: 0.7; }
+      .kb-contact-mail {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #ffffff;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-thickness: 1px;
+      }
+      .kb-contact-mail-icon { width: 18px; height: 18px; flex: none; }
+
+      /* ══ Aktualitätssignal ════════════════════════════════════════════ */
+      .kb-contentmeta { background: var(--kb-page); }
+      .kb-contentmeta-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 10px;
+        margin: 0;
+        padding: 22px 0 26px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--kb-ink-soft);
+      }
+      .kb-contentmeta-sep { color: #9aa5b0; }
 
       /* ══ Footer ═══════════════════════════════════════════════════════ */
       /* Der Footer im Zielbild ist deutlich dichter gesetzt als der Rest der
@@ -1032,7 +1265,7 @@ function Styles() {
         letter-spacing: 0.04em;
       }
       .kb-footer-col li + li { margin-top: 6px; }
-      .kb-footer-col a { color: rgba(255, 255, 255, 0.93); }
+      .kb-footer-col a { color: #ffffff; }
       .kb-footer-col a:hover { text-decoration: underline; }
 
       .kb-footer-bottom {
@@ -1044,9 +1277,9 @@ function Styles() {
         border-top: 1px solid rgba(255, 255, 255, 0.2);
         font-size: 13px;
       }
-      .kb-footer-copy { margin: 0; color: rgba(255, 255, 255, 0.88); }
+      .kb-footer-copy { margin: 0; color: #ffffff; }
       .kb-footer-legal { display: flex; flex-wrap: wrap; gap: 30px; margin-inline: auto; }
-      .kb-footer-legal a { color: rgba(255, 255, 255, 0.88); }
+      .kb-footer-legal a { color: #ffffff; }
       .kb-footer-legal a:hover { text-decoration: underline; }
 
       /* ══ Responsive ═══════════════════════════════════════════════════ */
@@ -1099,6 +1332,11 @@ function Styles() {
         .kb-trustbar { grid-template-columns: repeat(2, 1fr); gap: 24px 20px; }
         .kb-grid-4 { grid-template-columns: repeat(2, 1fr); }
         .kb-grid-3 { grid-template-columns: 1fr; }
+        /* Zweispaltig braucht die fünfte Karte keine Einrückung mehr: vier
+           Karten füllen zwei Reihen, die fünfte steht allein und links. */
+        .kb-grid-5 { grid-template-columns: repeat(4, 1fr); }
+        .kb-grid-5 > :nth-child(4) { grid-column: span 2; }
+        .kb-grid-5 > :nth-child(5) { grid-column: span 2; }
 
         .kb-compare {
           grid-template-columns: 1fr;
@@ -1138,28 +1376,49 @@ function Styles() {
         }
         .kb-service-item:not(.kb-service-phone) { display: none; }
         .kb-service-phone { font-size: 14.5px; }
-        .kb-service-btn { padding: 7px 16px; }
 
         .kb-brand-logo { width: 178px; }
         .kb-brand-claim { font-size: 12.5px; }
-        .kb-nav-list { gap: 18px; }
 
         .kb-hero-media { height: 218px; }
         .kb-hero-inner { padding: 28px 0 40px; }
-        .kb-eyebrow { font-size: 16px; }
-        .kb-h1 { margin-top: 14px; }
-        .kb-h1 br { display: none; }
+        .kb-h1-lead { font-size: 16px; }
+        .kb-h1-main { margin-top: 14px; }
         .kb-h1 + .kb-hero-lead { margin-top: 20px; }
         .kb-hero-lead { font-size: 16.5px; }
         .kb-hero-actions { flex-direction: column; align-items: stretch; gap: 12px; margin-top: 28px; }
-        .kb-hero-tertiary { margin-top: 24px; }
+        .kb-hero-actions .kb-mockcta { align-items: stretch; }
         .kb-btn { width: 100%; min-height: 56px; padding: 0 20px; }
+
+        /* Tap-Ziele auf mindestens 44px. Betrifft die Textlinks, die auf dem
+           Desktop nur so hoch sind wie ihre Zeile: Navigation, Footer-Spalten,
+           Rechtszeile, Breadcrumb-Home und der Mail-Link im Kontaktband. Die
+           Vergrößerung passiert über Padding, damit Schriftgrad, Farbe und
+           Abstände des Entwurfs unverändert bleiben. */
+        .kb-nav-link { padding: 12px 0; }
+        .kb-nav-list { gap: 18px; padding-bottom: 4px; }
+        .kb-footer-col a,
+        .kb-footer-legal a,
+        .kb-footer-contact a {
+          display: inline-block;
+          padding: 12px 0;
+        }
+        .kb-footer-col li + li { margin-top: 0; }
+        .kb-footer-heading { margin-bottom: 4px; }
+        .kb-footer-legal { gap: 4px 22px; }
+        .kb-crumb-home { padding: 12px 8px 12px 0; }
+        .kb-contact-mail { padding: 11px 0; }
+        .kb-service-btn { padding: 12px 16px; }
 
         .kb-trustbar { grid-template-columns: 1fr; gap: 20px; padding: 24px 22px; }
         .kb-stat-badge { width: 58px; height: 58px; }
         .kb-stat-icon { width: 30px; height: 30px; }
 
         .kb-grid-4 { grid-template-columns: 1fr; gap: 16px; }
+        .kb-grid-5 { grid-template-columns: 1fr; gap: 16px; }
+        .kb-grid-5 > *,
+        .kb-grid-5 > :nth-child(4),
+        .kb-grid-5 > :nth-child(5) { grid-column: auto; }
         .kb-card { padding: 32px 22px 28px; }
         .kb-card-badge { width: 92px; height: 92px; }
         .kb-card-icon { width: 45px; height: 45px; }
@@ -1180,7 +1439,7 @@ function Styles() {
         .kb-footer-grid { grid-template-columns: 1fr; gap: 30px; padding: 38px 0 32px; }
         .kb-footer-brand { grid-column: auto; }
         .kb-footer-bottom { flex-direction: column; align-items: flex-start; gap: 14px; }
-        .kb-footer-legal { gap: 22px; margin-inline: 0; }
+        .kb-footer-legal { margin-inline: 0; }
       }
     `}</style>
   );
