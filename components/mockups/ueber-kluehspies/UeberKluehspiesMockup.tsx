@@ -31,7 +31,6 @@ import {
   IconChat,
   IconFacebook,
   IconGuests,
-  IconHandCard,
   IconHome,
   IconMail,
   IconNoPayment,
@@ -218,10 +217,13 @@ function Hero() {
               <IconMail className="kb-btn-icon kb-btn-icon-lead" />
               {hero.primaryCta.label}
             </a>
+            {/* Icon als Schlüssel, nicht als Komponente: MockCta ist eine
+                Client Component, und über diese Grenze lassen sich keine
+                Funktionen reichen. Siehe Kommentar in MockCta.tsx. */}
             <MockCta
               variant="button-outline"
               label={hero.secondaryCta.label}
-              icon={IconHandCard}
+              icon="handCard"
               note="Ziel-URL offen: Der Anbieter-Vergleich bekommt eine eigene Seite, deren Adresse noch nicht freigegeben ist. Siehe HANDOVER.md §7.1."
             />
           </div>
