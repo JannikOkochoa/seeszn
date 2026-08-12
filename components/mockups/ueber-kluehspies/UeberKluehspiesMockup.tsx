@@ -967,10 +967,15 @@ function Styles() {
 
       /* Fließtext-Anker unter der Kachelreihe. Ruhiger gesetzt als der Rest,
          damit er die Kacheln stützt statt mit ihnen zu konkurrieren. */
+      /* Der inhaltlich dichteste Absatz der Seite: Rechtsform, Sitz und alle
+         vier Kennzahlen. Über die volle Containerbreite ergab das rund 110
+         Zeichen je Zeile, also weit über dem Lesbarkeitsoptimum. Der Block
+         bleibt mittig, der Text darin läuft linksbündig gegen eine feste
+         Kante — bei vier Sätzen sucht das Auge sonst jede Zeile neu. */
       .kb-trustbar-anchor {
         margin: 22px auto 0;
-        max-width: 88ch;
-        text-align: center;
+        max-width: 68ch;
+        text-align: left;
         font-size: 16.5px;
         line-height: 1.7;
         color: var(--kb-ink-soft);
@@ -989,10 +994,12 @@ function Styles() {
       }
       .kb-h2-left { text-align: left; }
       .kb-h2-light { color: #ffffff; }
+      /* Wie beim Entity-Anker: Block mittig, Text linksbündig. Der Lead ist
+         drei Zeilen lang und damit ein Absatz, kein Untertitel. */
       .kb-section-lead {
         margin: 16px auto 0;
         max-width: 74ch;
-        text-align: center;
+        text-align: left;
         font-size: 16.5px;
         line-height: 1.65;
         color: var(--kb-ink-soft);
@@ -1007,13 +1014,16 @@ function Styles() {
       .kb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
       .kb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 
-      /* Fünf Karten als 3 + 2 mit zentrierter zweiter Reihe. Sechs Spalten,
-         jede Karte über zwei: dann lässt sich die zweite Reihe um eine halbe
-         Kartenbreite einrücken, ohne die Kartenbreite zu verändern. */
-      .kb-grid-5 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
-      .kb-grid-5 > * { grid-column: span 2; }
-      .kb-grid-5 > :nth-child(4) { grid-column: 2 / span 2; }
-      .kb-grid-5 > :nth-child(5) { grid-column: 4 / span 2; }
+      /* Fünf Karten als 2 + 2 + 1. Die vorherige Aufteilung 3 + 2 ließ die
+         zweite Reihe halb leer stehen, was wie ein Umbruchfehler aussah. Läuft
+         die fünfte Karte über die volle Breite, liest sich dieselbe ungerade
+         Zahl als bewusster Abschluss. */
+      .kb-grid-5 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+      .kb-grid-5 > :last-child { grid-column: 1 / -1; }
+      /* Über die volle Breite liefe der Text der letzten Karte sonst auf über
+         120 Zeichen je Zeile. Icon und Überschrift bleiben mittig, nur der
+         Absatz bekommt sein Maß. */
+      .kb-grid-5 > :last-child .kb-card-text { max-width: 68ch; }
 
       /* ══ Cards ════════════════════════════════════════════════════════ */
       .kb-card {
@@ -1043,8 +1053,14 @@ function Styles() {
         line-height: 1.32;
         color: var(--kb-ink);
       }
+      /* Die Karte bleibt eine zentrierte Komposition: Icon, Überschrift und
+         Link stehen weiter mittig. Nur der Absatz richtet sich links aus.
+         Zentrierter Mehrzeilentext lässt den linken Rand flattern, und bei
+         fünf bis sechs Zeilen je Karte sucht das Auge jede Zeile neu. */
       .kb-card-text {
         margin: 12px 0 0;
+        text-align: left;
+        align-self: stretch;
         font-size: 15.5px;
         line-height: 1.6;
         color: var(--kb-ink-soft);
@@ -1334,11 +1350,8 @@ function Styles() {
         .kb-trustbar { grid-template-columns: repeat(2, 1fr); gap: 24px 20px; }
         .kb-grid-4 { grid-template-columns: repeat(2, 1fr); }
         .kb-grid-3 { grid-template-columns: 1fr; }
-        /* Zweispaltig braucht die fünfte Karte keine Einrückung mehr: vier
-           Karten füllen zwei Reihen, die fünfte steht allein und links. */
-        .kb-grid-5 { grid-template-columns: repeat(4, 1fr); }
-        .kb-grid-5 > :nth-child(4) { grid-column: span 2; }
-        .kb-grid-5 > :nth-child(5) { grid-column: span 2; }
+        /* Das Fünfergrid ist schon in der Grundregel zweispaltig und behält
+           2 + 2 + 1 auch hier. */
 
         .kb-compare {
           grid-template-columns: 1fr;
@@ -1417,10 +1430,10 @@ function Styles() {
         .kb-stat-icon { width: 30px; height: 30px; }
 
         .kb-grid-4 { grid-template-columns: 1fr; gap: 16px; }
+        /* Einspaltig: die letzte Karte ist ohnehin so breit wie alle anderen,
+           die Vollbreiten-Regel wird zurückgenommen. */
         .kb-grid-5 { grid-template-columns: 1fr; gap: 16px; }
-        .kb-grid-5 > *,
-        .kb-grid-5 > :nth-child(4),
-        .kb-grid-5 > :nth-child(5) { grid-column: auto; }
+        .kb-grid-5 > :last-child { grid-column: auto; }
         .kb-card { padding: 32px 22px 28px; }
         .kb-card-badge { width: 92px; height: 92px; }
         .kb-card-icon { width: 45px; height: 45px; }
