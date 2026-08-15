@@ -33,6 +33,9 @@ const deRoutes: Entry[] = [
   { path: "/work", priority: 0.7, changeFrequency: "monthly" },
   { path: "/case-studies/seo-aio-tourismus", priority: 0.9, changeFrequency: "monthly" },
   { path: "/case-studies/french-beret-ecommerce-seo", priority: 0.9, changeFrequency: "monthly" },
+  // Englisch verfasst, liegt aber im Wurzelbaum: die Case Study ist
+  // selbstreferenzierend kanonisch und hat kein hreflang-Gegenstück.
+  { path: "/case-studies/paid-acquisition-at-scale", priority: 0.9, changeFrequency: "monthly" },
   { path: "/insights", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about", priority: 0.6, changeFrequency: "monthly" },
   // /diagnosis ist bewusst nicht mehr gelistet: die Seite bleibt als Werkzeug

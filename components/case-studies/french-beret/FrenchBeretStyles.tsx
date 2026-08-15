@@ -14,7 +14,10 @@ export default function FrenchBeretStyles() {
       /* ═══ Breadcrumb ═══════════════════════════════════════════
          Sichtbare Einordnung und crawlbarer Pfad. Er bringt den
          Nav-Abstand mit, den der Hero deshalb nicht mehr braucht. */
-      .fb-crumb { padding: 92px var(--gutter) 0; background: var(--paper); }
+      /* 126px, nicht 92px: <main> beginnt am Dokumentanfang, und Ankündigungs-
+         leiste plus Navigation belegen die ersten 106px — bei 92px stand der
+         Breadcrumb hinter dem Header und war unsichtbar. */
+      .fb-crumb { padding: 126px var(--gutter) 0; background: var(--paper); }
       .fb-crumb ol {
         display: flex;
         flex-wrap: wrap;

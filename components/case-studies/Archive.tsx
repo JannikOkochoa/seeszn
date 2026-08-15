@@ -7,6 +7,11 @@ import {
   FB_HERO_IMAGE,
   FB_PATH,
 } from "@/lib/case-studies/french-beret";
+import {
+  PA_FIGURES,
+  PA_IMAGES,
+  PA_PATH,
+} from "@/lib/case-studies/paid-acquisition";
 
 // ─── Ergebnis-Register ───────────────────────────────────────────────────────
 // Ein Register, kein Portfolio-Raster. Die drei Einträge tragen die strategische
@@ -20,9 +25,10 @@ import {
 // ist kein Link. Er bekommt auch keine Kennzahlen: was nicht dokumentiert ist,
 // steht hier nicht.
 //
-// Die englische Fassung führt nur die eine englisch veröffentlichte Case Study.
+// Die englische Fassung führt nur die englisch veröffentlichten Case Studies.
 // Ein Register, das auf deutschsprachige Seiten verweist, wäre ein Versprechen,
-// das die englische Oberfläche nicht einlöst.
+// das die englische Oberfläche nicht einlöst. Die anonymisierte Paid-Acquisition-
+// Case-Study ist englisch verfasst und steht deshalb in beiden Registern.
 
 interface Entry {
   id: string;
@@ -50,8 +56,8 @@ const COPY = {
   en: {
     eyebrow: "Case Studies",
     title: "Results",
-    lede: "One publicly documented case study. Starting position, interventions, outcome and measurement setup are all on the record. The client stays anonymous.",
-    disciplines: "SEO · AI Search · Technical SEO",
+    lede: "Two publicly documented case studies. Starting position, interventions, outcome and measurement setup are all on the record. Where a client cannot be named, we say so.",
+    disciplines: "SEO · AI Search · Google Ads · Paid Acquisition",
     registerLeft: "Public register",
     action: "View case study",
     counter: (n: number) => `0${n} ${n === 1 ? "entry" : "entries"}`,
@@ -101,12 +107,20 @@ const DE_ENTRIES: Entry[] = [
     id: "scale",
     index: "03",
     discipline: "Scale",
-    title: "B2B Workspace",
-    status: "Coming soon",
+    title: "Paid Acquisition at Scale",
+    href: PA_PATH,
     meta: [
-      { key: "Disziplin", value: "Google Ads · Paid Acquisition · Scale" },
+      { key: "Disziplin", value: "Google Ads / Growth" },
+      { key: "Markt", value: "DACH" },
+      { key: "Media-Budget", value: `${PA_FIGURES.spend} p. a.` },
       { key: "Kunde", value: "Anonymisiert" },
     ],
+    image: {
+      src: PA_IMAGES.hero.src,
+      width: PA_IMAGES.hero.width,
+      height: PA_IMAGES.hero.height,
+    },
+    focus: "50% 42%",
   },
 ];
 
@@ -129,6 +143,25 @@ const EN_ENTRIES: Entry[] = [
       height: enCase.hero.image.height,
     },
     focus: "32% 44%",
+  },
+  {
+    id: "scale",
+    index: "02",
+    discipline: "Scale",
+    title: "Paid Acquisition at Scale",
+    href: PA_PATH,
+    meta: [
+      { key: "Discipline", value: "Google Ads / Growth" },
+      { key: "Market", value: "DACH" },
+      { key: "Media budget", value: `${PA_FIGURES.spend} annually` },
+      { key: "Client", value: "Anonymized" },
+    ],
+    image: {
+      src: PA_IMAGES.hero.src,
+      width: PA_IMAGES.hero.width,
+      height: PA_IMAGES.hero.height,
+    },
+    focus: "50% 42%",
   },
 ];
 
