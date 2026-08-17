@@ -10,13 +10,14 @@ import {
 import { useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { productHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function Manifesto() {
   const t = useTranslations();
   const m = t.manifesto;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = productHref(t.locale);
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const reduced = useReducedMotion();

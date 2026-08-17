@@ -1,3 +1,5 @@
+import { PRODUCT_PATH } from "@/lib/links";
+
 // ─── German commercial landing-page content ─────────────────────────────────
 // Each entry drives one /<slug> page through the shared LandingPage template.
 // Tone: deutsch, scharf, premium, sachlich. Keine Hype-Sprache, keine erfundenen Zahlen.
@@ -36,8 +38,10 @@ export interface LandingPage {
 }
 
 // Der Haupt-CTA der kommerziellen Landingpages führt in den Produkt-Kaufweg.
-// /diagnosis bleibt als Werkzeug erreichbar, ist aber nicht mehr das Angebot.
-const DIAGNOSIS = "/first-move";
+// "First Move starten" ist ein generisches Produktversprechen, kein Prüf-CTA:
+// er führt deshalb an den Anfang der Produktseite, nicht an das eingebettete
+// Instrument. Eine eigenständige Scan-Seite gibt es im deutschen Baum nicht mehr.
+const DIAGNOSIS = PRODUCT_PATH;
 
 export const LANDING_PAGES: Record<string, LandingPage> = {
   // ───────────────────────────────────────────────────────────────────────────

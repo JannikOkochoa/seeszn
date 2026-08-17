@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { useRef } from "react";
 import { useTranslations } from "@/lib/i18n/context";
+import { scanHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -23,7 +24,7 @@ const VALUES = [
 export default function ScanSection() {
   const t = useTranslations();
   const sc = t.servicesPage.scan;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = scanHref(t.locale);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const reduced = useReducedMotion();

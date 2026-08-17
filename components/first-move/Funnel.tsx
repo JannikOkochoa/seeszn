@@ -15,6 +15,14 @@
 //   Fast Lane  Hero → "First Move starten" → Angebot → Fit → Start
 // Wer das Produkt schon verstanden hat, muss den Scan nie durchlaufen.
 //
+// Seit der Konsolidierung im August 2026 gibt es im deutschen Baum keine eigene
+// Scan-Seite mehr. Die Prüfung ist ein Mechanismus des Produkts und liegt im
+// Abschnitt #sichtbarkeit-pruefen. Dort steht das Instrument selbst: Frage,
+// Domainfeld, eine Handlung, Vertrauenszeilen. Die schmalen Domainfelder im Hero
+// und im Abschluss sind Einstiege in dieses eine Instrument, keine zweiten
+// Prüfungen: sie füllen denselben Zustand, scrollen zum Instrument und starten
+// dort. Ein Ergebnis erscheint deshalb nie außerhalb des sichtbaren Bereichs.
+//
 // Ehrlichkeitsregeln, die dieser Code durchsetzt:
 //   - Die Zustandsleiste zeigt nur Zustände, die der Server gemeldet hat. Kein
 //     Prozentbalken, keine erfundene Wartezeit.
@@ -47,6 +55,7 @@ import {
   RISK_REVERSAL_SHORT,
 } from "@/lib/first-move/product";
 import { SPEND_BANDS } from "@/lib/first-move/types";
+import { SCAN_ANCHOR } from "@/lib/links";
 import type {
   ApprovalPath,
   Complexity,
@@ -61,6 +70,12 @@ import type {
 type Variant = "master" | "paid";
 type Phase = "idle" | "scanning" | "result" | "empty" | "error";
 type Lane = "discovery" | "fast";
+/**
+ * Von welchem Einstieg aus die Prüfung gestartet wurde. Zwei Aufgaben: die
+ * Fehlermeldung erscheint dort, wo der Besucher gerade steht, und die Attribution
+ * bleibt erhalten, obwohl alle Einstiege dieselbe Route benutzen.
+ */
+type Entry = "hero" | "instrument" | "final";
 
 interface FunnelProps {
   variant: Variant;
@@ -111,6 +126,39 @@ const CHANNEL_OPTIONS: { id: FirstMoveRoute; label: string }[] = [
 
 const LEVEL_LABEL: Record<string, string> = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 
+/**
+ * Die Beschriftung des Instruments. Eine Frage, eine Erwartung, eine Handlung,
+ * zwei Zusagen. Die Zusagen beschreiben, was der Server wirklich tut: die
+ * öffentliche Prüfung braucht weder E-Mail noch Zugang, und sie liest nur, was
+ * ohnehin abrufbar ist.
+ */
+const INSTRUMENT = {
+  master: {
+    label: "Sichtbarkeitsprüfung",
+    question: "Wo liegt der nächste Engpass?",
+    sub: "Eine Domain genügt. Die erste Einordnung erscheint direkt.",
+    placeholder: "deine-domain.de",
+    cta: "Sichtbarkeit prüfen",
+    reads: "Was wir dabei öffentlich lesen",
+    trust: [
+      "Keine E-Mail nötig. Das Ergebnis erscheint direkt auf dieser Seite.",
+      "Nur öffentlich abrufbare Signale. Kein Zugriff auf deine Systeme.",
+    ],
+  },
+  paid: {
+    label: "Paid Check",
+    question: "Wo verliert dein Budget zuerst?",
+    sub: "Eine Einstiegsseite genügt. Der erste Befund erscheint direkt.",
+    placeholder: "deine-domain.de",
+    cta: "Paid Check starten",
+    reads: "Was wir dabei ohne Account-Zugriff lesen",
+    trust: [
+      "Weder E-Mail noch Google-Ads-Zugriff nötig.",
+      "Nur öffentlich abrufbare Signale deiner Einstiegsseite.",
+    ],
+  },
+} as const;
+
 /** Was der öffentliche Scan liest. Im Ruhezustand als Liste, nicht als Verlauf. */
 const READS: string[] = [
   "Domain und Erreichbarkeit",
@@ -156,6 +204,7 @@ export default function FirstMoveFunnel({
   const [finding, setFinding] = useState<PublicFinding | null>(null);
   const [emptyReason, setEmptyReason] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [errorAt, setErrorAt] = useState<Entry>("instrument");
   const [scannedDomain, setScannedDomain] = useState("");
 
   const [fitOpen, setFitOpen] = useState(false);
@@ -177,6 +226,9 @@ export default function FirstMoveFunnel({
   const [devNotice, setDevNotice] = useState("");
 
   const resultRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+  const stageInputRef = useRef<HTMLInputElement>(null);
   const fitRef = useRef<HTMLDivElement>(null);
   const offerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -222,11 +274,16 @@ export default function FirstMoveFunnel({
   }, []);
 
   const start = useCallback(
-    async (raw?: string) => {
+    async (raw?: string, entry: Entry = "instrument") => {
       const value = (raw ?? domain).trim();
       if (!value) {
+        // Eine leere Eingabe ist ein Bedienfehler, kein Prüfergebnis: die Meldung
+        // bleibt am Einstieg stehen, der Fokus geht zurück ins Feld, und es wird
+        // nicht zu einem Abschnitt gescrollt, den der Besucher gar nicht sucht.
         setErrorMsg("Bitte gib eine Domain ein, zum Beispiel deine-domain.de");
+        setErrorAt(entry);
         setPhase("error");
+        (entry === "hero" ? heroInputRef : stageInputRef).current?.focus();
         return;
       }
 
@@ -237,9 +294,10 @@ export default function FirstMoveFunnel({
       resetForNewScan();
       setPhase("scanning");
       setLane("discovery");
-      track("domain_submit", { surface: variant });
+      track("domain_submit", { surface: variant, entry });
       track("public_scan_start", {
         surface: variant,
+        entry,
         route: isPaid ? "paid_acquisition" : (channel ?? "unsure"),
         spend_band: isPaid ? spendBand : undefined,
       });
@@ -287,6 +345,7 @@ export default function FirstMoveFunnel({
               track("public_scan_signal", { surface: variant, state: event.state });
             } else if (event.type === "error") {
               setErrorMsg(event.message);
+              setErrorAt("instrument");
               setPhase("error");
             } else if (event.type === "result") {
               setScannedDomain(event.domain);
@@ -312,6 +371,7 @@ export default function FirstMoveFunnel({
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return;
         setErrorMsg("Die Prüfung ist fehlgeschlagen. Bitte versuche es erneut.");
+        setErrorAt("instrument");
         setPhase("error");
       }
     },
@@ -319,18 +379,35 @@ export default function FirstMoveFunnel({
   );
 
   // Das Domainfeld im Abschluss startet dieselbe Prüfung, statt einen zweiten
-  // Zustand aufzumachen.
+  // Zustand aufzumachen. Das Scrollen übernimmt start() selbst.
   useEffect(() => {
     function onExternalStart(e: Event) {
       const detail = (e as CustomEvent<{ domain?: string }>).detail;
       if (!detail?.domain) return;
       setDomain(detail.domain);
-      document.getElementById("pruefung")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      void start(detail.domain);
+      void start(detail.domain, "final");
     }
     window.addEventListener("fm:start", onExternalStart as EventListener);
     return () => window.removeEventListener("fm:start", onExternalStart as EventListener);
   }, [start]);
+
+  /**
+   * Das Instrument trägt alle Zustände. Wer im Hero oder im Abschluss startet,
+   * wird dorthin gebracht, statt auf ein Ergebnis außerhalb des Bildschirms zu
+   * warten.
+   *
+   * Der Sprung liegt bewusst in einem Effekt und nicht in start(): wird er im
+   * selben Tick wie der Zustandswechsel ausgelöst, bricht der Browser die weiche
+   * Bewegung sofort wieder ab, weil sich das Layout darunter im selben Frame
+   * ändert. Nach dem Commit hält sie.
+   */
+  useEffect(() => {
+    if (phase !== "scanning") return;
+    const frame = requestAnimationFrame(() => {
+      stageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [phase]);
 
   // Sobald ein Ergebnis steht, wandert der Fokus dorthin.
   useEffect(() => {
@@ -470,6 +547,14 @@ export default function FirstMoveFunnel({
 
   const scopeLabel = gate ? gate.k : "geeignet für den Festpreis";
 
+  // Die Fehlermeldung erscheint genau einmal, und zwar dort, wo der Besucher
+  // gerade steht.
+  const heroError = phase === "error" && errorAt === "hero" && errorMsg !== "";
+  const instrumentError = phase === "error" && errorAt !== "hero" && errorMsg !== "";
+  const copy = isPaid ? INSTRUMENT.paid : INSTRUMENT.master;
+  const idle = phase === "idle" || phase === "error";
+  const settled = phase === "result" || phase === "empty";
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
@@ -479,11 +564,13 @@ export default function FirstMoveFunnel({
             <div className="fm-hero-copy">
               {heroCopy}
 
+              {/* Schmaler Einstieg. Er startet dasselbe Instrument weiter unten
+                  und bringt den Besucher dorthin mit. */}
               <form
                 className="fm-form"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  void start();
+                  void start(undefined, "hero");
                 }}
               >
                 <div className="fm-field">
@@ -492,6 +579,7 @@ export default function FirstMoveFunnel({
                   </label>
                   <input
                     id={`${uid}-domain`}
+                    ref={heroInputRef}
                     name="domain"
                     className="fm-input"
                     type="text"
@@ -501,8 +589,10 @@ export default function FirstMoveFunnel({
                     placeholder="deine-domain.de"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    aria-describedby={`${uid}-facts`}
-                    aria-invalid={phase === "error" ? true : undefined}
+                    aria-describedby={
+                      heroError ? `${uid}-hero-error ${uid}-facts` : `${uid}-facts`
+                    }
+                    aria-invalid={heroError ? true : undefined}
                   />
                   <button type="submit" className="fm-btn" disabled={phase === "scanning"}>
                     {phase === "scanning"
@@ -543,8 +633,8 @@ export default function FirstMoveFunnel({
                     ? "Vor dem ersten Ergebnis brauchen wir weder eine E-Mail noch Zugriff auf dein Google-Ads-Konto. Wir lesen zuerst nur öffentlich abrufbare Signale."
                     : "Vor dem ersten Ergebnis brauchen wir keine E-Mail. Wir lesen nur öffentlich abrufbare Signale, und es entsteht kein Retainer."}
                 </p>
-                {phase === "error" && errorMsg ? (
-                  <p className="fm-error" role="alert">
+                {heroError ? (
+                  <p id={`${uid}-hero-error`} className="fm-error" role="alert">
                     {errorMsg}
                   </p>
                 ) : null}
@@ -557,7 +647,14 @@ export default function FirstMoveFunnel({
       </section>
 
       {/* ── Prüfung ──────────────────────────────────────────────────────── */}
-      <section id="pruefung" className="fm-stage" aria-labelledby="fm-stage-h">
+      {/* Das eingebettete Instrument. Sprungziel für jeden CTA, dessen Absicht
+          ausdrücklich die Prüfung ist. Der Anker steht in lib/links.ts. */}
+      <section
+        id={SCAN_ANCHOR}
+        ref={stageRef}
+        className="fm-stage"
+        aria-labelledby="fm-stage-h"
+      >
         <div className="fm-wrap">
           <div className="fm-stage-head">
             <span className="fm-eyebrow">
@@ -571,37 +668,129 @@ export default function FirstMoveFunnel({
                   : phase === "scanning"
                     ? `Wir lesen ${scannedDomain || "die Oberfläche"}`
                     : isPaid
-                      ? "Was wir ohne Account-Zugriff sehen"
-                      : "Was wir öffentlich lesen"}
+                      ? "Zuerst der öffentliche Befund, dann der Account"
+                      : "Zuerst der Befund, dann die Umsetzung"}
             </h2>
           </div>
 
           <div className="fm-stage-body">
-            {/* Links: Zustände. Nur echte Schritte, ohne Prozentbalken. */}
+            {/* Links: das Instrument. Im Ruhezustand die Handlung, während der
+                Prüfung die echten Zustände, danach der Weg zu einer neuen
+                Domain. Immer derselbe Rahmen, damit das Auge nicht springt. */}
             <div className="fm-stage-log">
-              {phase === "idle" || phase === "error" ? (
-                <ul className="fm-log">
-                  {(isPaid ? PAID_READS : READS).map((item) => (
-                    <li key={item}>
-                      <span className="fm-log-label">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <ul className="fm-log" aria-live="polite" aria-atomic="false">
-                  {log.map((entry, i) => (
-                    <li
-                      key={`${entry.state}-${i}`}
-                      data-live={i === log.length - 1 && phase === "scanning"}
-                    >
-                      <span>
-                        <span className="fm-log-label">{entry.label}</span>
-                        {entry.detail ? <span className="fm-log-detail">{entry.detail}</span> : null}
+              <div className="fm-probe">
+                <div className="fm-probe-head">
+                  <span className="fm-probe-k">
+                    <span className="fm-probe-pip" aria-hidden="true" />
+                    {copy.label}
+                  </span>
+                  <span className="fm-probe-free">Kostenlos</span>
+                </div>
+
+                {idle ? (
+                  <form
+                    className="fm-probe-body"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void start(undefined, "instrument");
+                    }}
+                  >
+                    <label htmlFor={`${uid}-probe`} className="fm-probe-q">
+                      {copy.question}
+                    </label>
+                    <p className="fm-probe-sub">{copy.sub}</p>
+
+                    <input
+                      id={`${uid}-probe`}
+                      ref={stageInputRef}
+                      name="domain"
+                      className="fm-probe-input"
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
+                      spellCheck={false}
+                      placeholder={copy.placeholder}
+                      value={domain}
+                      onChange={(e) => setDomain(e.target.value)}
+                      aria-describedby={
+                        instrumentError ? `${uid}-probe-error` : `${uid}-probe-trust`
+                      }
+                      aria-invalid={instrumentError ? true : undefined}
+                    />
+
+                    <button type="submit" className="fm-probe-cta">
+                      <span className="fm-probe-cta-line" aria-hidden="true" />
+                      <span>{copy.cta}</span>
+                      <span className="fm-probe-cta-arrow" aria-hidden="true">
+                        →
                       </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    </button>
+
+                    {instrumentError ? (
+                      <p id={`${uid}-probe-error`} className="fm-error" role="alert">
+                        {errorMsg}
+                      </p>
+                    ) : null}
+
+                    <ul id={`${uid}-probe-trust`} className="fm-probe-trust">
+                      {copy.trust.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+
+                    <details className="fm-details fm-probe-reads">
+                      <summary>{copy.reads}</summary>
+                      <div className="fm-details-body">
+                        <ul className="fm-log">
+                          {(isPaid ? PAID_READS : READS).map((item) => (
+                            <li key={item}>
+                              <span className="fm-log-label">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </form>
+                ) : (
+                  <div className="fm-probe-body">
+                    <p className="fm-probe-target">
+                      <span className="fm-probe-target-k">Geprüft</span>
+                      <span className="fm-probe-target-v">{scannedDomain || domain.trim()}</span>
+                    </p>
+
+                    <ul className="fm-log" aria-live="polite" aria-atomic="false">
+                      {log.map((entry, i) => (
+                        <li
+                          key={`${entry.state}-${i}`}
+                          data-live={i === log.length - 1 && phase === "scanning"}
+                        >
+                          <span>
+                            <span className="fm-log-label">{entry.label}</span>
+                            {entry.detail ? (
+                              <span className="fm-log-detail">{entry.detail}</span>
+                            ) : null}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {settled ? (
+                      <button
+                        type="button"
+                        className="fm-link-secondary fm-probe-again"
+                        onClick={() => {
+                          resetForNewScan();
+                          setPhase("idle");
+                          setDomain("");
+                          window.setTimeout(() => stageInputRef.current?.focus(), 0);
+                        }}
+                      >
+                        Andere Domain prüfen
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
 
               <p className="fm-micro fm-stage-note">
                 {phase === "scanning"

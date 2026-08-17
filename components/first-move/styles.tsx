@@ -385,6 +385,164 @@ export default function FirstMoveStyles() {
 
 @keyframes fm-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 
+/* ── Das Instrument ──────────────────────────────────────────────────────── */
+/* Ein Gerät auf der Seite, kein Formular in einem Kasten. Es trägt eine Frage,
+   ein Feld, eine Handlung und zwei Zusagen. Alle Zustände der Prüfung laufen im
+   selben Rahmen ab, damit das Auge zwischen Eingabe, Verlauf und Ergebnis nicht
+   springt. Nur bestehende Tokens: Papier, Tinte, 1px-Linien, Acid als Akzent. */
+.fm-probe {
+  border: 1px solid var(--warm-black);
+  background: var(--surface-raised);
+  display: flex;
+  flex-direction: column;
+}
+.fm-probe-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fm-probe-k { display: inline-flex; align-items: center; gap: 9px; }
+.fm-probe-pip {
+  width: 6px; height: 6px; flex: none;
+  background: var(--signal);
+  animation: fm-pip 2.6s ease-in-out infinite;
+}
+@keyframes fm-pip { 50% { opacity: 0.28; } }
+/* Tinte auf Acid, nie Acid als Schriftfarbe. */
+.fm-probe-free {
+  background: var(--signal);
+  color: #11110f;
+  padding: 3px 7px;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+  flex: none;
+}
+
+.fm-probe-body { padding: 20px 16px 18px; display: flex; flex-direction: column; }
+.fm-probe-q {
+  display: block;
+  font-family: var(--font-body), sans-serif;
+  font-size: clamp(18px, 1.5vw, 21px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--ink-strong);
+}
+.fm-probe-sub {
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 8px 0 18px;
+}
+.fm-probe-input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  border-bottom: 1px solid var(--warm-black);
+  background: transparent;
+  font-family: var(--font-body), sans-serif;
+  font-size: 16px;
+  color: var(--ink-strong);
+  padding: 12px 2px;
+  min-height: 48px;
+}
+.fm-probe-input::placeholder { color: var(--text-faint); }
+.fm-probe-input:focus { outline: none; box-shadow: 0 1px 0 0 var(--signal); }
+
+.fm-probe-cta {
+  position: relative;
+  overflow: hidden;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 52px;
+  padding: 15px 18px;
+  border: 1px solid var(--warm-black);
+  background: var(--warm-black);
+  color: var(--paper);
+  font-family: var(--font-body), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  transition: background 200ms ease, color 200ms ease;
+}
+.fm-probe-cta-line {
+  position: absolute;
+  top: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 250ms cubic-bezier(.16,1,.3,1);
+}
+.fm-probe-cta:hover { background: transparent; color: var(--ink-strong); }
+.fm-probe-cta:hover .fm-probe-cta-line { transform: scaleX(1); }
+.fm-probe-cta-arrow { flex: none; font-size: 15px; transition: transform 200ms ease; }
+.fm-probe-cta:hover .fm-probe-cta-arrow { transform: translateX(4px); }
+
+.fm-probe-body .fm-error { margin-top: 12px; }
+
+.fm-probe-trust {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fm-probe-trust li {
+  display: grid;
+  grid-template-columns: 6px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-family: var(--font-body), sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.fm-probe-trust li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--signal);
+  transform: translateY(4px);
+}
+
+.fm-probe-reads { margin-top: 14px; }
+.fm-probe-reads > summary { padding: 12px 0 10px; font-size: 12.5px; color: var(--text-secondary); }
+.fm-probe-reads .fm-details-body { padding-bottom: 10px; }
+
+.fm-probe-target { display: flex; flex-direction: column; gap: 4px; margin: 0 0 16px; }
+.fm-probe-target-k {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fm-probe-target-v {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
+}
+.fm-probe-again { margin-top: 18px; align-self: flex-start; }
+
 /* Das Beispiel vor der ersten Prüfung. Etwas zurückgenommen, damit es nie mit
    einem echten Ergebnis verwechselt wird, aber vollständig lesbar. */
 .fm-example { display: flex; flex-direction: column; gap: 18px; }
@@ -811,7 +969,10 @@ export default function FirstMoveStyles() {
 }
 
 @media (max-width: 1024px) {
-  .fm-hero-grid { grid-template-columns: 1fr; gap: 32px; }
+  /* minmax(0, 1fr) statt 1fr: eine implizite min-content-Untergrenze hat den
+     Hero auf sehr schmalen Geräten (320px) über den Viewport hinausgedrückt und
+     die Seite waagerecht scrollbar gemacht. */
+  .fm-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .fm-hero-plate { order: -1; }
   .fm-hero-img { aspect-ratio: 16 / 9; }
   .fm-stage-body { grid-template-columns: 1fr; }

@@ -4,13 +4,14 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { productHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function TheShift() {
   const t = useTranslations();
   const ts = t.theShift;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = productHref(t.locale);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 

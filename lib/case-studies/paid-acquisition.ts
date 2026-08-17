@@ -31,6 +31,8 @@
 // invented January–December curve would be the one thing that makes a truthful
 // case study untrustworthy.
 
+import { PAID_PRODUCT_PATH } from "@/lib/links";
+
 export const PA_PATH = "/case-studies/paid-acquisition-at-scale";
 export const PA_INDEX_PATH = "/work";
 export const PA_ASSETS = "/case-studies/paid-acquisition";
@@ -243,7 +245,11 @@ export const PA_CONFIDENTIAL = {
 } as const;
 
 // ── Next step ────────────────────────────────────────────────────────────────
-export const PA_CTA_HREF = "/first-move";
+// Die Paid-Acquisition-Case-Study führt auf die Paid-Produktseite, nicht auf die
+// Master-Seite: derselbe Preis, derselbe Kaufweg, aber der Message Match bleibt
+// erhalten und die eingebettete Prüfung ist dort die Paid-Prüfung (Messsignale,
+// Consent, Konversionspfad, Formularreibung) statt der Search-Prüfung.
+export const PA_CTA_HREF = PAID_PRODUCT_PATH;
 export const PA_RELATED: { label: string; href: string }[] = [
   { label: "French Beret case study", href: "/case-studies/french-beret-ecommerce-seo" },
   { label: "How we work", href: "/services" },

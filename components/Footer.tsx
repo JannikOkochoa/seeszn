@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { productHref } from "@/lib/links";
 
 export default function Footer() {
   const t = useTranslations();
   const f = t.footer;
-  // Gleiche Logik wie im Header: deutsch in den Produkt-Kaufweg, englisch weiter
-  // auf die Sichtbarkeitsprüfung, solange es dort keine First-Move-Seite gibt.
-  const ctaHref = t.locale === "de" ? "/first-move" : "/en/diagnosis";
+  // Gleiche Logik wie im Header: generischer Produkt-CTA, also der Anfang der
+  // Produktseite. Ziele stehen in lib/links.
+  const ctaHref = productHref(t.locale);
 
   return (
     <footer className="ft-root" role="contentinfo">

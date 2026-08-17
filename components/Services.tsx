@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { scanHref } from "@/lib/links";
 import VisibilityField from "@/components/home/VisibilityField";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -18,7 +19,7 @@ const IMGS = [
 export default function Services() {
   const t = useTranslations();
   const s = t.homepageServices;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = scanHref(t.locale);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.05 });
 

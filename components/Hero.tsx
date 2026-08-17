@@ -12,6 +12,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { scanHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -53,7 +54,7 @@ const PARTICLES: Array<{
 export default function Hero() {
   const t = useTranslations();
   const h = t.hero;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = scanHref(t.locale);
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 

@@ -195,7 +195,9 @@ export const de: Translations = {
     legal: [
       { name: "Rechtliches", href: "/legal" },
       { name: "Datenschutz", href: "/privacy" },
-      { name: "Kontakt",     href: "/diagnosis" },
+      // Kontakt heißt im deutschen Baum: die verbindliche Anfrage am Ende des
+      // Kaufwegs. Es gibt keine eigenständige Scan-Seite mehr.
+      { name: "Kontakt",     href: "/first-move#start" },
       { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
     ],
     copy: "© 2026 Okri Holdings LLC",

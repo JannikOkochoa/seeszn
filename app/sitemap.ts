@@ -38,9 +38,10 @@ const deRoutes: Entry[] = [
   { path: "/case-studies/paid-acquisition-at-scale", priority: 0.9, changeFrequency: "monthly" },
   { path: "/insights", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about", priority: 0.6, changeFrequency: "monthly" },
-  // /diagnosis ist bewusst nicht mehr gelistet: die Seite bleibt als Werkzeug
-  // live, trägt aber seit der First-Move-Einführung noindex, damit es nur eine
-  // indexierbare deutsche Produktseite für diese Suchintention gibt.
+  // /diagnosis und /diagnosis/result existieren nicht mehr. Die deutsche
+  // Sichtbarkeitsprüfung ist jetzt ein Abschnitt der Produktseite
+  // (/first-move#sichtbarkeit-pruefen); die alten Routen zeigen per 301 dorthin.
+  // Umleitungsziele gehören nicht in eine Sitemap.
   // Insights / research
   { path: "/insights/was-ist-ki-sichtbarkeit", priority: 0.7, changeFrequency: "monthly" },
   { path: "/insights/was-ist-geo", priority: 0.7, changeFrequency: "monthly" },
@@ -62,6 +63,9 @@ const enRoutes: Entry[] = [
   { path: "/en/case-studies/seo-aio-tourism", priority: 0.6, changeFrequency: "monthly" },
   { path: "/en/insights", priority: 0.4, changeFrequency: "monthly" },
   { path: "/en/about", priority: 0.3, changeFrequency: "monthly" },
+  // Die englische Sichtbarkeitsprüfung bleibt gelistet: sie ist die einzige
+  // englische Konversionsfläche, solange es keine englische Produktseite gibt.
+  // Sie hat seit der Konsolidierung kein deutsches hreflang-Gegenstück mehr.
   { path: "/en/diagnosis", priority: 0.5, changeFrequency: "monthly" },
   { path: "/en/legal", priority: 0.1, changeFrequency: "yearly" },
   { path: "/en/privacy", priority: 0.1, changeFrequency: "yearly" },

@@ -11,6 +11,7 @@ import {
 import { useRef } from "react";
 import Image from "next/image";
 import { useTranslations } from "@/lib/i18n/context";
+import { scanHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -25,7 +26,7 @@ function fadeUp(delay: number) {
 export default function ServicesHero() {
   const t = useTranslations();
   const h = t.servicesPage.hero;
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = scanHref(t.locale);
   const reduced = useReducedMotion();
 
   const sectionRef = useRef<HTMLElement>(null);

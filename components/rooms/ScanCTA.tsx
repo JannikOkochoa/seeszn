@@ -10,6 +10,7 @@ import {
 import { useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/lib/i18n/context";
+import { productHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -39,7 +40,7 @@ export default function ScanCTA({
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const reduced = useReducedMotion();
   const t = useTranslations();
-  const diagHref = t.locale === "de" ? "/diagnosis" : "/en/diagnosis";
+  const diagHref = productHref(t.locale);
 
   // Final inhale — headline grows in, ghost word counter-drifts behind
   const { scrollYProgress } = useScroll({

@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+// Muss mit SCAN_ANCHOR aus lib/links.ts übereinstimmen. next.config wird außerhalb
+// der tsconfig-Pfadauflösung geladen, deshalb steht der Wert hier wörtlich.
+const SCAN_ANCHOR = "sichtbarkeit-pruefen";
+
 const nextConfig: NextConfig = {
   // Der private Client Room wird nicht mehr über die öffentliche robots.txt
   // ausgeschlossen — das hätte den Kundennamen neben einer anonymisierten Case
@@ -38,6 +42,43 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // ── Die eigenständige deutsche Sichtbarkeitsprüfung ──────────────────
+      // /diagnosis und /diagnosis/result waren eine zweite deutsche
+      // Konversionsfläche für dieselbe Absicht wie /first-move. Seit der
+      // Konsolidierung ist die Prüfung ein Mechanismus des Produkts und liegt im
+      // Abschnitt #sichtbarkeit-pruefen der Produktseite. Zwei Flächen, die um
+      // dieselbe Handlung konkurrieren, gibt es damit nicht mehr.
+      //
+      // Geprüft vor dem Umleiten: keine API-Logik hängt an diesen Pfaden
+      // (/api/scan bleibt bestehen und wird weiter von /en/diagnosis benutzt),
+      // kein Formular postet dorthin (die Ergebnis-Seite postet an /api/contact),
+      // keine externe Integration und keine Kampagne zeigt darauf, und das
+      // Tracking wertet keinen Pfadnamen aus.
+      //
+      // Ziel ist der Anker, nicht der Seitenanfang: wer /diagnosis aufruft, will
+      // prüfen, nicht lesen. Die Absicht bleibt so über den Wechsel erhalten.
+      //
+      // `statusCode: 301` statt `permanent: true` aus demselben Grund wie unten
+      // bei /cases: 308 ist gleichwertig, liest sich in Rank-Trackern und
+      // Logauswertungen aber wie eine Anomalie. Beides sind GET-Seiten.
+      //
+      // Query-Parameter werden von Next automatisch durchgereicht, der ?domain=
+      // einer geteilten Ergebnis-URL geht also nicht verloren.
+      { source: "/diagnosis", destination: `/first-move#${SCAN_ANCHOR}`, statusCode: 301 },
+      {
+        source: "/diagnosis/result",
+        destination: `/first-move#${SCAN_ANCHOR}`,
+        statusCode: 301,
+      },
+      // Direkt aufs Endziel, damit aus /de/diagnosis keine Kette über
+      // /diagnosis entsteht. Muss vor der allgemeinen /de-Regel stehen.
+      { source: "/de/diagnosis", destination: `/first-move#${SCAN_ANCHOR}`, statusCode: 301 },
+      {
+        source: "/de/diagnosis/result",
+        destination: `/first-move#${SCAN_ANCHOR}`,
+        statusCode: 301,
+      },
+
       // German moved from /de/* to the root. Permanently redirect the old
       // German URLs so existing links and indexed pages resolve cleanly.
       { source: "/de", destination: "/", permanent: true },

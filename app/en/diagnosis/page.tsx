@@ -8,13 +8,22 @@ import JsonLd from "@/components/seo/JsonLd";
 import { en } from "@/lib/i18n/en";
 import { buildMetadata, serviceSchema, breadcrumbSchema, faqSchema } from "@/lib/seo";
 
+// Die englische Sichtbarkeitsprüfung bleibt als eigenständige Fläche bestehen:
+// sie ist die einzige englische Konversionsfläche. Eine englische Produktseite
+// gibt es nicht, und Englischsprachige auf die deutsche /first-move zu schicken
+// wäre schlechter als das Werkzeug zu behalten.
+//
+// Kein altPath mehr: das deutsche Gegenstück /diagnosis existiert nicht mehr und
+// zeigt per 301 auf die Produktseite. Ein hreflang auf eine Weiterleitung ist ein
+// defektes hreflang, deshalb ist diese Seite jetzt self-canonical ohne Alternate.
+// Sobald eine englische Produktseite existiert, konsolidiert sie genauso wie die
+// deutsche und diese Route wird ebenfalls umgeleitet.
 export const metadata: Metadata = buildMetadata({
   title: "Check brand visibility: AI Visibility Diagnosis | SEESZN",
   description:
     "The SEESZN visibility diagnosis checks where your B2B brand is missing, misread or uncited in Google and AI answers like ChatGPT, Perplexity, Gemini and Google AI Overviews. Not a generic SEO audit: a GEO/AIO diagnosis with prioritized next steps.",
   path: "/en/diagnosis",
   locale: "en",
-  altPath: "/diagnosis",
 });
 
 export default function DiagnosisPage() {

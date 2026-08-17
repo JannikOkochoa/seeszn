@@ -7,6 +7,7 @@ import SignalAperture from "./SignalAperture";
 import LanguageSwitch from "./LanguageSwitch";
 import ScrollProgress from "./ScrollProgress";
 import { useTranslations } from "@/lib/i18n/context";
+import { productHref } from "@/lib/links";
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -23,10 +24,9 @@ function CtaButton({
 }) {
   const [hovered, setHovered] = useState(false);
   const t = useTranslations();
-  // Der deutsche Haupt-CTA führt in den Kaufweg des Produkts (First Move). Die
-  // englische Oberfläche hat noch keine First-Move-Seite und bleibt deshalb auf
-  // der Sichtbarkeitsprüfung, statt auf eine deutsche Seite zu springen.
-  const ctaHref = t.locale === "de" ? "/first-move" : "/en/diagnosis";
+  // "FIRST MOVE" ist ein generischer Produkt-CTA, kein Prüf-CTA: er führt an den
+  // Anfang der Produktseite, nicht an das Instrument. Ziele stehen in lib/links.
+  const ctaHref = productHref(t.locale);
 
   return (
     <Link

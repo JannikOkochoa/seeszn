@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { useRef } from "react";
 import { useTranslations } from "@/lib/i18n/context";
+import { scanHref } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -59,7 +60,7 @@ export default function DiagnosisCTA() {
         </motion.p>
 
         <motion.div {...anim(0.24)}>
-          <a href={t.locale === "de" ? "/diagnosis" : "/en/diagnosis"} className="dcta-cta">
+          <a href={scanHref(t.locale)} className="dcta-cta">
             {dc.cta} <span style={{ color: "var(--olive)" }}>→</span>
           </a>
         </motion.div>

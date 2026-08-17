@@ -3,6 +3,13 @@
 // ─── Sichtbarkeitsprüfung — intake instrument ─────────────────────────────────
 // Not a contact form. The user enters a brand, we run real free checks, and
 // they get a first reading before any email is asked for. Value first.
+//
+// Since the August 2026 consolidation this serves the ENGLISH surface only.
+// German visitors are not sent to a standalone scan page any more: on the German
+// side the check is a mechanism of the product page (/first-move, section
+// #sichtbarkeit-pruefen), so there is exactly one German conversion journey.
+// This component stays because there is no English product page yet; when one
+// ships, /en/diagnosis consolidates the same way and this file retires with it.
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +17,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useTranslations, useLocale } from "@/lib/i18n/context";
 import type { ScanResult, ScanError } from "@/lib/scan/types";
 import { sessionKeyFor } from "@/lib/scan/storage";
+import { EN_DIAGNOSIS_PATH } from "@/lib/links";
 
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
@@ -99,8 +107,9 @@ export default function IntakeForm() {
 
   function openResult() {
     if (!result) return;
-    const base = locale === "en" ? "/en/diagnosis/result" : "/diagnosis/result";
-    router.push(`${base}?domain=${encodeURIComponent(result.domain)}`);
+    // Es gibt nur noch eine Ergebnisfläche für dieses Werkzeug. Die deutsche
+    // Variante wurde mit der eigenständigen Scan-Seite eingezogen.
+    router.push(`${EN_DIAGNOSIS_PATH}/result?domain=${encodeURIComponent(result.domain)}`);
   }
 
   const gapLine =

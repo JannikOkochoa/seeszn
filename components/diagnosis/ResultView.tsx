@@ -18,6 +18,7 @@ import { useTranslations, useLocale } from "@/lib/i18n/context";
 import type { AiAnswerCheck, CategoryId, ScanResult, ScanStatus, ScoreCard } from "@/lib/scan/types";
 import { sessionKeyFor } from "@/lib/scan/storage";
 import { isCompanyEmail, isFreemail } from "@/lib/email/freemail";
+import { EN_DIAGNOSIS_PATH, scanHref } from "@/lib/links";
 
 type Load = "loading" | "ready" | "error";
 
@@ -88,7 +89,10 @@ export default function ResultView() {
     bootstrap();
   }, [rescan]);
 
-  const backHref = locale === "en" ? "/en/diagnosis" : "/diagnosis";
+  // Die Sichtbarkeitsprüfung existiert nur noch als englische Fläche. Im
+  // deutschen Baum ist die Prüfung ein Mechanismus der Produktseite, deshalb
+  // führt der Rückweg dort auf das eingebettete Instrument.
+  const backHref = locale === "en" ? EN_DIAGNOSIS_PATH : scanHref("de");
 
   if (load !== "ready" || !result) {
     return (
