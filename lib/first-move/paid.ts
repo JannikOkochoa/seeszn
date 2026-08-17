@@ -9,12 +9,21 @@
 // Diese Punkte brauchen Read-only-Zugriff und werden erst danach geprüft.
 //
 // Rauschregel: ein einzelnes Signal qualifiziert nie. Es braucht mindestens zwei
-// unabhängige Beobachtungen oder eine klare wirtschaftliche Relevanz plus eine
-// bestätigende Beobachtung.
+// unabhängige, direkt gemessene Beobachtungen.
+//
+// Seit der Paid-Validierung im August 2026 gilt zusätzlich: die ABWESENHEIT eines
+// öffentlich sichtbaren Mess-Tags oder einer bekannten Consent-Plattform ist kein
+// Beleg. Beides ist bei sauber gebauten Seiten der Normalfall, weil Tags über
+// einen Container, serverseitig oder erst nach Einwilligung laden. Vorher hat
+// genau diese Abwesenheit auf stripe.com, mailchimp.com und manufactum.de einen
+// Befund erzeugt. Der öffentliche Check kann die Messqualität nicht beurteilen,
+// nur den öffentlich sichtbaren Aufbau der Einstiegsseite. Messqualität ist ein
+// Read-only-Thema und steht so auch in READ_ONLY_UNLOCKS.
 
 import type { EvidenceItem, Level, PaidCategory, PaidFinding, SpendBand } from "./types";
 import type { PageSurface } from "./surface";
 import { MEASUREMENT_WEEKS_MAX, MEASUREMENT_WEEKS_MIN } from "./product";
+import { CONTENT_WORD_FLOOR, looksLikeHtmlDocument } from "./diagnosis";
 
 export interface PaidCheckInput {
   domain: string;
@@ -31,15 +40,6 @@ function ev(item: Omit<EvidenceItem, "id" | "observedAt">): EvidenceItem {
   counter += 1;
   return { id: `p${counter}`, observedAt: new Date().toISOString(), ...item };
 }
-
-/** Wirtschaftliches Gewicht des Budgetbands. Nur für Impact, nie für den Preis. */
-const BAND_WEIGHT: Record<SpendBand, number> = {
-  lt_10k: 1,
-  "10k_50k": 2,
-  "50k_250k": 3,
-  gt_250k: 4,
-  unknown: 1,
-};
 
 export const BAND_LABEL: Record<SpendBand, string> = {
   lt_10k: "unter 10.000 € pro Monat",
@@ -63,44 +63,35 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
   // nichts aussagen.
   if (landing.status !== 200) return null;
 
+  // Kein HTML-Dokument, keine Landingpage-Bewertung. Eine als text/plain
+  // ausgelieferte Datei hat weder Title noch Überschrift; "keine H1" wäre dort
+  // eine wahre und zugleich nichtssagende Aussage.
+  if (!looksLikeHtmlDocument(landing)) return null;
+
+  // Eine Seite, deren Text erst im Browser entsteht, liefert uns eine Hülle.
+  // Aus fehlender H1, fehlendem Formular und fehlendem Tag würden daraus drei
+  // "Defekte", die ausschließlich unser Leseverfahren beschreiben.
+  if (landing.wordCount < CONTENT_WORD_FLOOR) return null;
+
+  // ── Was wir öffentlich WIRKLICH messen können ───────────────────────────────
+  //
+  // Getrennt von dem, was wir öffentlich nur NICHT sehen können. Der Unterschied
+  // ist der ganze Punkt dieser Datei:
+  //
+  //   messbar        Es gibt kein Formular und keinen weiterführenden Pfad.
+  //                  Das Formular hat 14 Felder. Lighthouse meldet 31 von 100.
+  //   nicht sichtbar Kein Google-Ads-Tag im ausgelieferten HTML.
+  //                  Keine bekannte Consent-Plattform im HTML.
+  //
+  // Die zweite Gruppe ist der Normalfall bei sauber gebauten Seiten: Tags laufen
+  // über einen Container, serverseitig oder erst nach Einwilligung. Aus ihrer
+  // Abwesenheit einen Befund zu bauen hieß, jede zweite gut gebaute Landingpage
+  // zu beschuldigen. Sie zählt deshalb NIE als Beleg und erzeugt nie einen
+  // Befund; sie erscheint als Grenze der Prüfung in den Dimensionen.
   const signals: EvidenceItem[] = [];
-  let category: PaidCategory = "other";
+  const category: PaidCategory = "landing_page_mismatch";
 
-  const adsTag = landing.tagSignals.find((t) => t.startsWith("Google Ads"));
-  const anyGoogleTag = landing.tagSignals.some((t) => t.startsWith("Google"));
-
-  // 1) Öffentlich erkennbares Google-Ads-Messsignal.
-  if (!adsTag) {
-    signals.push(
-      ev({
-        source: "public_tag_signal",
-        type: "ads_conversion_tag_not_visible",
-        observation: anyGoogleTag
-          ? `Im ausgelieferten HTML ist ein Google-Tag-Container sichtbar (${landing.tagSignals.join(", ")}), aber kein Google-Ads-Conversion- oder Remarketing-Tag. Ob Conversions serverseitig oder über den Container laufen, ist öffentlich nicht erkennbar.`
-          : "Im ausgelieferten HTML ist kein Google-Tag und kein Google-Ads-Signal sichtbar. Womit Conversions gemessen werden, ist von außen nicht nachvollziehbar.",
-        scope: { urls: [landing.url] },
-        measuredValue: landing.tagSignals.length,
-        reproducible: true,
-      }),
-    );
-    category = "conversion_signal_quality";
-  }
-
-  // 2) Consent-Implementierung im Verhältnis zu den geladenen Tags.
-  if (landing.tagSignals.length > 0 && !landing.consentPlatform) {
-    signals.push(
-      ev({
-        source: "consent_signal",
-        type: "no_cmp_detected",
-        observation: `Es sind ${landing.tagSignals.length} Mess-Tags sichtbar, aber keine gängige Consent-Plattform im HTML erkennbar. Wie die Einwilligung die Messung steuert, lässt sich von außen nicht bestätigen.`,
-        scope: { urls: [landing.url] },
-        reproducible: true,
-      }),
-    );
-    if (category === "other") category = "conversion_signal_quality";
-  }
-
-  // 3) Konversionspfad auf der Einstiegsseite.
+  // 1) Konversionspfad auf der Einstiegsseite.
   const hasPath = landing.formCount > 0 || landing.internalLinks.length > 3;
   if (!hasPath) {
     signals.push(
@@ -113,10 +104,9 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
         reproducible: true,
       }),
     );
-    category = "landing_page_mismatch";
   }
 
-  // 4) Formularreibung. Nur wenn es wirklich ein Formular gibt: lose Felder
+  // 2) Formularreibung. Nur wenn es wirklich ein Formular gibt: lose Felder
   // gehören meist zu Suche oder Filtern und sagen über den Anfrageweg nichts.
   if (landing.formCount > 0 && (landing.inputCount >= 9 || landing.requiredInputCount >= 6)) {
     signals.push(
@@ -130,19 +120,18 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
         reproducible: true,
       }),
     );
-    if (category === "other") category = "landing_page_mismatch";
   }
 
-  // 5) Aussageklarheit der Einstiegsseite.
-  if (landing.h1.length !== 1) {
+  // 3) Aussageklarheit. Nur eine FEHLENDE H1 zählt. "Mehr als eine H1" hat
+  // technisch einwandfreie Seiten getroffen: stripe.com setzt zwei, mailchimp.com
+  // sechs, beide völlig legitim. Dieselbe Korrektur wie im Search-Klassifikator.
+  if (landing.h1.length === 0) {
     signals.push(
       ev({
         source: "landing_page",
         type: "message_clarity",
         observation:
-          landing.h1.length === 0
-            ? "Die Einstiegsseite hat keine H1. Das Versprechen der Seite ist weder für Nutzer noch maschinell eindeutig."
-            : `Die Einstiegsseite hat ${landing.h1.length} H1-Überschriften. Es gibt keine eindeutige Hauptaussage.`,
+          "Die Einstiegsseite liefert keine H1 aus. Das Versprechen der Seite ist weder für Nutzer noch maschinell eindeutig.",
         measuredValue: landing.h1.length,
         scope: { urls: [landing.url] },
         reproducible: true,
@@ -150,7 +139,7 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
     );
   }
 
-  // 6) Performance der Einstiegsseite, nur wenn wirklich gemessen.
+  // 4) Performance der Einstiegsseite, nur wenn wirklich gemessen.
   if (typeof input.performance === "number" && input.performance < 50) {
     signals.push(
       ev({
@@ -162,28 +151,38 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
         reproducible: true,
       }),
     );
-    if (category === "other") category = "landing_page_mismatch";
   }
 
-  // Rauschregel: unter zwei unabhängigen Beobachtungen entsteht kein Befund.
+  // Rauschregel: unter zwei unabhängigen, direkt gemessenen Beobachtungen
+  // entsteht kein Befund.
   if (signals.length < 2) return null;
 
-  const weight = BAND_WEIGHT[spendBand];
-  const impact: Level = weight >= 3 ? "high" : signals.length >= 3 ? "medium" : "medium";
+  // Der Impact folgt der Evidenz, nicht dem selbst angegebenen Budget. Aus einem
+  // eingetippten Budgetband einen höheren Schweregrad abzuleiten hieße, die
+  // wirtschaftliche Wirkung zu behaupten, die dieser Check gerade nicht messen
+  // kann. Das Band bleibt als Kontext im economicSignal stehen.
+  const impact: Level = signals.length >= 3 ? "high" : "medium";
+
+  // Der Titel benennt den stärksten wirklich gemessenen Defekt, nicht eine
+  // Gesamtbewertung der Paid-Aktivität. "Der Funnel konvertiert schlecht" wäre
+  // aus diesen Signalen nicht belegbar.
+  const types = new Set(signals.map((sig) => sig.type));
+  const title = types.has("conversion_path_absent")
+    ? "Auf der Einstiegsseite ist kein nächster Schritt erkennbar."
+    : types.has("landing_page_performance")
+      ? "Die Einstiegsseite zeigt einen messbaren Ladezeit-Engpass."
+      : types.has("form_friction")
+        ? "Das Formular der Einstiegsseite verlangt auffällig viele Felder."
+        : "Die Einstiegsseite liefert keine eindeutige Hauptaussage aus.";
 
   return {
     id: `fmp_${Date.now().toString(36)}`,
     route: "paid_acquisition",
     paidCategory: category,
     status: "qualified",
-    title:
-      category === "conversion_signal_quality"
-        ? "Das Messsignal hinter dem bezahlten Traffic ist öffentlich nicht nachvollziehbar."
-        : "Die Einstiegsseite trägt den bezahlten Traffic nicht sauber weiter.",
+    title,
     summary:
-      category === "conversion_signal_quality"
-        ? "Was der Account als Conversion zurückbekommt, entscheidet über Gebotssteuerung und Budgeteffizienz. Öffentlich ist dieses Signal auf der Einstiegsseite nicht belegbar. Das ist ein begründeter Anfangsverdacht, kein Account-Befund."
-        : "Der bezahlte Klick landet auf einer Seite, deren Weg zum nächsten Schritt öffentlich erkennbar unterbrochen oder unklar ist. Das wirkt vor jeder Account-Optimierung.",
+      "Der bezahlte Klick landet auf einer Seite, deren Aufbau an einer öffentlich messbaren Stelle nicht trägt. Das wirkt vor jeder Account-Optimierung. Über Kampagnen, Gebote, Suchbegriffe oder die tatsächliche Conversion Rate sagt dieser Befund nichts.",
     evidence: signals,
     publicEvidence: signals,
     impact,
@@ -195,32 +194,21 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
       source: "derived",
     },
     proposedFirstMove: {
-      interventionType:
-        category === "conversion_signal_quality"
-          ? "Conversion-Signal messbar und prüfbar machen"
-          : "Konversionspfad der Einstiegsseite begradigen",
-      title:
-        category === "conversion_signal_quality"
-          ? "Das Conversion-Signal messbar und prüfbar machen."
-          : "Den Konversionspfad der Einstiegsseite begradigen.",
+      interventionType: "Konversionspfad der Einstiegsseite begradigen",
+      title: "Den Konversionspfad der Einstiegsseite begradigen.",
       scope:
-        category === "conversion_signal_quality"
-          ? "Ein sauber definiertes primäres Conversion-Signal wird gesetzt, ausgelöst und gegengeprüft, inklusive Consent-Verhalten. Ein Signal, eine Seite, kein Account-Rebuild."
-          : "Auf der wichtigsten Einstiegsseite werden Aussage, primäre Handlung und Formular auf einen Pfad reduziert und gemessen. Eine Seite, kein Relaunch.",
-      implementationSurface: category === "conversion_signal_quality" ? "measurement" : "website",
+        "Auf der wichtigsten Einstiegsseite werden Aussage, primäre Handlung und Formular auf einen Pfad reduziert und gemessen. Eine Seite, kein Relaunch.",
+      implementationSurface: "website",
       implementationMode: "SEESZN_access",
       expectedHours: 12,
       bounded: true,
       reversibleOrControlled: true,
     },
     measurementHypothesis: {
-      metric:
-        category === "conversion_signal_quality"
-          ? "Anteil der Klicks mit gültigem Conversion-Signal"
-          : "Conversion Rate der Einstiegsseite aus bezahltem Traffic",
+      metric: "Conversion Rate der Einstiegsseite aus bezahltem Traffic",
       baselineDefinition:
         "Google Ads und Web-Analytics, gleicher Zeitraum und gleiche Kampagnenauswahl vor und nach der Umsetzung.",
-      expectedDirection: category === "conversion_signal_quality" ? "clarify" : "increase",
+      expectedDirection: "increase",
       measurementWindowWeeksMin: MEASUREMENT_WEEKS_MIN,
       measurementWindowWeeksMax: MEASUREMENT_WEEKS_MAX,
       attributionLimitations: [

@@ -11,6 +11,8 @@
 // interne Auswertung, `PublicFinding` das, was ein kostenloser Scan zeigen darf.
 // Nur die öffentliche Sicht verlässt den Server.
 
+import type { PublicDiagnosis } from "./diagnosis";
+
 /** Diagnosepfad. Keine kaufbare Auswahl, nur die Richtung der ersten Suche. */
 export type FirstMoveRoute = "search" | "ai_search" | "paid_acquisition" | "unsure";
 
@@ -253,6 +255,12 @@ export interface ScanResultEvent {
   route: FirstMoveRoute;
   /** Immer die öffentliche Sicht. Die vollständige Auswertung bleibt am Server. */
   finding: PublicFinding | null;
+  /**
+   * Der Diagnosezustand samt gelesener Evidenz. Immer gesetzt, wenn der Scan
+   * durchgelaufen ist: auch ohne Empfehlung hat der Besucher ein Ergebnis.
+   * Enthält nur aggregierte Beobachtungen, nie URLs.
+   */
+  diagnosis: PublicDiagnosis;
   /** Gesetzt, wenn kein Befund die Qualifikationsschwelle erreicht hat. */
   notQualifiedReason?: string;
   at: string;

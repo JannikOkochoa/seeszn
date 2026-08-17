@@ -1,0 +1,60 @@
+{
+ "input": "arbeitsagentur.de",
+ "landing": {
+  "url": "https://www.arbeitsagentur.de/",
+  "status": 200,
+  "title": "Startseite | Bundesagentur für Arbeit",
+  "metaDescription": "Die Website rund ums Leben. Das Webportal der Bundesagentur für Arbeit möchte Menschen in jeder Lebenslage unterstützen. Jetzt informieren!",
+  "canonical": "https://www.arbeitsagentur.de/privatpersonen",
+  "noindex": false,
+  "h1": [
+   "Hauptnavigation",
+   "Willkommen, wie können wir Sie weiterbringen?",
+   "Bildnachweis"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 349,
+  "internalLinks": [
+   "https://www.arbeitsagentur.de/",
+   "https://www.arbeitsagentur.de/gebaerdensprache",
+   "https://www.arbeitsagentur.de/leichte-sprache",
+   "https://www.arbeitsagentur.de/privatpersonen",
+   "https://www.arbeitsagentur.de/unternehmen",
+   "https://www.arbeitsagentur.de/institutionen",
+   "https://www.arbeitsagentur.de/bildung?quelle=startseite-meinberuf-20260713",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden",
+   "https://www.arbeitsagentur.de/jobsuche",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/arbeitslosengeld/ihre-schritte-wenn-sie-arbeitslos-werden",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/arbeitslosengeld",
+   "https://www.arbeitsagentur.de/grundsicherung",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/arbeitslosengeld/finanzielle-hilfen/kurzarbeitergeld-arbeitnehmer",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/arbeitslosengeld/finanzielle-hilfen/insolvenzgeld-arbeitnehmer",
+   "https://www.arbeitsagentur.de/jobsuche/?pavsuche=true",
+   "https://www.arbeitsagentur.de/arbeitslos-arbeit-finden/arbeitslosengeld/existenzgruendung-gruendungszuschuss",
+   "https://www.arbeitsagentur.de/bildung/",
+   "https://www.arbeitsagentur.de/bildung/noch-planlos",
+   "https://www.arbeitsagentur.de/bildung/welche-ausbildung-welches-studium-passt",
+   "https://www.arbeitsagentur.de/bildung/berufe-und-wege"
+  ],
+  "externalLinks": 7,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 3,
+  "hreflangLocales": [
+   "de",
+   "en",
+   "es"
+  ],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 166786
+ },
+ "performance": null
+}

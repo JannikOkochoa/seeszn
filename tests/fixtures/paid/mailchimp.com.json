@@ -1,0 +1,69 @@
+{
+ "input": "mailchimp.com",
+ "landing": {
+  "url": "https://mailchimp.com/",
+  "status": 200,
+  "title": "Email & SMS Marketing Platform | Mailchimp",
+  "metaDescription": "Utilize real-time user behavior data and artificial intelligence to convert more customers. Easy to use, get started for free!",
+  "canonical": "https://mailchimp.com/",
+  "noindex": false,
+  "h1": [
+   "Email & SMS marketing minus the learning curve",
+   "Effortless growth powered by your data",
+   "AI-powered marketing that brings your customers to you",
+   "An easier way to keep your community engaged",
+   "Connect with clients and grow your business faster",
+   "Get to know your audience and drive more ROI"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 3287,
+  "internalLinks": [
+   "https://mailchimp.com/",
+   "https://mailchimp.com/pricing/marketing/",
+   "https://mailchimp.com/whats-new/",
+   "https://mailchimp.com/solutions/marketing-tools-restaurants/",
+   "https://mailchimp.com/solutions/marketing-tools-hotels/",
+   "https://mailchimp.com/solutions/marketing-tools-nonprofits/",
+   "https://mailchimp.com/solutions/ecommerce-marketing-tools/",
+   "https://mailchimp.com/solutions/email-sms-small-businesses/",
+   "https://mailchimp.com/solutions/email-sms-professional-services/",
+   "https://mailchimp.com/solutions/email-sms-growing-businesses/",
+   "https://mailchimp.com/solutions/email-marketing-platform/",
+   "https://mailchimp.com/solutions/ai-tools/",
+   "https://mailchimp.com/solutions/marketing-automation-tools/",
+   "https://mailchimp.com/solutions/content-creation-tools/",
+   "https://mailchimp.com/solutions/social-media-marketing-tools/",
+   "https://mailchimp.com/solutions/analytics-reporting-tools/",
+   "https://mailchimp.com/solutions/lead-generation-platform/",
+   "https://mailchimp.com/solutions/digital-marketing-templates/",
+   "https://mailchimp.com/audience/",
+   "https://mailchimp.com/features/"
+  ],
+  "externalLinks": 35,
+  "jsonLdTypes": [
+   "Service",
+   "Organization"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": false,
+  "hreflangCount": 7,
+  "hreflangLocales": [
+   "en",
+   "es",
+   "fr",
+   "pt-br",
+   "de",
+   "it"
+  ],
+  "formCount": 5,
+  "inputCount": 31,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": "OneTrust",
+  "ogSiteName": "Mailchimp",
+  "htmlBytes": 569412
+ },
+ "performance": null
+}

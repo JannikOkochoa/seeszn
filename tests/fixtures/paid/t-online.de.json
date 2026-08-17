@@ -1,0 +1,60 @@
+{
+ "input": "https://t-online.de",
+ "landing": {
+  "url": "https://www.t-online.de/",
+  "status": 200,
+  "title": "News & E-Mail bei t-online | Politik, Sport, Unterhaltung & Ratgeber",
+  "metaDescription": "Aktuelle News aus Politik, Sport, Unterhaltung, Wirtschaft & Finanzen | Ratgeber Leben, Gesundheit und Heim & Garten | E-Mail und Shopping bei t-online.",
+  "canonical": "https://www.t-online.de/",
+  "noindex": false,
+  "h1": [
+   "t-online - Anständig. Informiert."
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 3,
+  "wordCount": 2158,
+  "internalLinks": [
+   "https://www.t-online.de/wetter",
+   "https://www.t-online.de/finanzen/boerse/indizes/dax/de0008469008/",
+   "https://www.t-online.de/",
+   "https://www.t-online.de/region/",
+   "https://www.t-online.de/nachrichten/",
+   "https://www.t-online.de/nachrichten/deutschland/",
+   "https://www.t-online.de/themen/landtagswahl-sachsen-anhalt/",
+   "https://www.t-online.de/themen/landtagswahl-mecklenburg-vorpommern/",
+   "https://www.t-online.de/themen/abgeordnetenhauswahl-berlin/",
+   "https://www.t-online.de/nachrichten/ausland/",
+   "https://www.t-online.de/nachrichten/tagesanbruch/",
+   "https://www.t-online.de/kolumnisten/",
+   "https://www.t-online.de/nachrichten/ukraine/",
+   "https://www.t-online.de/sport/",
+   "https://www.t-online.de/themen/transfermarkt/",
+   "https://www.t-online.de/sport/fussball/bundesliga/",
+   "https://www.t-online.de/sport/fussball/2-bundesliga/",
+   "https://www.t-online.de/sport/fussball/",
+   "https://www.t-online.de/sport/fussball/frauenfussball/",
+   "https://www.t-online.de/sport/fussball/champions-league/"
+  ],
+  "externalLinks": 61,
+  "jsonLdTypes": [
+   "WebPage",
+   "SearchAction",
+   "WebSite",
+   "NewsMediaOrganization",
+   "ImageObject"
+  ],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 3,
+  "inputCount": 7,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "t-online",
+  "htmlBytes": 899254
+ },
+ "performance": null
+}

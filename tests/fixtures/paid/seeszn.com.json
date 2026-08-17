@@ -1,0 +1,63 @@
+{
+ "input": "seeszn.com",
+ "landing": {
+  "url": "https://seeszn.com/",
+  "status": 200,
+  "title": "KI-Sichtbarkeit & SEO für B2B-Marken | SEESZN",
+  "metaDescription": "SEESZN macht B2B-Marken sichtbar in Google, ChatGPT, Perplexity, Gemini und AI Overviews. SEO, GEO, AIO, Content-Architektur und KI-Sichtbarkeits-Audits.",
+  "canonical": "https://seeszn.com",
+  "noindex": false,
+  "h1": [
+   "Die KI kennt deine Marke nicht."
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 1,
+  "wordCount": 912,
+  "internalLinks": [
+   "https://seeszn.com/",
+   "https://seeszn.com/services",
+   "https://seeszn.com/work",
+   "https://seeszn.com/insights",
+   "https://seeszn.com/about",
+   "https://seeszn.com/first-move",
+   "https://seeszn.com/research/absence-index",
+   "https://seeszn.com/ki-sichtbarkeit-agentur",
+   "https://seeszn.com/geo-agentur",
+   "https://seeszn.com/aio-optimierung",
+   "https://seeszn.com/chatgpt-sichtbarkeit",
+   "https://seeszn.com/b2b-seo-agentur",
+   "https://seeszn.com/ki-sichtbarkeits-audit",
+   "https://seeszn.com/legal",
+   "https://seeszn.com/privacy",
+   "https://seeszn.com/brief/ki-sichtbarkeit"
+  ],
+  "externalLinks": 0,
+  "jsonLdTypes": [
+   "Organization",
+   "Country",
+   "OfferCatalog",
+   "Offer",
+   "Service",
+   "WebSite",
+   "FAQPage",
+   "Question",
+   "Answer"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": true,
+  "hreflangCount": 3,
+  "hreflangLocales": [
+   "de-de",
+   "en"
+  ],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "SEESZN",
+  "htmlBytes": 169159
+ },
+ "performance": null
+}

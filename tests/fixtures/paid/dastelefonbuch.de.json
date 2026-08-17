@@ -1,0 +1,57 @@
+{
+ "input": "https://www.dastelefonbuch.de",
+ "landing": {
+  "url": "https://www.dastelefonbuch.de/",
+  "status": 200,
+  "title": "Das Telefonbuch >> Mehr als Adressen und Telefonnummern!",
+  "metaDescription": "ll▶ ☎ Telefonnummern ✉ Adressen ✓ Firmeninfos ➟ Jetzt Firmen und Personen finden! ☎ Das Telefonbuch ✓ Ihre Nr. 1 für Adressen und Telefonnummern",
+  "canonical": null,
+  "noindex": false,
+  "h1": [
+   "Einfach finden was Sie suchen"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 329,
+  "internalLinks": [
+   "https://www.dastelefonbuch.de/",
+   "https://www.dastelefonbuch.de/werben",
+   "https://www.dastelefonbuch.de/Barrierefrei",
+   "https://www.dastelefonbuch.de/up/auth",
+   "https://www.dastelefonbuch.de/R%C3%BCckw%C3%A4rts-Suche",
+   "https://www.dastelefonbuch.de/Postleitzahlen",
+   "https://www.dastelefonbuch.de/Vorwahlen",
+   "https://www.dastelefonbuch.de/L%C3%A4ndervorwahlen",
+   "https://www.dastelefonbuch.de/Auslandsauskunft",
+   "https://www.dastelefonbuch.de/Benzinpreise",
+   "https://www.dastelefonbuch.de/Notruf",
+   "https://www.dastelefonbuch.de/Apotheken-Notdienste",
+   "https://www.dastelefonbuch.de/Geldautomaten",
+   "https://www.dastelefonbuch.de/N%C3%A4he/Massagepraxis",
+   "https://www.dastelefonbuch.de/N%C3%A4he/Personalausweis%20Beantragen",
+   "https://www.dastelefonbuch.de/Firmeneintrag",
+   "https://www.dastelefonbuch.de/Apps",
+   "https://www.dastelefonbuch.de/Telefonbuch/Berlin",
+   "https://www.dastelefonbuch.de/Telefonbuch/Bochum",
+   "https://www.dastelefonbuch.de/Telefonbuch/Bremen"
+  ],
+  "externalLinks": 13,
+  "jsonLdTypes": [
+   "WebSite",
+   "Organization"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 1,
+  "inputCount": 2,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 132718
+ },
+ "performance": null
+}

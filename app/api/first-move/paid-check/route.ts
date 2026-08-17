@@ -104,6 +104,7 @@ export async function POST(request: Request): Promise<Response> {
           url: outcome.url,
           route: "paid_acquisition",
           finding: publicFinding,
+          diagnosis: outcome.diagnosis,
           notQualifiedReason: outcome.notQualifiedReason,
           at: new Date().toISOString(),
         });

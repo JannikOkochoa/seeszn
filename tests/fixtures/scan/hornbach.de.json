@@ -1,0 +1,44 @@
+{
+ "domain": "hornbach.de",
+ "home": {
+  "url": "https://www.hornbach.de/",
+  "status": 406,
+  "title": "HORNBACH - Oops!",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": false,
+  "h1": [],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 15,
+  "internalLinks": [
+   "https://www.hornbach.de/"
+  ],
+  "externalLinks": 0,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 2955
+ },
+ "samples": [],
+ "robots": {
+  "state": "missing",
+  "sitemapUrls": [],
+  "blocksAiCrawlers": []
+ },
+ "sitemap": {
+  "state": "missing",
+  "urls": [],
+  "partial": false
+ },
+ "sitemapUrlCount": 0
+}

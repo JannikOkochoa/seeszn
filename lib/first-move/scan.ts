@@ -9,6 +9,7 @@
 import { normalizeUrl, SafeFetchError } from "@/lib/scan/fetcher";
 import { readPage, readRobots, readSitemap, type PageSurface } from "./surface";
 import { qualify } from "./qualify";
+import { diagnose, diagnosePaid, type PublicDiagnosis } from "./diagnosis";
 import { qualifyPublicPaid } from "./paid";
 import type {
   FirstMoveFinding,
@@ -98,7 +99,13 @@ async function readSamples(urls: URL[]): Promise<PageSurface[]> {
 export interface ScanOutcome {
   domain: string;
   url: string;
+  /**
+   * Nur gesetzt, wenn die Diagnose den Zustand `clear_signal` trägt. Ein
+   * Kandidat, der die Empfehlungsschwelle nicht erreicht, verlässt die
+   * Orchestrierung nicht: seine Beobachtungen stecken in den Dimensionen.
+   */
   finding: FirstMoveFinding | null;
+  diagnosis: PublicDiagnosis;
   notQualifiedReason?: string;
 }
 
@@ -153,12 +160,16 @@ export async function runFirstMoveScan(
   const samples = await readSamples(picks);
   state(emit, "public_pages_read", "Relevante Seiten verglichen", `${samples.length + 1} Seiten geprüft`);
 
-  const indexable = samples.filter((p) => p.status === 200 && !p.noindex).length;
+  // Dieselbe Grundmenge wie in der Diagnose-Dimension "Technische Basis":
+  // Startseite plus Stichprobe. Zwei verschiedene Nenner für dieselbe Aussage
+  // hätten Protokoll und Ergebnis auseinanderlaufen lassen.
+  const readable = [home, ...samples].filter((p) => p.status === 200);
+  const indexable = readable.filter((p) => !p.noindex).length;
   state(
     emit,
     "technical_signals_checked",
     "Technische Signale geprüft",
-    `${indexable} von ${samples.length} Unterseiten indexierbar`,
+    `${indexable} von ${readable.length} geprüften Seiten indexierbar`,
   );
 
   const templates = new Set(
@@ -172,30 +183,63 @@ export async function runFirstMoveScan(
   );
 
   state(emit, "finding_qualifying", "Signale werden abgeglichen");
-  const finding = qualify({ route, domain: displayDomain, home, samples, robots, sitemap });
+  const candidate = qualify({ route, domain: displayDomain, home, samples, robots, sitemap });
 
-  if (!finding) {
-    const blocked = home.status !== 200;
-    state(
-      emit,
-      "not_qualified",
-      blocked ? "Oberfläche nicht öffentlich lesbar" : "Kein starkes öffentliches Signal",
-      blocked
-        ? `Die Startseite antwortet mit ${home.status}`
-        : "Die öffentlichen Signale reichen für eine Empfehlung nicht aus",
-    );
-    return {
-      domain: displayDomain,
-      url: home.url,
-      finding: null,
-      notQualifiedReason: blocked
-        ? `Die Startseite antwortet auf einen automatisierten Abruf mit Status ${home.status}. Was ein Bot-Schutz ausliefert, sagt über die echte Seite nichts aus, deshalb leiten wir daraus keinen Befund ab. Wir prüfen das manuell.`
-        : "Die öffentlich lesbaren Signale zeigen kein Muster, das stark genug für eine Empfehlung wäre.",
-    };
+  // Die Diagnose entscheidet, ob ein Kandidat eine öffentliche Empfehlung trägt.
+  // Sie läuft immer, auch wenn qualify() nichts gefunden hat: ein Scan ohne
+  // Empfehlung ist trotzdem ein Scan mit Ergebnis.
+  const diagnosis = diagnose({ home, samples, robots, sitemap }, candidate);
+  const finding = diagnosis.state === "clear_signal" ? candidate : null;
+
+  state(
+    emit,
+    diagnosis.state === "clear_signal" ? "finding_ready" : "not_qualified",
+    FINAL_STATE_LABEL[diagnosis.state],
+    finding ? finding.title : finalStateDetail(diagnosis),
+  );
+
+  return {
+    domain: displayDomain,
+    url: home.url,
+    finding,
+    diagnosis,
+    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis),
+  };
+}
+
+/** Die letzte Zeile des Protokolls. Sie benennt den Zustand, nicht ein Urteil. */
+const FINAL_STATE_LABEL: Record<PublicDiagnosis["state"], string> = {
+  clear_signal: "Relevantes Signal erkannt",
+  mixed_signal: "Signalbild abgeglichen",
+  healthy_public_foundation: "Öffentliche Basis geprüft",
+  insufficient_public_evidence: "Öffentliche Datenlage begrenzt",
+};
+
+/**
+ * Warum es so ausgegangen ist, in einem Satz und aus dem Gemessenen abgeleitet.
+ * Nur bei fehlender Evidenz nennt der Satz die konkrete Grenze.
+ */
+function finalStateDetail(d: PublicDiagnosis): string {
+  const { readablePages, contentPages } = d.evidenceBase;
+  switch (d.state) {
+    case "clear_signal":
+      return "Ein Muster trägt eine Empfehlung.";
+    case "healthy_public_foundation":
+      return `${readablePages} Seiten gelesen, keine gemessene Schwäche in den öffentlichen Signalen`;
+    case "mixed_signal":
+      return `${readablePages} Seiten gelesen, kein einzelner Engpass dominiert`;
+    case "insufficient_public_evidence":
+      switch (d.limitation) {
+        case "surface_not_readable":
+          return "Die Oberfläche ist für einen automatisierten Abruf nicht lesbar";
+        case "pages_without_content":
+          return `nur ${contentPages} von ${readablePages} gelesenen Seiten liefern Text im HTML aus`;
+        case "too_few_pages":
+          return `nur ${readablePages} Seite(n) öffentlich lesbar`;
+        default:
+          return "zu wenige belastbar messbare Signale";
+      }
   }
-
-  state(emit, "finding_ready", "Relevantes Signal erkannt", finding.title);
-  return { domain: displayDomain, url: home.url, finding };
 }
 
 // ─── Paid Stufe 1 ─────────────────────────────────────────────────────────────
@@ -229,6 +273,7 @@ export interface PaidOutcome {
   domain: string;
   url: string;
   finding: PaidFinding | null;
+  diagnosis: PublicDiagnosis;
   notQualifiedReason?: string;
 }
 
@@ -275,7 +320,7 @@ export async function runPaidPublicCheck(
   }
 
   state(emit, "finding_qualifying", "Signale werden abgeglichen");
-  const finding = qualifyPublicPaid({
+  const candidate = qualifyPublicPaid({
     domain: displayDomain,
     spendBand,
     landing,
@@ -283,27 +328,18 @@ export async function runPaidPublicCheck(
     performance,
   });
 
-  if (!finding) {
-    const blocked = landing.status !== 200;
-    state(
-      emit,
-      "not_qualified",
-      blocked ? "Einstiegsseite nicht öffentlich lesbar" : "Kein starkes öffentliches Signal",
-      blocked
-        ? `Die Einstiegsseite antwortet mit ${landing.status}`
-        : "Die öffentlich sichtbaren Signale sind unauffällig",
-    );
-    return {
-      domain: displayDomain,
-      url: landing.url,
-      finding: null,
-      notQualifiedReason: blocked
-        ? `Die Einstiegsseite antwortet auf einen automatisierten Abruf mit Status ${landing.status}. Aus einer Bot-Schutzseite leiten wir keinen Befund ab. Wir prüfen das manuell.`
-        : "Die öffentlich sichtbaren Paid-Signale dieser Einstiegsseite sind unauffällig. Alles Weitere liegt im Konto und ist ohne lesenden Zugriff nicht seriös bewertbar.",
-    };
-  }
+  const diagnosis = diagnosePaid({ landing, performance }, candidate);
+  const finding = diagnosis.state === "clear_signal" ? candidate : null;
 
-  state(emit, "public_finding_ready", "Relevantes Signal erkannt", finding.title);
+  state(
+    emit,
+    diagnosis.state === "clear_signal" ? "public_finding_ready" : "not_qualified",
+    FINAL_STATE_LABEL[diagnosis.state],
+    finding ? finding.title : finalStateDetail(diagnosis),
+  );
+
+  // Der Hinweis auf die Kontoebene gilt in jedem Ausgang: was öffentlich nicht
+  // sichtbar ist, bleibt auch bei unauffälliger Einstiegsseite unsichtbar.
   state(
     emit,
     "read_only_required",
@@ -311,7 +347,13 @@ export async function runPaidPublicCheck(
     "Suchbegriffe, Attribution und Budgetverteilung sind öffentlich nicht lesbar",
   );
 
-  return { domain: displayDomain, url: landing.url, finding };
+  return {
+    domain: displayDomain,
+    url: landing.url,
+    finding,
+    diagnosis,
+    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis),
+  };
 }
 
 /** Mappt Transportfehler auf die Fehlercodes des Contracts. */

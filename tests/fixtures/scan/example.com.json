@@ -1,0 +1,44 @@
+{
+ "domain": "example.com",
+ "home": {
+  "url": "https://example.com/",
+  "status": 200,
+  "title": "Example Domain",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": false,
+  "h1": [
+   "Example Domain"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 21,
+  "internalLinks": [],
+  "externalLinks": 1,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 559
+ },
+ "samples": [],
+ "robots": {
+  "state": "missing",
+  "sitemapUrls": [],
+  "blocksAiCrawlers": []
+ },
+ "sitemap": {
+  "state": "missing",
+  "urls": [],
+  "partial": false
+ },
+ "sitemapUrlCount": 0
+}

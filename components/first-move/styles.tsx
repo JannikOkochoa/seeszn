@@ -563,6 +563,49 @@ export default function FirstMoveStyles() {
 }
 .fm-badge--example { border-style: dashed; color: var(--text-secondary); }
 
+.fm-badge-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+/* Sicherheit der Interpretation. Bewusst als Text und nicht als Prozentwert:
+   eine Zahl würde eine Kalibrierung behaupten, die es hier nicht gibt. */
+.fm-confidence {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Ablesung: was der Scan beobachtet hat ───────────────────────────────── */
+/* Kein Ampelsystem, keine Punktzahl, kein Grün und kein Rot. Die Bewertung
+   sitzt in einer 2px-Marke am linken Rand, die Aussage steht im Satz. */
+.fm-readout { display: flex; flex-direction: column; margin: 0; }
+.fm-readout > div {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 4px 16px;
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  padding: 10px 0 10px 12px;
+  border-left: 2px solid var(--line-strong);
+}
+.fm-readout > div:first-child { border-top: none; }
+.fm-readout > div[data-verdict="solid"] { border-left-color: var(--signal); }
+.fm-readout > div[data-verdict="mixed"] { border-left-color: var(--line-strong); }
+.fm-readout > div[data-verdict="weak"] { border-left-color: var(--ink-strong); }
+.fm-readout dt {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fm-readout dd {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-body);
+  max-width: 62ch;
+}
+
 .fm-finding-title {
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
@@ -1006,6 +1049,7 @@ export default function FirstMoveStyles() {
   .fm-metrics { max-width: none; }
   .fm-metric-v { font-size: 22px; }
   .fm-ev { grid-template-columns: 1fr; gap: 4px; }
+  .fm-readout > div { grid-template-columns: 1fr; gap: 3px; }
   .fm-header-meta { display: none; }
 }
 

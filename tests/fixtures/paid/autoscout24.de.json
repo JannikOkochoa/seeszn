@@ -1,0 +1,56 @@
+{
+ "input": "https://www.autoscout24.de",
+ "landing": {
+  "url": "https://www.autoscout24.de/",
+  "status": 403,
+  "title": "Diese Seite ist für dich nicht verfügbar",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": true,
+  "h1": [
+   "Diese Seite ist für dich nicht verfügbar"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 1,
+  "wordCount": 143,
+  "internalLinks": [
+   "https://www.autoscout24.de/",
+   "https://www.autoscout24.de/lst/c/suv-pick-up",
+   "https://www.autoscout24.de/lst/c/limousine",
+   "https://www.autoscout24.de/lst/c/kombi",
+   "https://www.autoscout24.de/lst/c/kleinwagen",
+   "https://www.autoscout24.de/lst/c/van-kleinbus",
+   "https://www.autoscout24.de/lst/c/coupe",
+   "https://www.autoscout24.de/lst/c/cabrio",
+   "https://www.autoscout24.de/lst/c/transporter",
+   "https://www.autoscout24.de/auto/mercedes-benz/",
+   "https://www.autoscout24.de/auto/volkswagen/",
+   "https://www.autoscout24.de/auto/bmw/",
+   "https://www.autoscout24.de/auto/audi/",
+   "https://www.autoscout24.de/auto/ford/",
+   "https://www.autoscout24.de/auto/skoda/",
+   "https://www.autoscout24.de/auto/opel/",
+   "https://www.autoscout24.de/auto/porsche/",
+   "https://www.autoscout24.de/auto-verkaufen/",
+   "https://www.autoscout24.de/auto/",
+   "https://www.autoscout24.de/informieren/ratgeber/alles-zur-finanzierung/"
+  ],
+  "externalLinks": 12,
+  "jsonLdTypes": [
+   "Organization"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 4,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 74736
+ },
+ "performance": null
+}

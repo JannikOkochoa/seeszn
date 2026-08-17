@@ -1,0 +1,59 @@
+{
+ "input": "basecamp.com",
+ "landing": {
+  "url": "https://basecamp.com/",
+  "status": 200,
+  "title": "Basecamp",
+  "metaDescription": "Trusted by millions, Basecamp puts everything you need to get work done in one place. It’s the calm, organized way to manage projects, work with clients, and communicate company-wide.",
+  "canonical": "https://basecamp.com/",
+  "noindex": false,
+  "h1": [
+   "The refreshingly straightforward project management system that’s rock-solid and easy to use."
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 1088,
+  "internalLinks": [
+   "https://basecamp.com/",
+   "https://basecamp.com/pricing",
+   "https://basecamp.com/5",
+   "https://basecamp.com/features",
+   "https://basecamp.com/paths",
+   "https://basecamp.com/agents",
+   "https://basecamp.com/reliable",
+   "https://basecamp.com/live",
+   "https://basecamp.com/customers",
+   "https://basecamp.com/support/testimonials",
+   "https://basecamp.com/classes",
+   "https://basecamp.com/apps",
+   "https://basecamp.com/integrations",
+   "https://basecamp.com/books",
+   "https://basecamp.com/about",
+   "https://basecamp.com/small",
+   "https://basecamp.com/underdogs",
+   "https://basecamp.com/overkill",
+   "https://basecamp.com/guides/how-we-communicate",
+   "https://basecamp.com/guides/how-we-make-decisions"
+  ],
+  "externalLinks": 9,
+  "jsonLdTypes": [
+   "WebPage",
+   "WebSite",
+   "ItemList",
+   "SiteNavigationElement"
+  ],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 1,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "Basecamp",
+  "htmlBytes": 53917
+ },
+ "performance": null
+}

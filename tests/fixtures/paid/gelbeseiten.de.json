@@ -1,0 +1,56 @@
+{
+ "input": "https://www.gelbeseiten.de",
+ "landing": {
+  "url": "https://www.gelbeseiten.de/",
+  "status": 200,
+  "title": "Gelbe Seiten | Das richtige Unternehmen finden",
+  "metaDescription": "Gelbe Seiten - Das Branchenbuch für Deutschland gibt Auskunft zu Telefonnummern, Adressen, Faxnummern und Firmen-Infos in den Einträgen der Unternehmen nach Branchen",
+  "canonical": "https://www.gelbeseiten.de",
+  "noindex": false,
+  "h1": [
+   "Dienstleister schneller finden"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 468,
+  "internalLinks": [
+   "https://www.gelbeseiten.de/",
+   "https://www.gelbeseiten.de/gsservice/barrierefrei",
+   "https://www.gelbeseiten.de/branchenbuch",
+   "https://www.gelbeseiten.de/projektplaner/energieberatung",
+   "https://www.gelbeseiten.de/starteintrag",
+   "https://www.gelbeseiten.de/starteintrag/findentry?step=1",
+   "https://www.gelbeseiten.de/gsservice/werbung",
+   "https://www.gelbeseiten.de/gsservice/verlage",
+   "https://www.gelbeseiten.de/gsservice/echtzeit",
+   "https://www.gelbeseiten.de/ratgeber/gl",
+   "https://www.gelbeseiten.de/ratgeber/hg",
+   "https://www.gelbeseiten.de/ratgeber/rf",
+   "https://www.gelbeseiten.de/gsservice/machergeschichten",
+   "https://www.gelbeseiten.de/gsservice/alexaskill",
+   "https://www.gelbeseiten.de/gsservice/mobil",
+   "https://www.gelbeseiten.de/ratgeber/hg/garten-im-mai-diese-gartenarbeiten-liegen-im-wonnemonat-an",
+   "https://www.gelbeseiten.de/ratgeber/gl/corona-erkaeltung-oder-grippe-unterschiede-kennen-symptome-richtig-deuten",
+   "https://www.gelbeseiten.de/branchenbuch/branche/heizung%20%26%20sanit%c3%a4r",
+   "https://www.gelbeseiten.de/branchenbuch/branche/arzt",
+   "https://www.gelbeseiten.de/branchenbuch/branche/zahnarzt"
+  ],
+  "externalLinks": 9,
+  "jsonLdTypes": [
+   "Organization"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 1,
+  "inputCount": 7,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "Gelbe Seiten",
+  "htmlBytes": 83200
+ },
+ "performance": null
+}

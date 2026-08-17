@@ -1,0 +1,33 @@
+{
+ "input": "https://motherfuckingwebsite.com",
+ "landing": {
+  "url": "https://motherfuckingwebsite.com/",
+  "status": 200,
+  "title": "Motherfucking Website",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": false,
+  "h1": [
+   "This is a motherfucking website."
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 1,
+  "wordCount": 554,
+  "internalLinks": [],
+  "externalLinks": 0,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 4903
+ },
+ "performance": null
+}

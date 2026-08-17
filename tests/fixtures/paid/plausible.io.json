@@ -1,0 +1,56 @@
+{
+ "input": "plausible.io",
+ "landing": {
+  "url": "https://plausible.io/",
+  "status": 200,
+  "title": "Plausible Analytics | Simple, privacy-friendly Google Analytics alternative",
+  "metaDescription": "Plausible is a lightweight and open-source Google Analytics alternative. Your website data is 100% yours and the privacy of your visitors is respected.",
+  "canonical": "https://plausible.io/",
+  "noindex": false,
+  "h1": [
+   "Easy to use and privacy-friendly Google Analytics alternative"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 1,
+  "wordCount": 1313,
+  "internalLinks": [
+   "https://plausible.io/",
+   "https://plausible.io/simple-web-analytics",
+   "https://plausible.io/lightweight-web-analytics",
+   "https://plausible.io/privacy-focused-web-analytics",
+   "https://plausible.io/open-source-website-analytics",
+   "https://plausible.io/eu-hosted-web-analytics",
+   "https://plausible.io/for-ecommerce",
+   "https://plausible.io/for-saas",
+   "https://plausible.io/for-freelancers-agencies",
+   "https://plausible.io/for-bloggers-creators",
+   "https://plausible.io/white-label-web-analytics",
+   "https://plausible.io/enterprise-web-analytics",
+   "https://plausible.io/vs-google-analytics",
+   "https://plausible.io/migrate-from-google-analytics",
+   "https://plausible.io/vs-matomo",
+   "https://plausible.io/vs-cloudflare-web-analytics",
+   "https://plausible.io/docs",
+   "https://plausible.io/blog",
+   "https://plausible.io/tools",
+   "https://plausible.io/status"
+  ],
+  "externalLinks": 16,
+  "jsonLdTypes": [
+   "WebSite"
+  ],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 3,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "Plausible Analytics",
+  "htmlBytes": 76101
+ },
+ "performance": null
+}

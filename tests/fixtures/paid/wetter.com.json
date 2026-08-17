@@ -1,0 +1,70 @@
+{
+ "input": "https://www.wetter.com",
+ "landing": {
+  "url": "https://www.wetter.com/",
+  "status": 200,
+  "title": "Wetter, Wettervorhersage & Wetterbericht | wetter.com",
+  "metaDescription": "wetter.com ▶ Aktuelles Wetter & 16-Tages Wettervorhersage für Ihren Ort ▶ Mit Regenradar ✓ Wetterwarnungen ✓ Satellitenbildern ✓",
+  "canonical": "https://www.wetter.com/",
+  "noindex": false,
+  "h1": [
+   "Wetter für Deutschland heute"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 2641,
+  "internalLinks": [
+   "https://www.wetter.com/",
+   "https://www.wetter.com/$%7B%20seoString%20%7D",
+   "https://www.wetter.com/gesundheit/pollenflug/",
+   "https://www.wetter.com/deutschland/EUDE.html",
+   "https://www.wetter.com/oesterreich/EUAT.html",
+   "https://www.wetter.com/schweiz/EUCH.html",
+   "https://www.wetter.com/europa/EU.html",
+   "https://www.wetter.com/unwetterwarnungen/deutschland/",
+   "https://www.wetter.com/unwetterwarnungen/oesterreich/",
+   "https://www.wetter.com/unwetterwarnungen/schweiz/",
+   "https://www.wetter.com/europa/bodensee/TRSM00000195.html",
+   "https://www.wetter.com/spanien/balearen/mallorca/TRSM00000194.html",
+   "https://www.wetter.com/spanien/canarias/teneriffa/TRSM00000231.html",
+   "https://www.wetter.com/deutschland/baden-wuerttemberg/schwarzwald/TRSM00000221.html",
+   "https://www.wetter.com/europa/allgaeuer-alpen/TRSM00000139.html",
+   "https://www.wetter.com/spanien/canarias/gran-canaria/TRSM00000159.html",
+   "https://www.wetter.com/europa/costa-brava/TRSM00000143.html",
+   "https://www.wetter.com/europa/ostseekueste/TRSM00000207.html",
+   "https://www.wetter.com/klima_und_umwelt/",
+   "https://www.wetter.com/klima_und_umwelt/10000-tage-trend/"
+  ],
+  "externalLinks": 18,
+  "jsonLdTypes": [
+   "ItemList",
+   "VideoObject",
+   "WebPage",
+   "ImageObject",
+   "Thing",
+   "WebSite",
+   "SearchAction",
+   "Organization"
+  ],
+  "hasOrganizationSchema": true,
+  "hasFaqSchema": false,
+  "hreflangCount": 5,
+  "hreflangLocales": [
+   "de-at",
+   "de-ch",
+   "de-de",
+   "pl-pl"
+  ],
+  "formCount": 2,
+  "inputCount": 2,
+  "requiredInputCount": 2,
+  "tagSignals": [
+   "Google Tag Manager"
+  ],
+  "consentPlatform": "Usercentrics",
+  "ogSiteName": "wetter.com",
+  "htmlBytes": 494789
+ },
+ "performance": null
+}

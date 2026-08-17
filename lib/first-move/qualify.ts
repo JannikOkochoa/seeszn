@@ -22,6 +22,20 @@ import type {
 } from "./types";
 import type { PageSurface, RobotsResult, SitemapResult } from "./surface";
 import { MEASUREMENT_WEEKS_MAX, MEASUREMENT_WEEKS_MIN } from "./product";
+import { CONTENT_WORD_FLOOR } from "./diagnosis";
+
+/**
+ * Seiten, deren Textkörper wirklich im ausgelieferten HTML steht.
+ *
+ * Eine rein clientseitig gerenderte Seite liefert eine Hülle von rund 50 Wörtern
+ * ohne H1 aus. Ohne diesen Filter entsteht daraus ein "Template-Defekt über alle
+ * Seiten" mit hohem Impact, der ausschließlich unser Leseverfahren beschreibt
+ * und über die Website nichts aussagt. Jede Kandidatenregel, die über die
+ * Struktur von Seiten urteilt, arbeitet deshalb auf dieser Menge.
+ */
+function contentPages(samples: PageSurface[]): PageSurface[] {
+  return samples.filter((p) => p.status === 200 && p.wordCount >= CONTENT_WORD_FLOOR);
+}
 
 export interface QualifyInput {
   route: FirstMoveRoute;
@@ -108,6 +122,32 @@ function hasCommercialIntent(t: Set<string>): boolean {
  */
 const PRODUCT_DETAIL_PATH = /\/(products?|produkt|produkte|artikel|item|dp|sku)\//i;
 
+/**
+ * Sprachfassungen derselben Seite. Sie tragen naturgemäß dieselbe Absicht und
+ * sind kein Relevanzproblem, sondern gewollt.
+ *
+ * Ohne diesen Ausschluss hat der Scan auf gnu.org "2 Seiten konkurrieren um
+ * dieselbe kommerzielle Absicht" gemeldet: gemeint waren / und /home.en.html
+ * neben den Fassungen home.de/es/fr/el/fa.html. Eine Konsolidierung wäre dort
+ * genau der falsche Rat gewesen.
+ *
+ * Erkannt werden die beiden üblichen Muster: ein Sprachpräfix im Pfad
+ * (/de/, /en-gb/) und ein Sprachsuffix im Dateinamen (home.de.html).
+ */
+const LOCALE_SEGMENT = /^[a-z]{2}(-[a-z]{2})?$/i;
+const LOCALE_FILE_SUFFIX = /\.[a-z]{2}(-[a-z]{2})?\.(html?|php)$/i;
+
+function isLocaleVariant(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    if (LOCALE_FILE_SUFFIX.test(path)) return true;
+    const first = path.split("/").filter(Boolean)[0] ?? "";
+    return LOCALE_SEGMENT.test(first);
+  } catch {
+    return false;
+  }
+}
+
 /** Letztes Pfadsegment ohne Endung, klein geschrieben. */
 function slug(url: string): string {
   try {
@@ -163,12 +203,12 @@ const LEVEL_SCORE: Record<Level, number> = { low: 1, medium: 2, high: 3 };
  */
 function candidateCompetingIntent(input: QualifyInput): Candidate | null {
   const brand = brandTokenSet(input.domain, input.home);
-  const pages = input.samples.filter(
+  const pages = contentPages(input.samples).filter(
     (p) =>
-      p.status === 200 &&
       !p.noindex &&
       (p.title || p.h1.length > 0) &&
-      !PRODUCT_DETAIL_PATH.test(new URL(p.url).pathname),
+      !PRODUCT_DETAIL_PATH.test(new URL(p.url).pathname) &&
+      !isLocaleVariant(p.url),
   );
   if (pages.length < 3) return null;
 
@@ -182,7 +222,7 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
     .filter((s) => s.core.size >= 2);
   if (signatures.length < 3) return null;
 
-  let best: { pages: PageSurface[]; score: number } | null = null;
+  let best: { pages: PageSurface[]; score: number; commercial: boolean } | null = null;
   for (let i = 0; i < signatures.length; i++) {
     const group = [signatures[i]];
     for (let j = i + 1; j < signatures.length; j++) {
@@ -216,10 +256,16 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
 
     const commercial = distinct.some((g) => hasCommercialIntent(g.sig));
     const score = distinct.length + (commercial ? 1 : 0);
-    if (!best || score > best.score) best = { pages: distinct.map((g) => g.page), score };
+    if (!best || score > best.score) {
+      best = { pages: distinct.map((g) => g.page), score, commercial };
+    }
   }
 
+  // Ein Zweiercluster reicht nur, wenn die Seiten erkennbar kommerzielle Absicht
+  // tragen. Der Befund behauptet "dieselbe kommerzielle Absicht"; zwei
+  // themengleiche Seiten ohne jedes kommerzielle Signal tragen diesen Satz nicht.
   if (!best || best.pages.length < 2) return null;
+  if (best.pages.length < 3 && !best.commercial) return null;
 
   // Interne Verlinkung als zweites unabhängiges Signal: wie oft verweist die
   // Startseite auf die einzelnen konkurrierenden Seiten.
@@ -406,10 +452,14 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
  * Verlangt zwei unabhängige Bedingungen über mindestens drei Seiten.
  */
 function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
-  const pages = input.samples.filter((p) => p.status === 200);
+  const pages = contentPages(input.samples);
   if (pages.length < 4) return null;
 
-  const badH1 = pages.filter((p) => p.h1.length !== 1);
+  // Nur eine FEHLENDE H1 zählt. "Mehr als eine H1" war die frühere Bedingung und
+  // hat technisch einwandfreie Übersichts- und Listenseiten getroffen, die
+  // legitim mehrere H1 setzen. Auf stripe.com hätte das jede geprüfte Seite als
+  // defekt markiert.
+  const badH1 = pages.filter((p) => p.h1.length === 0);
   const titles = pages.map((p) => (p.title ?? "").trim().toLowerCase()).filter(Boolean);
   const dupTitles = titles.length - new Set(titles).size;
   const descs = pages.map((p) => (p.metaDescription ?? "").trim().toLowerCase()).filter(Boolean);
@@ -421,7 +471,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
       ev({
         source: "public_html",
         type: "h1_structure",
-        observation: `${badH1.length} von ${pages.length} geprüften Seiten haben keine oder mehrere H1. Die Hauptaussage der Seite ist maschinell nicht eindeutig.`,
+        observation: `${badH1.length} von ${pages.length} geprüften Seiten liefern keine H1 aus. Die Hauptaussage der Seite ist maschinell nicht eindeutig.`,
         measuredValue: `${badH1.length}/${pages.length}`,
         scope: { urls: badH1.slice(0, 6).map((p) => p.url) },
         reproducible: true,
@@ -491,7 +541,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
 
 /** D) AI Search: die Oberfläche ist für Antwortsysteme schwer verwertbar. */
 function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
-  const pages = input.samples.filter((p) => p.status === 200);
+  const pages = contentPages(input.samples);
   if (pages.length < 3) return null;
 
   const signals: EvidenceItem[] = [];
@@ -553,17 +603,31 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
 
   if (signals.length < 2) return null;
 
+  // Die Aussage muss zur Messung passen. Eine Domain, die genau einen Crawler
+  // sperrt, ist nicht "von Antwortsystemen ausgeschlossen". daringfireball.net
+  // sperrt nur PerplexityBot; der absolute Satz wäre dort schlicht falsch.
+  const blocked = input.robots.blocksAiCrawlers.length;
+  const broadBlock = blocked >= 2;
+
   return {
     route: "ai_search",
-    title: strong
-      ? "Antwortsysteme sind vom Lesen der Inhalte ausgeschlossen."
-      : "Die Inhalte sind für Antwortsysteme schwer zitierbar.",
+    title: !strong
+      ? "Die Inhalte sind für Antwortsysteme schwer zitierbar."
+      : broadBlock
+        ? "Mehrere Antwortsysteme sind vom Lesen der Inhalte ausgeschlossen."
+        : "Ein Antwortsystem ist vom Lesen der Inhalte ausgeschlossen.",
     summary: strong
-      ? "Die Sperre in der robots.txt und die Struktur der Seiten wirken zusammen: die Marke kann in Antworten von ChatGPT, Gemini, Perplexity und AI Overviews weder gelesen noch als Quelle geführt werden."
+      ? `Die robots.txt sperrt ${blocked === 1 ? "ein Antwortsystem" : `${blocked} Antwortsysteme`} vollständig, und die geprüften Seiten enthalten kaum abgrenzbare Antwortblöcke. In genau diesen Systemen kann die Marke nicht als Quelle geführt werden.`
       : "Die geprüften Seiten enthalten keine klar abgegrenzten, belegten Antwortblöcke und keinen eindeutig benannten Absender. Antwortsysteme können daraus keine zitierfähige Passage bilden.",
     evidence: signals,
-    impact: strong ? "high" : "medium",
-    confidence: strong ? "high" : "medium",
+    impact: strong ? (broadBlock ? "high" : "medium") : "medium",
+    // Ohne Crawler-Sperre stützt sich dieser Kandidat ausschließlich auf das
+    // FEHLEN von Signalen: keine Frageüberschrift, kein Absender, wenig Text.
+    // Daraus lässt sich ein Muster vermuten, aber kein Engpass diagnostizieren.
+    // `low` heißt hier deshalb nicht "schwaches Signal", sondern: diese Aussage
+    // trägt keine öffentliche Empfehlung. Die Beobachtungen bleiben erhalten und
+    // laufen über die Dimension "Antwortstruktur" ins Ergebnis.
+    confidence: strong ? "high" : "low",
     effort: strong ? "low" : "medium",
     move: {
       interventionType: strong

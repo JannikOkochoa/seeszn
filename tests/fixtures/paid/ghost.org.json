@@ -1,0 +1,58 @@
+{
+ "input": "ghost.org",
+ "landing": {
+  "url": "https://ghost.org/",
+  "status": 200,
+  "title": "Ghost: The best open source blog & newsletter platform",
+  "metaDescription": "Beautiful, modern publishing with email newsletters and paid subscriptions built-in. Used by Platformer, 404Media, Lever News, Tangle, The Browser, and thousands more.",
+  "canonical": null,
+  "noindex": false,
+  "h1": [
+   "Turn your audience into a business ."
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 880,
+  "internalLinks": [
+   "https://ghost.org/",
+   "https://ghost.org/creators/",
+   "https://ghost.org/publishers/",
+   "https://ghost.org/business/",
+   "https://ghost.org/marketplace/",
+   "https://ghost.org/resources/",
+   "https://ghost.org/themes/",
+   "https://ghost.org/help/",
+   "https://ghost.org/integrations/",
+   "https://ghost.org/changelog/",
+   "https://ghost.org/experts/",
+   "https://ghost.org/about/",
+   "https://ghost.org/pricing/",
+   "https://ghost.org/6/",
+   "https://ghost.org/integrations/geckoboard/",
+   "https://ghost.org/integrations/discourse/",
+   "https://ghost.org/integrations/imgur/",
+   "https://ghost.org/integrations/mailchimp/",
+   "https://ghost.org/integrations/pinterest/",
+   "https://ghost.org/integrations/helpscout/"
+  ],
+  "externalLinks": 22,
+  "jsonLdTypes": [
+   "WebSite",
+   "WebPage",
+   "ImageObject"
+  ],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": "Ghost - The Professional Publishing Platform",
+  "htmlBytes": 121257
+ },
+ "performance": null
+}

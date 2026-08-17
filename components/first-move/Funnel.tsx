@@ -37,9 +37,12 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { track } from "@/lib/first-move/analytics";
 import {
-  NO_SIGNAL_BODY,
-  NO_SIGNAL_LABEL,
-  NO_SIGNAL_TITLE,
+  CONFIDENCE_LABEL,
+  DIAGNOSIS_COPY,
+  LIMITATION_BODY,
+  OBSERVATIONS_LABEL,
+  PAID_DIAGNOSIS_COPY,
+  PAID_LIMITATION_BODY,
   PUBLIC_EVIDENCE_LABEL,
   PUBLIC_INTERVENTION_LABEL,
   PUBLIC_SIGNAL_LABEL,
@@ -56,6 +59,7 @@ import {
 } from "@/lib/first-move/product";
 import { SPEND_BANDS } from "@/lib/first-move/types";
 import { SCAN_ANCHOR } from "@/lib/links";
+import type { PublicDiagnosis } from "@/lib/first-move/diagnosis";
 import type {
   ApprovalPath,
   Complexity,
@@ -202,7 +206,12 @@ export default function FirstMoveFunnel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [log, setLog] = useState<ScanStateEvent[]>([]);
   const [finding, setFinding] = useState<PublicFinding | null>(null);
-  const [emptyReason, setEmptyReason] = useState("");
+  /**
+   * Der Diagnosezustand des letzten Laufs. Er trägt das Ergebnis auch dann,
+   * wenn es keine Empfehlung gibt: ein Scan ohne Befund ist kein Scan ohne
+   * Ergebnis.
+   */
+  const [diagnosis, setDiagnosis] = useState<PublicDiagnosis | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [errorAt, setErrorAt] = useState<Entry>("instrument");
   const [scannedDomain, setScannedDomain] = useState("");
@@ -266,7 +275,7 @@ export default function FirstMoveFunnel({
   const resetForNewScan = useCallback(() => {
     setLog([]);
     setFinding(null);
-    setEmptyReason("");
+    setDiagnosis(null);
     setErrorMsg("");
     setEmailOpen(false);
     setSent(null);
@@ -349,21 +358,32 @@ export default function FirstMoveFunnel({
               setPhase("error");
             } else if (event.type === "result") {
               setScannedDomain(event.domain);
+              setDiagnosis(event.diagnosis);
               if (event.finding) {
                 setFinding(event.finding);
                 setComplexity(event.finding.suggestedComplexity ?? null);
                 setPhase("result");
-                track("public_scan_complete", { surface: variant, qualified: true });
+              } else {
+                setPhase("empty");
+              }
+              // Ein Scan ist immer abgeschlossen, auch ohne Empfehlung. Die
+              // Auswertung unterscheidet jetzt, WIE er ausgegangen ist, statt
+              // nur ob eine Empfehlung entstanden ist.
+              track("public_scan_complete", {
+                surface: variant,
+                qualified: event.finding !== null,
+                diagnosis: event.diagnosis.state,
+                interpretation_confidence: event.diagnosis.confidence,
+                readable_pages: event.diagnosis.evidenceBase.readablePages,
+                limitation: event.diagnosis.limitation,
+              });
+              if (event.finding) {
                 track("finding_view", {
                   surface: variant,
                   route: event.finding.route,
                   impact: event.finding.impact,
                   confidence: event.finding.confidence,
                 });
-              } else {
-                setEmptyReason(event.notQualifiedReason ?? "");
-                setPhase("empty");
-                track("public_scan_complete", { surface: variant, qualified: false });
               }
             }
           }
@@ -555,6 +575,24 @@ export default function FirstMoveFunnel({
   const idle = phase === "idle" || phase === "error";
   const settled = phase === "result" || phase === "empty";
 
+  /**
+   * Texte des Zustands, den die Diagnose gemeldet hat. Der Paid Check liest nur
+   * eine Einstiegsseite und bekommt deshalb engere Sätze: er darf über den
+   * Aufbau der Seite sprechen, nicht über die Wirtschaftlichkeit der Kampagnen.
+   */
+  const stateCopy = diagnosis
+    ? (isPaid ? PAID_DIAGNOSIS_COPY : DIAGNOSIS_COPY)[diagnosis.state]
+    : null;
+  const limitationBody = isPaid ? PAID_LIMITATION_BODY : LIMITATION_BODY;
+  /**
+   * Nur die Dimensionen, die wirklich messbar waren. Eine Dimension mit
+   * "unknown" wurde nicht beurteilt und darf deshalb auch nicht so aussehen,
+   * als hätten wir sie geprüft.
+   */
+  const measuredDimensions = diagnosis
+    ? diagnosis.dimensions.filter((d) => d.verdict !== "unknown")
+    : [];
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
@@ -661,15 +699,13 @@ export default function FirstMoveFunnel({
               {phase === "scanning" ? "Prüfung läuft" : "Öffentliche Prüfung"}
             </span>
             <h2 id="fm-stage-h" className="fm-stage-title">
-              {phase === "result"
-                ? PUBLIC_SIGNAL_LABEL
-                : phase === "empty"
-                  ? NO_SIGNAL_LABEL
-                  : phase === "scanning"
-                    ? `Wir lesen ${scannedDomain || "die Oberfläche"}`
-                    : isPaid
-                      ? "Zuerst der öffentliche Befund, dann der Account"
-                      : "Zuerst der Befund, dann die Umsetzung"}
+              {settled && stateCopy
+                ? stateCopy.label
+                : phase === "scanning"
+                  ? `Wir lesen ${scannedDomain || "die Oberfläche"}`
+                  : isPaid
+                    ? "Zuerst der öffentliche Befund, dann der Account"
+                    : "Zuerst der Befund, dann die Umsetzung"}
             </h2>
           </div>
 
@@ -855,7 +891,12 @@ export default function FirstMoveFunnel({
 
               {phase === "result" && finding ? (
                 <>
-                  <span className="fm-badge">{PUBLIC_SIGNAL_LABEL}</span>
+                  <div className="fm-badge-row">
+                    <span className="fm-badge">{PUBLIC_SIGNAL_LABEL}</span>
+                    <span className="fm-confidence">
+                      Öffentliche Lesung · {CONFIDENCE_LABEL[finding.confidence]}
+                    </span>
+                  </div>
                   <h3 className="fm-finding-title">{finding.title}</h3>
                   {finding.summary ? <p className="fm-serif">{finding.summary}</p> : null}
 
@@ -896,6 +937,32 @@ export default function FirstMoveFunnel({
 
                   <p className="fm-block-v fm-verify">{PUBLIC_VERIFY_LINE}</p>
 
+                  {/* Beobachtungen, die nicht zum Befund gehören, aber gemessen
+                      wurden. Sie zeigen, dass die Prüfung mehr gesehen hat als
+                      den einen Punkt, und wo die Grundlage trägt. */}
+                  {measuredDimensions.length ? (
+                    <details
+                      className="fm-details"
+                      onToggle={(e) => {
+                        if ((e.currentTarget as HTMLDetailsElement).open) {
+                          track("evidence_expand", { surface: variant, scope: "readout" });
+                        }
+                      }}
+                    >
+                      <summary>{OBSERVATIONS_LABEL}</summary>
+                      <div className="fm-details-body">
+                        <dl className="fm-readout">
+                          {measuredDimensions.map((d) => (
+                            <div key={d.id} data-verdict={d.verdict}>
+                              <dt>{d.label}</dt>
+                              <dd>{d.observation}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    </details>
+                  ) : null}
+
                   {/* Read-only erscheint erst, wenn ein echter öffentlicher Befund steht. */}
                   {isPaid && finding.requiresReadOnly ? (
                     <details
@@ -935,7 +1002,7 @@ export default function FirstMoveFunnel({
 
                   <div className="fm-actions">
                     <button type="button" className="fm-btn" onClick={goToOffer}>
-                      First Move prüfen
+                      {stateCopy?.cta ?? "First Move prüfen"}
                     </button>
                     <button
                       type="button"
@@ -949,17 +1016,49 @@ export default function FirstMoveFunnel({
                 </>
               ) : null}
 
-              {phase === "empty" ? (
+              {/* Kein Befund heißt nicht: kein Ergebnis. Gemischtes Bild,
+                  solide Basis und zu dünne Datenlage sind drei verschiedene
+                  Wahrheiten und bekommen drei verschiedene Antworten. */}
+              {phase === "empty" && diagnosis && stateCopy ? (
                 <>
-                  <span className="fm-badge">{NO_SIGNAL_LABEL}</span>
-                  <h3 className="fm-finding-title">{NO_SIGNAL_TITLE}</h3>
-                  {emptyReason ? <p className="fm-block-v">{emptyReason}</p> : null}
-                  <p className="fm-block-v">{NO_SIGNAL_BODY}</p>
+                  <div className="fm-badge-row">
+                    <span className="fm-badge">{stateCopy.label}</span>
+                    {/* Sicherheit der Interpretation, nicht Stärke eines Befunds.
+                        Sie sagt, wie belastbar die Lesung ist, und löscht die
+                        Beobachtungen nicht aus. */}
+                    <span className="fm-confidence">
+                      Öffentliche Lesung · {CONFIDENCE_LABEL[diagnosis.confidence]}
+                    </span>
+                  </div>
+                  <h3 className="fm-finding-title">{stateCopy.title}</h3>
+                  <p className="fm-serif">
+                    {diagnosis.limitation
+                      ? limitationBody[diagnosis.limitation]
+                      : stateCopy.body}
+                  </p>
+
+                  {/* Die Beobachtungen, auf denen der Zustand beruht. Genau die,
+                      die auch wirklich gemessen wurden: der Besucher soll den
+                      Weg vom Protokoll links zur Aussage rechts nachvollziehen
+                      können. */}
+                  {measuredDimensions.length ? (
+                    <div className="fm-block">
+                      <span className="fm-block-k">{OBSERVATIONS_LABEL}</span>
+                      <dl className="fm-readout">
+                        {measuredDimensions.map((d) => (
+                          <div key={d.id} data-verdict={d.verdict}>
+                            <dt>{d.label}</dt>
+                            <dd>{d.observation}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ) : null}
+
+                  <p className="fm-block-v fm-verify">{stateCopy.limits}</p>
 
                   <fieldset className="fm-channel">
-                    <legend className="fm-channel-legend">
-                      Wo merkst du das Problem aktuell am stärksten?
-                    </legend>
+                    <legend className="fm-channel-legend">{stateCopy.question}</legend>
                     <div className="fm-channel-opts">
                       {CHANNEL_OPTIONS.map((opt) => (
                         <button
@@ -982,7 +1081,15 @@ export default function FirstMoveFunnel({
                       bedeutet, macht den Zustand nur unruhig. */}
                   <div className="fm-actions">
                     <button type="button" className="fm-btn" onClick={goToOffer}>
-                      First Move trotzdem prüfen
+                      {stateCopy.cta}
+                    </button>
+                    <button
+                      type="button"
+                      className="fm-link-secondary"
+                      onClick={() => setEmailOpen((v) => !v)}
+                      aria-expanded={emailOpen}
+                    >
+                      Ergebnis per E-Mail senden
                     </button>
                   </div>
                 </>

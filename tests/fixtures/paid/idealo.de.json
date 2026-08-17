@@ -1,0 +1,31 @@
+{
+ "input": "https://www.idealo.de",
+ "landing": {
+  "url": "https://www.idealo.de/",
+  "status": 403,
+  "title": "idealo",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": false,
+  "h1": [],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 40,
+  "internalLinks": [],
+  "externalLinks": 2,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 3888
+ },
+ "performance": null
+}

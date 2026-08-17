@@ -1,0 +1,48 @@
+{
+ "input": "posthog.com",
+ "landing": {
+  "url": "https://posthog.com/",
+  "status": 200,
+  "title": "PostHog – We make your product self-driving",
+  "metaDescription": "PostHog automatically diagnoses problems, fixes bugs, and generates pull requests – all without you having to prompt it.",
+  "canonical": "https://posthog.com/",
+  "noindex": false,
+  "h1": [],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 49,
+  "internalLinks": [
+   "https://posthog.com/pricing",
+   "https://posthog.com/",
+   "https://posthog.com/self-driving",
+   "https://posthog.com/context-warehouse",
+   "https://posthog.com/docs",
+   "https://posthog.com/demo",
+   "https://posthog.com/talk-to-a-human",
+   "https://posthog.com/about",
+   "https://posthog.com/changelog",
+   "https://posthog.com/handbook",
+   "https://posthog.com/merch",
+   "https://posthog.com/careers",
+   "https://posthog.com/trash"
+  ],
+  "externalLinks": 1,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 3,
+  "hreflangLocales": [
+   "en",
+   "ko"
+  ],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 899972
+ },
+ "performance": null
+}

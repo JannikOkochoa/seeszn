@@ -1,0 +1,37 @@
+{
+ "input": "https://www.gutenberg.org/cache/epub/84/pg84-images.html",
+ "landing": {
+  "url": "https://www.gutenberg.org/cache/epub/84/pg84-images.html",
+  "status": 200,
+  "title": "Frankenstein | Project Gutenberg",
+  "metaDescription": null,
+  "canonical": null,
+  "noindex": false,
+  "h1": [
+   "Frankenstein;"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 0,
+  "wordCount": 73913,
+  "internalLinks": [
+   "https://www.gutenberg.org/",
+   "https://www.gutenberg.org/ebooks/84",
+   "https://www.gutenberg.org/donate/"
+  ],
+  "externalLinks": 0,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 0,
+  "hreflangLocales": [],
+  "formCount": 0,
+  "inputCount": 0,
+  "requiredInputCount": 0,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 466046
+ },
+ "performance": null
+}

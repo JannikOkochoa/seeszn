@@ -115,6 +115,9 @@ export async function POST(request: Request): Promise<Response> {
           url: outcome.url,
           route: picked,
           finding: publicFinding,
+          // Die Diagnose enthält nur aggregierte Beobachtungen, keine URLs und
+          // keine Messwerte einzelner Seiten. Sie darf deshalb ungefiltert raus.
+          diagnosis: outcome.diagnosis,
           notQualifiedReason: outcome.notQualifiedReason,
           at: new Date().toISOString(),
         });

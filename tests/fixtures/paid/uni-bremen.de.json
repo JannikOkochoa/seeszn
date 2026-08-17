@@ -1,0 +1,57 @@
+{
+ "input": "uni-bremen.de",
+ "landing": {
+  "url": "https://www.uni-bremen.de/",
+  "status": 200,
+  "title": "Startseite - Universität Bremen",
+  "metaDescription": "Die Universität Bremen ist mit rund 20.000 Studierenden eine mittelgroße deutsche Universität. Für engagierte und talentierte Studierende bietet Bremen ein breites Fächerangebot: gut 100 Masterstudiengänge und Bachelorprogramme sowie das juristische Staatsexamen. Und mit dem Forschenden Lernen hat die Universität das Projektstudium, eine Besonderheit aus ihren Gründerzeiten, neu interpretiert. 2012 wurde Bremen mit dem Zukunftskonzept „Ambitioniert und agil“ als eine von elf Universitäten als Exzellenzuniversität ausgezeichnet.",
+  "canonical": "https://www.uni-bremen.de/",
+  "noindex": false,
+  "h1": [
+   "Startseite"
+  ],
+  "h2": [],
+  "h3": [],
+  "questionHeadings": 3,
+  "wordCount": 4057,
+  "internalLinks": [
+   "https://www.uni-bremen.de/",
+   "https://www.uni-bremen.de/en/",
+   "https://www.uni-bremen.de/leichte-sprache/",
+   "https://www.uni-bremen.de/dgs/",
+   "https://www.uni-bremen.de/barrierefreiheit/",
+   "https://www.uni-bremen.de/login/",
+   "https://www.uni-bremen.de/sitemap/",
+   "https://www.uni-bremen.de/infos-fuer-1",
+   "https://www.uni-bremen.de/studium",
+   "https://www.uni-bremen.de/studium/orientieren-bewerben",
+   "https://www.uni-bremen.de/weiterbildung",
+   "https://www.uni-bremen.de/kooperationen/hochschulfoerderung",
+   "https://www.uni-bremen.de/kooperationen/transfer-mit-wirtschaft",
+   "https://www.uni-bremen.de/universitaet/hochschulkommunikation-und-marketing/informationen-fuer-medienvertreterinnen",
+   "https://www.uni-bremen.de/direkt-zu-1",
+   "https://www.uni-bremen.de/fb1",
+   "https://www.uni-bremen.de/fb2",
+   "https://www.uni-bremen.de/fb3",
+   "https://www.uni-bremen.de/fb4/fachbereich-4-produktionstechnik-maschinenbau-und-verfahrenstechnik",
+   "https://www.uni-bremen.de/jura/fachbereich-6-rechtswissenschaft"
+  ],
+  "externalLinks": 17,
+  "jsonLdTypes": [],
+  "hasOrganizationSchema": false,
+  "hasFaqSchema": false,
+  "hreflangCount": 5,
+  "hreflangLocales": [
+   "de-de",
+   "en-us"
+  ],
+  "formCount": 2,
+  "inputCount": 12,
+  "requiredInputCount": 1,
+  "tagSignals": [],
+  "consentPlatform": null,
+  "ogSiteName": null,
+  "htmlBytes": 282137
+ },
+ "performance": null
+}
