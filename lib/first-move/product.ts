@@ -69,10 +69,26 @@ export const MASTER_PATH = "/first-move";
 export const PAID_PATH = "/google-ads/first-move";
 
 /**
- * Die kompakte Faktenzeile unter dem Domainfeld. Sie hält den Preis sichtbar,
- * ohne ihn zur Hero-Headline zu machen.
+ * Die kompakte Faktenzeile unter dem Domainfeld.
+ *
+ * Sie trug bis August 2026 den Preis. Das war zu früh: der Besucher hat an
+ * dieser Stelle noch kein Ergebnis gesehen und bewertet eine Zahl, zu der er
+ * keinen Gegenwert kennt. Der Preis steht deshalb jetzt erst im Angebot, also
+ * nach Diagnose, Geschäftslage und formuliertem Move, und dort vollständig.
+ * Verschwiegen wird er nirgends: PRICE_FRAME sagt vorher, was ihn begrenzt.
  */
-export const HERO_FACT_LINE = `${PRICE_DISPLAY} Festpreis · ${DELIVERY_SHORT} · ${CLIENT_EFFORT_SHORT}`;
+export const HERO_FACT_LINE = `Festpreis · ${DELIVERY_SHORT} · ${CLIENT_EFFORT_SHORT}`;
+
+/**
+ * Was vor dem Preis über den Preis gesagt wird. Nimmt die Angst vor einem
+ * offenen Ende, ohne den Besucher früh auf eine Zahl zu ankern.
+ */
+export const PRICE_FRAME =
+  "Ein klar abgegrenzter erster Move zum Festpreis. Kein Retainer, kein Paket aus zwölf Maßnahmen.";
+
+/** Die Zusage direkt vor dem Angebot. Der Preis kommt vor jeder Bindung. */
+export const PRICE_PROMISE =
+  "Preis und Umfang siehst du vollständig, bevor du irgendetwas beauftragst.";
 
 /**
  * Die Definition nahe am Hero. Normaler Nutzercontent, server-gerendert,

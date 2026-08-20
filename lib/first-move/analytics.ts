@@ -29,19 +29,44 @@
  *   - `proof_expand` der Besucher hat weitere Ergebnisse geöffnet
  *   - `lane`         "discovery" (über den Scan) oder "fast" (direkt zum Angebot)
  *
- * `route_select` feuert seit V6 nur noch, wenn ein Besucher den Kanalkontext
- * wirklich angibt. Der Hero fragt ihn nicht mehr ab.
+ * Mit dem Funnel-Umbau im August 2026 kommen die Schritte der neuen Journey
+ * dazu. Zwei Änderungen sind dabei wichtig:
+ *
+ *   - `route_select` ist ersatzlos entfallen. Der Funnel fragt den Besucher
+ *     nicht mehr, in welchem Kanal er sein Problem vermutet. An seiner Stelle
+ *     steht `first_move_business_context_selected`: eine Geschäftslage, keine
+ *     Serviceauswahl.
+ *   - `first_move_result_classified` trägt die Ergebniskategorie und die
+ *     Ergebnisart. Damit ist auswertbar, wie oft die Prüfung in HIDDEN_SIGNAL
+ *     endet, und ob dieser Zustand schlechter konvertiert als ein Befund. Das
+ *     war vorher nicht messbar, weil beide Fälle gleich aussahen.
+ *
+ * Für "das Angebot war sichtbar" und "die Anfrage beginnt" gibt es bewusst
+ * keine neuen Namen: `offer_view` und `first_move_request_start` messen genau
+ * das und laufen seit V6. Ein zweiter Name für dasselbe Ereignis hätte jede
+ * bestehende Auswertung halbiert.
+ *
+ * Kein Ereignis trägt PII. Domain, E-Mail und Name bleiben draußen.
  */
 export type FirstMoveEvent =
   | "first_move_view"
   | "domain_submit"
-  | "route_select"
   | "spend_band_select"
   | "public_scan_start"
   | "public_scan_signal"
   | "public_scan_complete"
   | "finding_view"
   | "evidence_expand"
+  // ── Die Schritte der Journey ──────────────────────────────────────────────
+  | "first_move_result_classified"
+  | "first_move_result_viewed"
+  | "first_move_result_continue_clicked"
+  | "first_move_business_context_selected"
+  | "first_move_data_step_viewed"
+  | "first_move_data_connection_started"
+  | "first_move_continue_without_data"
+  | "first_move_recommendation_generated"
+  | "first_move_recommendation_viewed"
   | "proof_expand"
   | "offer_view"
   | "paid_connect_click"

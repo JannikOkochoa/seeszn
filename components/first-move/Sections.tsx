@@ -21,6 +21,7 @@ import {
   OFFER_FACTS,
   OFFER_POSITIONING,
   PRICE_DISPLAY,
+  PRICE_PROMISE,
   PROCESS_STEPS,
   PRODUCT_DEFINITION,
   QUALIFICATION_RULE,
@@ -223,7 +224,14 @@ export function Offer() {
             <h2 id="fm-offer" className="fm-h2" style={{ maxWidth: "14ch" }}>
               SEESZN First Move
             </h2>
-            <p className="fm-price" style={{ marginTop: 20 }}>
+            {/* Der erste Ort im Funnel, an dem eine Zahl steht. Davor sagt
+                PRICE_FRAME, was den Preis begrenzt; hier steht er vollständig
+                und vor jeder Bindung. Versteckt wird er nirgends, er kommt nur
+                nicht mehr vor dem Ergebnis. */}
+            <p className="fm-micro" style={{ marginTop: 20 }}>
+              {PRICE_PROMISE}
+            </p>
+            <p className="fm-price" style={{ marginTop: 12 }}>
               {PRICE_DISPLAY}
             </p>
             <span className="fm-price-sub">Netto · Festpreis</span>

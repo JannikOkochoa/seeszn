@@ -11,9 +11,26 @@
 // Komponente ordnet nur die Reihenfolge und schaltet die interaktiven Teile.
 //
 // Zwei Wege sind ausdrücklich vorgesehen:
-//   Discovery  Hero → Domain → Prüfung → Signal → Proof → Angebot → Fit → Start
+//   Discovery  Hero → Domain → Prüfung → Ergebnis → Geschäftslage → Signale →
+//              First Move → Angebot → Fit → Start
 //   Fast Lane  Hero → "First Move starten" → Angebot → Fit → Start
 // Wer das Produkt schon verstanden hat, muss den Scan nie durchlaufen.
+//
+// Der Discovery-Weg lief bis August 2026 auf einem einzigen Screen: Diagnose,
+// Erklärung, Selbsteinschätzung des Kanals und CTA gleichzeitig. Er ist jetzt in
+// vier Schritte mit je einem Job zerlegt (`Step`), weil sonst kein Schritt seinen
+// Job richtig machen kann:
+//
+//   diagnosis  Was sehen wir, und was schließt das aus?
+//   context    Welches Geschäftsproblem liegt dahinter?
+//   signals    Welche nicht-öffentlichen Daten schärfen die Empfehlung?
+//   move       Was ist der eine nächste Move?
+//
+// Entfallen ist dabei die Frage, ob der Besucher sein Problem eher in Search, AI
+// Search oder Paid vermutet. Diese Einordnung ist die Arbeit, die er hier sucht.
+//
+// Der Preis erscheint in keinem dieser vier Schritte. Er steht im Angebot, also
+// nach dem formulierten Move, und dort vollständig und vor jeder Bindung.
 //
 // Seit der Konsolidierung im August 2026 gibt es im deutschen Baum keine eigene
 // Scan-Seite mehr. Die Prüfung ist ein Mechanismus des Produkts und liegt im
@@ -31,48 +48,86 @@
 //     nie mitgeschickt und nie als Scanergebnis getrackt.
 //   - Der öffentliche Befund heißt Signal. Er behauptet nicht, die Ursache zu
 //     kennen, und enthält keinen Umsetzungsplan.
+//   - Die Prüfung endet nie in einem Nichtergebnis. `buildOutcome()` ist total:
+//     zu jedem Diagnosezustand gehört eine Kategorie, ein Beleg und genau eine
+//     Fortsetzung. Ein Zustand `result === null` kann die Oberfläche nicht mehr
+//     erreichen und deshalb auch nicht mehr zu "Kein starkes Signal" werden.
+//   - Ein technischer Fehler ist kein Diagnosezustand. `phase === "error"` und
+//     die Ergebnisschritte teilen sich keine einzige Zeile Darstellung.
 //   - Kein Signal blockiert den Kauf. Der Fit Check läuft auch ohne Scan.
 //   - Es gibt keinen Zahlungsanbieter, also auch keine Zahlungsbestätigung.
 
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { track } from "@/lib/first-move/analytics";
 import {
-  CONFIDENCE_LABEL,
-  DIAGNOSIS_COPY,
-  LIMITATION_BODY,
   OBSERVATIONS_LABEL,
-  PAID_DIAGNOSIS_COPY,
-  PAID_LIMITATION_BODY,
   PUBLIC_EVIDENCE_LABEL,
   PUBLIC_INTERVENTION_LABEL,
-  PUBLIC_SIGNAL_LABEL,
-  PUBLIC_VERIFY_LINE,
 } from "@/lib/first-move/disclosure";
 import { EXAMPLE_FINDING, EXAMPLE_FINDING_PAID } from "@/lib/first-move/example";
+import {
+  BUSINESS_SITUATIONS,
+  CONFIDENCE_BAND_LABEL,
+  HIDDEN_SIGNAL_COPY,
+  buildFirstMove,
+  buildOutcome,
+  type BusinessSituation,
+} from "@/lib/first-move/outcome";
 import { READ_ONLY_GUARANTEES, READ_ONLY_UNLOCKS } from "@/lib/first-move/paid";
 import { PROOF_CASES, relevantCaseId } from "@/lib/first-move/proof";
 import {
   DELIVERY_DISPLAY,
   HERO_FACT_LINE,
+  INCLUDED,
   PRICE_DISPLAY_NET,
+  PRICE_FRAME,
+  PRICE_PROMISE,
   RISK_REVERSAL_SHORT,
 } from "@/lib/first-move/product";
+import {
+  SIGNALS_STEP,
+  SIGNAL_SOURCES,
+  hasConnectableSource,
+} from "@/lib/first-move/signals";
 import { SPEND_BANDS } from "@/lib/first-move/types";
 import { SCAN_ANCHOR } from "@/lib/links";
 import type { PublicDiagnosis } from "@/lib/first-move/diagnosis";
 import type {
   ApprovalPath,
   Complexity,
-  FirstMoveRoute,
   ImplementationPath,
   PublicFinding,
   ScanEvent,
+  ScanState,
   ScanStateEvent,
   SpendBand,
 } from "@/lib/first-move/types";
 
 type Variant = "master" | "paid";
-type Phase = "idle" | "scanning" | "result" | "empty" | "error";
+/**
+ * `settled` ersetzt das frühere Paar "result" und "empty". Die Unterscheidung
+ * "mit Empfehlung" gegen "ohne Empfehlung" gehört ins Ergebnis, nicht in die
+ * Ablaufsteuerung: sie hatte an dieser Stelle zwei getrennte Darstellungen
+ * erzwungen, von denen eine wie ein Fehlschlag aussah.
+ */
+type Phase = "idle" | "scanning" | "settled" | "error";
+
+/** Die vier Schritte nach der Prüfung. Jeder hat genau einen Job. */
+type Step = "diagnosis" | "context" | "signals" | "move";
+
+const STEP_ORDER: Record<Step, number> = {
+  diagnosis: 0,
+  context: 1,
+  signals: 2,
+  move: 3,
+};
+
+const STEP_LABEL: Record<Step, string> = {
+  diagnosis: "Befund",
+  context: "Situation",
+  signals: "Signale",
+  move: "First Move",
+};
 type Lane = "discovery" | "fast";
 /**
  * Von welchem Einstieg aus die Prüfung gestartet wurde. Zwei Aufgaben: die
@@ -117,17 +172,6 @@ const COMPLEXITY_OPTIONS: { id: Complexity; label: string }[] = [
   { id: "very_high", label: "Sehr hoch" },
 ];
 
-/**
- * Der Kanalkontext wird erst gefragt, wenn öffentlich kein Signal entstanden ist
- * und die Angabe den nächsten Schritt wirklich schärft.
- */
-const CHANNEL_OPTIONS: { id: FirstMoveRoute; label: string }[] = [
-  { id: "search", label: "Search" },
-  { id: "ai_search", label: "AI Search" },
-  { id: "paid_acquisition", label: "Paid Acquisition" },
-  { id: "unsure", label: "Weiß ich nicht" },
-];
-
 const LEVEL_LABEL: Record<string, string> = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 
 /**
@@ -139,10 +183,10 @@ const LEVEL_LABEL: Record<string, string> = { low: "Niedrig", medium: "Mittel", 
 const INSTRUMENT = {
   master: {
     label: "Sichtbarkeitsprüfung",
-    question: "Wo liegt der nächste Engpass?",
+    question: "Wo bleibt gerade Wachstum liegen?",
     sub: "Eine Domain genügt. Die erste Einordnung erscheint direkt.",
     placeholder: "deine-domain.de",
-    cta: "Sichtbarkeit prüfen",
+    cta: "Kostenlos prüfen",
     reads: "Was wir dabei öffentlich lesen",
     trust: [
       "Keine E-Mail nötig. Das Ergebnis erscheint direkt auf dieser Seite.",
@@ -162,6 +206,44 @@ const INSTRUMENT = {
     ],
   },
 } as const;
+
+/**
+ * Die Prüfung als fünf verständliche Stufen.
+ *
+ * Darunter laufen unverändert dieselben echten Checks, und ihr Protokoll bleibt
+ * einsehbar. Was sich ändert, ist die primäre Erzählung: der Besucher soll
+ * sehen, dass wir ein Geschäft einordnen, nicht dass wir eine robots.txt
+ * abrufen. Die Zuordnung bildet echte Serverzustände ab, sie erfindet keine
+ * Schritte und keine Wartezeit: eine Stufe gilt erst als erreicht, wenn der
+ * Server einen ihrer Zustände gemeldet hat.
+ */
+const STAGES: { id: string; label: string; states: ScanState[] }[] = [
+  {
+    id: "01",
+    label: "Geschäft und Angebot verstehen",
+    states: ["normalizing_domain", "domain_reachable"],
+  },
+  {
+    id: "02",
+    label: "Erschließung und Scope bestimmen",
+    states: ["robots_checked", "sitemap_checked", "scope_detected"],
+  },
+  {
+    id: "03",
+    label: "Search und AI Presence prüfen",
+    states: ["public_pages_read", "technical_signals_checked"],
+  },
+  {
+    id: "04",
+    label: "Muster über Seiten hinweg vergleichen",
+    states: ["semantic_patterns_found"],
+  },
+  {
+    id: "05",
+    label: "Stärksten Hebel bestimmen",
+    states: ["finding_qualifying", "public_finding_ready", "finding_ready", "not_qualified"],
+  },
+];
 
 /** Was der öffentliche Scan liest. Im Ruhezustand als Liste, nicht als Verlauf. */
 const READS: string[] = [
@@ -201,7 +283,14 @@ export default function FirstMoveFunnel({
 
   const [domain, setDomain] = useState("");
   const [spendBand, setSpendBand] = useState<SpendBand>("unknown");
-  const [channel, setChannel] = useState<FirstMoveRoute | null>(null);
+
+  /**
+   * Die Geschäftslage. Sie ersetzt die frühere Kanalauswahl: gefragt wird nach
+   * dem Problem, nicht nach der Disziplin, die es lösen soll.
+   */
+  const [situation, setSituation] = useState<BusinessSituation | null>(null);
+  /** Welcher der vier Ergebnisschritte gerade sichtbar ist. */
+  const [step, setStep] = useState<Step>("diagnosis");
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [log, setLog] = useState<ScanStateEvent[]>([]);
@@ -242,6 +331,11 @@ export default function FirstMoveFunnel({
   const offerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const viewedRef = useRef(false);
+  /**
+   * Die zuletzt klassifizierte Kategorie. Als Ref, damit sie in Ereignisse
+   * einfließt, ohne die Callbacks bei jedem Rerender neu zu erzeugen.
+   */
+  const outcomeCategoryRef = useRef<string>("");
 
   // Ein Seitenaufruf des Produkts, einmal pro Mount.
   useEffect(() => {
@@ -280,6 +374,7 @@ export default function FirstMoveFunnel({
     setEmailOpen(false);
     setSent(null);
     setFormError("");
+    setStep("diagnosis");
   }, []);
 
   const start = useCallback(
@@ -307,14 +402,16 @@ export default function FirstMoveFunnel({
       track("public_scan_start", {
         surface: variant,
         entry,
-        route: isPaid ? "paid_acquisition" : (channel ?? "unsure"),
+        route: isPaid ? "paid_acquisition" : "unsure",
         spend_band: isPaid ? spendBand : undefined,
       });
 
       const endpoint = isPaid ? "/api/first-move/paid-check" : "/api/first-move/scan";
+      // Der Scan bekommt keine Kanalvorgabe mehr. Er soll die Richtung finden,
+      // nicht die Vermutung des Besuchers bestätigen.
       const payload = isPaid
         ? { domain: value, spendBand }
-        : { domain: value, route: channel ?? "unsure" };
+        : { domain: value, route: "unsure" };
 
       try {
         const res = await fetch(endpoint, {
@@ -362,10 +459,23 @@ export default function FirstMoveFunnel({
               if (event.finding) {
                 setFinding(event.finding);
                 setComplexity(event.finding.suggestedComplexity ?? null);
-                setPhase("result");
-              } else {
-                setPhase("empty");
               }
+              // Ein Ergebnis ist ein Ergebnis, mit oder ohne Empfehlung. Es gibt
+              // deshalb nur noch einen Zielzustand.
+              setStep("diagnosis");
+              setPhase("settled");
+
+              // Die Klassifikation, nicht nur das Ob. Erst damit ist auswertbar,
+              // wie oft die Prüfung in HIDDEN_SIGNAL endet und ob dieser Zustand
+              // anders konvertiert als ein gemessener Befund.
+              const classified = buildOutcome(event.diagnosis, event.finding, isPaid);
+              track("first_move_result_classified", {
+                surface: variant,
+                category: classified.category,
+                kind: classified.kind,
+                diagnosis: event.diagnosis.state,
+                confidence: classified.confidence,
+              });
               // Ein Scan ist immer abgeschlossen, auch ohne Empfehlung. Die
               // Auswertung unterscheidet jetzt, WIE er ausgegangen ist, statt
               // nur ob eine Empfehlung entstanden ist.
@@ -395,7 +505,7 @@ export default function FirstMoveFunnel({
         setPhase("error");
       }
     },
-    [channel, domain, isPaid, resetForNewScan, spendBand, variant],
+    [domain, isPaid, resetForNewScan, spendBand, variant],
   );
 
   // Das Domainfeld im Abschluss startet dieselbe Prüfung, statt einen zweiten
@@ -429,12 +539,33 @@ export default function FirstMoveFunnel({
     return () => cancelAnimationFrame(frame);
   }, [phase]);
 
-  // Sobald ein Ergebnis steht, wandert der Fokus dorthin.
+  // Sobald ein Ergebnis steht, wandert der Fokus dorthin. Ebenso bei jedem
+  // Schrittwechsel: der neue Inhalt ersetzt den alten an derselben Stelle, und
+  // ohne verschobenen Fokus bliebe eine Tastatur- oder Screenreader-Bedienung
+  // im vorigen Schritt stehen.
   useEffect(() => {
-    if (phase === "result" || phase === "empty") {
+    if (phase === "settled") {
       resultRef.current?.focus({ preventScroll: true });
     }
-  }, [phase]);
+  }, [phase, step]);
+
+  /**
+   * Ein Schrittwechsel ist immer eine Fortsetzung, nie ein Neustart. Er wird an
+   * genau einer Stelle vorgenommen, damit Zustand und Ereignis nicht
+   * auseinanderlaufen.
+   */
+  const advance = useCallback(
+    (next: Step) => {
+      setStep(next);
+      track("first_move_result_continue_clicked", {
+        surface: variant,
+        from: step,
+        to: next,
+        category: outcomeCategoryRef.current,
+      });
+    },
+    [step, variant],
+  );
 
   function goToOffer() {
     document.getElementById("angebot")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -527,7 +658,12 @@ export default function FirstMoveFunnel({
           companyUrlConfirm: String(data.get("companyUrlConfirm") ?? ""),
           domain: scannedDomain || domain.trim(),
           surface: isPaid ? "google_ads" : "master",
-          channelContext: channel ?? "",
+          // Die Geschäftslage, nicht der vermutete Kanal. Der Feldname bleibt,
+          // damit bestehende Leads und Auswertungen weiterlaufen. Übertragen
+          // wird das Label, nicht die interne ID: die Notiz landet in einer
+          // E-Mail, die ein Mensch liest.
+          channelContext:
+            BUSINESS_SITUATIONS.find((o) => o.id === situation)?.label ?? "",
           fitCheck:
             intent === "checkout"
               ? `Umsetzung: ${implementation ?? "n/a"} · Freigabe: ${approval ?? "n/a"} · Komplexität: ${complexity ?? "n/a"}`
@@ -555,11 +691,14 @@ export default function FirstMoveFunnel({
     }
   }
 
+  // Der passende Case erscheint erst am Ende der Sequenz, beim formulierten
+  // Move. Auf dem Diagnoseschritt hätte er mit dem Befund um dieselbe
+  // Aufmerksamkeit konkurriert.
   const relevantCase =
-    phase === "result" || phase === "empty"
+    phase === "settled" && step === "move"
       ? PROOF_CASES[
           relevantCaseId(
-            finding?.route ?? (isPaid ? "paid_acquisition" : channel ?? undefined),
+            finding?.route ?? (isPaid ? "paid_acquisition" : undefined),
             finding?.surfaceKind,
           )
         ]
@@ -573,25 +712,73 @@ export default function FirstMoveFunnel({
   const instrumentError = phase === "error" && errorAt !== "hero" && errorMsg !== "";
   const copy = isPaid ? INSTRUMENT.paid : INSTRUMENT.master;
   const idle = phase === "idle" || phase === "error";
-  const settled = phase === "result" || phase === "empty";
+  const settled = phase === "settled";
+
+  // Die Zustandstexte liest jetzt buildOutcome(). Der Paid Check bekommt dort
+  // dieselbe engere Fassung wie vorher: er darf über den Aufbau der
+  // Einstiegsseite sprechen, nicht über die Wirtschaftlichkeit der Kampagnen.
+  /**
+   * Das Ergebnis als Objekt. `buildOutcome` ist total: sobald eine Diagnose
+   * vorliegt, gibt es eine Kategorie, einen Beleg und eine Fortsetzung. Die
+   * Oberfläche kann aus diesem Zustand keinen Dead End mehr bauen.
+   */
+  const outcome = useMemo(
+    () => (diagnosis ? buildOutcome(diagnosis, finding, isPaid) : null),
+    [diagnosis, finding, isPaid],
+  );
+
+  /** Der vorgeschlagene Move. Entsteht erst, wenn die Geschäftslage vorliegt. */
+  const move = useMemo(
+    () => (outcome ? buildFirstMove(outcome, situation, finding, INCLUDED) : null),
+    [outcome, situation, finding],
+  );
+
+  const connectable = hasConnectableSource();
+
+  useEffect(() => {
+    if (outcome) outcomeCategoryRef.current = outcome.category;
+  }, [outcome]);
+
+  // Eine Schrittansicht wird gemeldet, wenn sie wirklich sichtbar wird. Nicht
+  // beim Rendern der Komponente, sondern beim Erreichen des Schritts.
+  useEffect(() => {
+    if (phase !== "settled" || !outcome) return;
+    if (step === "diagnosis") {
+      track("first_move_result_viewed", {
+        surface: variant,
+        category: outcome.category,
+        kind: outcome.kind,
+      });
+    } else if (step === "signals") {
+      track("first_move_data_step_viewed", {
+        surface: variant,
+        category: outcome.category,
+        connectable,
+      });
+    } else if (step === "move") {
+      track("first_move_recommendation_viewed", {
+        surface: variant,
+        category: outcome.category,
+        confidence: outcome.confidence,
+      });
+    }
+    // Nur beim Schrittwechsel, nicht bei jeder Zustandsänderung daneben.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, phase]);
 
   /**
-   * Texte des Zustands, den die Diagnose gemeldet hat. Der Paid Check liest nur
-   * eine Einstiegsseite und bekommt deshalb engere Sätze: er darf über den
-   * Aufbau der Seite sprechen, nicht über die Wirtschaftlichkeit der Kampagnen.
+   * Welche Stufen der Prüfung der Server bereits gemeldet hat. Kein Timer, kein
+   * Prozentwert: eine Stufe ist erreicht, wenn einer ihrer Zustände im
+   * Protokoll steht.
    */
-  const stateCopy = diagnosis
-    ? (isPaid ? PAID_DIAGNOSIS_COPY : DIAGNOSIS_COPY)[diagnosis.state]
-    : null;
-  const limitationBody = isPaid ? PAID_LIMITATION_BODY : LIMITATION_BODY;
-  /**
-   * Nur die Dimensionen, die wirklich messbar waren. Eine Dimension mit
-   * "unknown" wurde nicht beurteilt und darf deshalb auch nicht so aussehen,
-   * als hätten wir sie geprüft.
-   */
-  const measuredDimensions = diagnosis
-    ? diagnosis.dimensions.filter((d) => d.verdict !== "unknown")
-    : [];
+  const reachedStates = new Set(log.map((entry) => entry.state));
+  const stageIndex = STAGES.reduce(
+    (acc, stage, i) => (stage.states.some((st) => reachedStates.has(st)) ? i : acc),
+    -1,
+  );
+  // Der Grund einer zu dünnen Datenlage und die Auswahl der wirklich gemessenen
+  // Dimensionen liegen jetzt in buildOutcome(). Die Oberfläche filtert nicht
+  // mehr selbst: sonst entstünde genau hier wieder eine zweite Wahrheit.
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -668,8 +855,8 @@ export default function FirstMoveFunnel({
                 </p>
                 <p className="fm-micro">
                   {isPaid
-                    ? "Vor dem ersten Ergebnis brauchen wir weder eine E-Mail noch Zugriff auf dein Google-Ads-Konto. Wir lesen zuerst nur öffentlich abrufbare Signale."
-                    : "Vor dem ersten Ergebnis brauchen wir keine E-Mail. Wir lesen nur öffentlich abrufbare Signale, und es entsteht kein Retainer."}
+                    ? "Öffentliche Daten. Kein Login, kein Google-Ads-Zugriff. Etwa 20 Sekunden."
+                    : "Öffentliche Daten. Kein Login. Etwa 20 Sekunden."}
                 </p>
                 {heroError ? (
                   <p id={`${uid}-hero-error`} className="fm-error" role="alert">
@@ -696,16 +883,20 @@ export default function FirstMoveFunnel({
         <div className="fm-wrap">
           <div className="fm-stage-head">
             <span className="fm-eyebrow">
-              {phase === "scanning" ? "Prüfung läuft" : "Öffentliche Prüfung"}
+              {phase === "scanning"
+                ? "Prüfung läuft"
+                : settled
+                  ? `Schritt ${STEP_ORDER[step] + 1} von 4`
+                  : "Öffentliche Prüfung"}
             </span>
             <h2 id="fm-stage-h" className="fm-stage-title">
-              {settled && stateCopy
-                ? stateCopy.label
+              {settled && outcome
+                ? outcome.label
                 : phase === "scanning"
                   ? `Wir lesen ${scannedDomain || "die Oberfläche"}`
                   : isPaid
                     ? "Zuerst der öffentliche Befund, dann der Account"
-                    : "Zuerst der Befund, dann die Umsetzung"}
+                    : "Zuerst der Befund, dann der nächste Move"}
             </h2>
           </div>
 
@@ -880,219 +1071,388 @@ export default function FirstMoveFunnel({
                 </div>
               ) : null}
 
+              {/* Während der Prüfung: die fünf Stufen als primäre Erzählung.
+                  Das technische Protokoll läuft unverändert weiter und bleibt
+                  links sichtbar. Kein Prozentbalken und keine geschätzte
+                  Restzeit: eine Stufe gilt als erreicht, wenn der Server einen
+                  ihrer Zustände gemeldet hat, sonst gar nicht. */}
               {phase === "scanning" ? (
                 <div className="fm-stage-empty">
-                  <p className="fm-serif">
-                    Wir vergleichen gerade die gelesenen Seiten und prüfen, ob mehrere Signale auf
-                    denselben Engpass zeigen.
+                  <ol className="fm-stages" aria-live="polite">
+                    {STAGES.map((stage, i) => (
+                      <li
+                        key={stage.id}
+                        data-state={
+                          i < stageIndex ? "done" : i === stageIndex ? "current" : "todo"
+                        }
+                      >
+                        <span className="fm-stages-n">{stage.id}</span>
+                        <span className="fm-stages-l">
+                          {isPaid && stage.id === "04"
+                            ? "Conversion-Signale vergleichen"
+                            : stage.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="fm-micro">
+                    Wir ordnen gerade ein, wo bei euch der größte Unterschied zwischen Aufwand und
+                    Ergebnis liegt.
                   </p>
                 </div>
               ) : null}
 
-              {phase === "result" && finding ? (
-                <>
-                  <div className="fm-badge-row">
-                    <span className="fm-badge">{PUBLIC_SIGNAL_LABEL}</span>
-                    <span className="fm-confidence">
-                      Öffentliche Lesung · {CONFIDENCE_LABEL[finding.confidence]}
-                    </span>
-                  </div>
-                  <h3 className="fm-finding-title">{finding.title}</h3>
-                  {finding.summary ? <p className="fm-serif">{finding.summary}</p> : null}
+              {/* ── Die vier Ergebnisschritte ───────────────────────────────
+                  Ein Screen, ein Job. Vorher lagen Diagnose, Erklärung,
+                  Selbsteinschätzung, Serviceauswahl und CTA gleichzeitig hier,
+                  und keiner der fünf Teile konnte seine Arbeit machen.
 
-                  {finding.evidence.length ? (
-                    <div className="fm-block">
-                      <span className="fm-block-k">{PUBLIC_EVIDENCE_LABEL}</span>
-                      <ul className="fm-evidence">
-                        {finding.evidence.map((item) => (
-                          <li key={item.id}>{item.observation}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  <div className="fm-metrics">
-                    {(
-                      [
-                        ["Impact", finding.impact],
-                        ["Confidence", finding.confidence],
-                      ] as const
-                    ).map(([label, level]) => (
-                      <div className={`fm-metric fm-metric--${level}`} key={label}>
-                        <span className="fm-metric-k">{label}</span>
-                        <span className="fm-metric-v">{LEVEL_LABEL[level]}</span>
-                        <span className="fm-metric-bar" aria-hidden="true" />
-                      </div>
+                  Es gibt bewusst keinen Zweig für "kein Ergebnis". `outcome`
+                  ist gesetzt, sobald eine Diagnose vorliegt, und trägt jeden
+                  Ausgang der Prüfung. */}
+              {settled && outcome ? (
+                <div className="fm-outcome" data-step={step}>
+                  <ol className="fm-seq" aria-label="Fortschritt">
+                    {(["diagnosis", "context", "signals", "move"] as Step[]).map((id, i) => (
+                      <li
+                        key={id}
+                        data-state={
+                          step === id ? "current" : i < STEP_ORDER[step] ? "done" : "todo"
+                        }
+                        aria-current={step === id ? "step" : undefined}
+                      >
+                        <span className="fm-seq-n">{`0${i + 1}`}</span>
+                        <span className="fm-seq-l">{STEP_LABEL[id]}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ol>
 
-                  {/* Die Art des Eingriffs zeigt die Einschätzung. Welche Seite
-                      das Ziel wird und wie umgesetzt wird, gehört zum Produkt. */}
-                  {finding.interventionType ? (
-                    <div className="fm-block">
-                      <span className="fm-block-k">{PUBLIC_INTERVENTION_LABEL}</span>
-                      <p className="fm-block-v">{finding.interventionType}</p>
-                    </div>
-                  ) : null}
-
-                  <p className="fm-block-v fm-verify">{PUBLIC_VERIFY_LINE}</p>
-
-                  {/* Beobachtungen, die nicht zum Befund gehören, aber gemessen
-                      wurden. Sie zeigen, dass die Prüfung mehr gesehen hat als
-                      den einen Punkt, und wo die Grundlage trägt. */}
-                  {measuredDimensions.length ? (
-                    <details
-                      className="fm-details"
-                      onToggle={(e) => {
-                        if ((e.currentTarget as HTMLDetailsElement).open) {
-                          track("evidence_expand", { surface: variant, scope: "readout" });
-                        }
-                      }}
-                    >
-                      <summary>{OBSERVATIONS_LABEL}</summary>
-                      <div className="fm-details-body">
-                        <dl className="fm-readout">
-                          {measuredDimensions.map((d) => (
-                            <div key={d.id} data-verdict={d.verdict}>
-                              <dt>{d.label}</dt>
-                              <dd>{d.observation}</dd>
-                            </div>
-                          ))}
-                        </dl>
+                  {/* ── 01 Befund ──────────────────────────────────────────
+                      Der Befund ist der Hero dieses Schritts, nicht das
+                      Formular. */}
+                  {step === "diagnosis" ? (
+                    <div className="fm-verdict">
+                      <div className="fm-badge-row">
+                        <span className="fm-badge" data-kind={outcome.kind}>
+                          {outcome.label}
+                        </span>
+                        <span className="fm-confidence">
+                          Öffentliche Lesung · {CONFIDENCE_BAND_LABEL[outcome.confidence]}
+                        </span>
                       </div>
-                    </details>
-                  ) : null}
 
-                  {/* Read-only erscheint erst, wenn ein echter öffentlicher Befund steht. */}
-                  {isPaid && finding.requiresReadOnly ? (
-                    <details
-                      className="fm-details"
-                      onToggle={(e) => {
-                        if ((e.currentTarget as HTMLDetailsElement).open) {
-                          track("evidence_expand", { surface: variant, scope: "read_only" });
-                        }
-                      }}
-                    >
-                      <summary>Was der Account zusätzlich zeigt</summary>
-                      <div className="fm-details-body">
-                        <p className="fm-block-v">
-                          Suchbegriffe, Attribution, Brand gegen Non-Brand und Leadqualität liegen im
-                          Konto. Read-only heißt: {READ_ONLY_GUARANTEES.join(", ")}.
-                        </p>
-                        <p className="fm-block-v">Damit prüfbar: {READ_ONLY_UNLOCKS.join(" · ")}.</p>
-                        {adsOAuthEnabled ? (
-                          <div className="fm-actions">
-                            <a
-                              href="/api/first-move/ads/connect"
-                              className="fm-btn fm-btn--ghost fm-btn--sm"
-                              onClick={() => track("paid_connect_click", { surface: variant })}
-                            >
-                              Google Ads read-only verbinden
-                            </a>
-                          </div>
-                        ) : (
-                          <p className="fm-block-v">
-                            Den Read-only-Zugriff richten wir im Kickoff gemeinsam ein, in unter 15
-                            Minuten. Vor dem Kauf wird nichts verbunden und nichts geändert.
-                          </p>
-                        )}
-                      </div>
-                    </details>
-                  ) : null}
+                      <h3 className="fm-verdict-title">{outcome.headline}</h3>
+                      {outcome.body ? <p className="fm-serif">{outcome.body}</p> : null}
 
-                  <div className="fm-actions">
-                    <button type="button" className="fm-btn" onClick={goToOffer}>
-                      {stateCopy?.cta ?? "First Move prüfen"}
-                    </button>
-                    <button
-                      type="button"
-                      className="fm-link-secondary"
-                      onClick={() => setEmailOpen((v) => !v)}
-                      aria-expanded={emailOpen}
-                    >
-                      Ergebnis per E-Mail senden
-                    </button>
-                  </div>
-                </>
-              ) : null}
+                      {/* Die kommerzielle Einordnung. Bei einem gemessenen
+                          Befund sagt sie, was er bedeutet; bei Hidden Signal
+                          sagt sie, was er eingrenzt. */}
+                      {outcome.meaning ? (
+                        <p className="fm-narrowing">{outcome.meaning}</p>
+                      ) : null}
 
-              {/* Kein Befund heißt nicht: kein Ergebnis. Gemischtes Bild,
-                  solide Basis und zu dünne Datenlage sind drei verschiedene
-                  Wahrheiten und bekommen drei verschiedene Antworten. */}
-              {phase === "empty" && diagnosis && stateCopy ? (
-                <>
-                  <div className="fm-badge-row">
-                    <span className="fm-badge">{stateCopy.label}</span>
-                    {/* Sicherheit der Interpretation, nicht Stärke eines Befunds.
-                        Sie sagt, wie belastbar die Lesung ist, und löscht die
-                        Beobachtungen nicht aus. */}
-                    <span className="fm-confidence">
-                      Öffentliche Lesung · {CONFIDENCE_LABEL[diagnosis.confidence]}
-                    </span>
-                  </div>
-                  <h3 className="fm-finding-title">{stateCopy.title}</h3>
-                  <p className="fm-serif">
-                    {diagnosis.limitation
-                      ? limitationBody[diagnosis.limitation]
-                      : stateCopy.body}
-                  </p>
+                      {/* Was die Prüfung positiv ausschließen konnte.
+                          Ausschließlich aus solide gemessenen Dimensionen: ein
+                          Punkt, der schwach war oder nicht gemessen wurde,
+                          erscheint hier nie. */}
+                      {outcome.ruledOut.length ? (
+                        <div className="fm-block">
+                          <span className="fm-block-k">Was wir ausschließen konnten</span>
+                          <ul className="fm-ruled">
+                            {outcome.ruledOut.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
 
-                  {/* Die Beobachtungen, auf denen der Zustand beruht. Genau die,
-                      die auch wirklich gemessen wurden: der Besucher soll den
-                      Weg vom Protokoll links zur Aussage rechts nachvollziehen
-                      können. */}
-                  {measuredDimensions.length ? (
-                    <div className="fm-block">
-                      <span className="fm-block-k">{OBSERVATIONS_LABEL}</span>
-                      <dl className="fm-readout">
-                        {measuredDimensions.map((d) => (
-                          <div key={d.id} data-verdict={d.verdict}>
-                            <dt>{d.label}</dt>
-                            <dd>{d.observation}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-                  ) : null}
-
-                  <p className="fm-block-v fm-verify">{stateCopy.limits}</p>
-
-                  <fieldset className="fm-channel">
-                    <legend className="fm-channel-legend">{stateCopy.question}</legend>
-                    <div className="fm-channel-opts">
-                      {CHANNEL_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className="fm-fit-opt"
-                          aria-pressed={channel === opt.id}
-                          onClick={() => {
-                            setChannel(opt.id);
-                            track("route_select", { surface: variant, route: opt.id });
+                      {/* Belege sekundär, aber nachvollziehbar. Links steht,
+                          was geprüft wurde, hier steht, was es bedeutet. */}
+                      {outcome.evidence.length ? (
+                        <details
+                          className="fm-details"
+                          onToggle={(e) => {
+                            if ((e.currentTarget as HTMLDetailsElement).open) {
+                              track("evidence_expand", { surface: variant, scope: "readout" });
+                            }
                           }}
                         >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
+                          <summary>{OBSERVATIONS_LABEL}</summary>
+                          <div className="fm-details-body">
+                            <dl className="fm-readout">
+                              {outcome.evidence.map((e) => (
+                                <div key={e.id} data-status={e.status}>
+                                  <dt>{e.label}</dt>
+                                  <dd>{e.value}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          </div>
+                        </details>
+                      ) : null}
 
-                  {/* Genau eine Fortsetzung. Ein zweiter Weg, der dasselbe
-                      bedeutet, macht den Zustand nur unruhig. */}
-                  <div className="fm-actions">
-                    <button type="button" className="fm-btn" onClick={goToOffer}>
-                      {stateCopy.cta}
-                    </button>
-                    <button
-                      type="button"
-                      className="fm-link-secondary"
-                      onClick={() => setEmailOpen((v) => !v)}
-                      aria-expanded={emailOpen}
-                    >
-                      Ergebnis per E-Mail senden
-                    </button>
-                  </div>
-                </>
+                      {/* Read-only erscheint nur, wenn ein echter öffentlicher
+                          Paid-Befund steht. */}
+                      {isPaid && finding?.requiresReadOnly ? (
+                        <details
+                          className="fm-details"
+                          onToggle={(e) => {
+                            if ((e.currentTarget as HTMLDetailsElement).open) {
+                              track("evidence_expand", { surface: variant, scope: "read_only" });
+                            }
+                          }}
+                        >
+                          <summary>Was der Account zusätzlich zeigt</summary>
+                          <div className="fm-details-body">
+                            <p className="fm-block-v">
+                              Suchbegriffe, Attribution, Brand gegen Non-Brand und Leadqualität
+                              liegen im Konto. Read-only heißt: {READ_ONLY_GUARANTEES.join(", ")}.
+                            </p>
+                            <p className="fm-block-v">
+                              Damit prüfbar: {READ_ONLY_UNLOCKS.join(" · ")}.
+                            </p>
+                            {adsOAuthEnabled ? (
+                              <div className="fm-actions">
+                                <a
+                                  href="/api/first-move/ads/connect"
+                                  className="fm-btn fm-btn--ghost fm-btn--sm"
+                                  onClick={() => track("paid_connect_click", { surface: variant })}
+                                >
+                                  Google Ads read-only verbinden
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="fm-block-v">
+                                Den Read-only-Zugriff richten wir im Kickoff gemeinsam ein, in unter
+                                15 Minuten. Vor dem Kauf wird nichts verbunden und nichts geändert.
+                              </p>
+                            )}
+                          </div>
+                        </details>
+                      ) : null}
+
+                      <p className="fm-block-v fm-verify">{outcome.limits}</p>
+
+                      {/* Genau eine dominante Handlung. */}
+                      <div className="fm-actions">
+                        <button
+                          type="button"
+                          className="fm-btn"
+                          onClick={() => advance("context")}
+                        >
+                          {outcome.cta} →
+                        </button>
+                        <span className="fm-micro">{HIDDEN_SIGNAL_COPY.ctaMicro}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="fm-link-secondary"
+                        onClick={() => setEmailOpen((v) => !v)}
+                        aria-expanded={emailOpen}
+                      >
+                        Ergebnis per E-Mail senden
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {/* ── 02 Geschäftslage ───────────────────────────────────
+                      Gefragt wird nach dem Geschäftsproblem. Welche Disziplin
+                      es löst, entscheidet SEESZN, nicht der Besucher. */}
+                  {step === "context" ? (
+                    <div className="fm-verdict">
+                      <span className="fm-badge">Schritt 02</span>
+                      <h3 className="fm-verdict-title">
+                        Was beschreibt eure Situation am ehesten?
+                      </h3>
+                      <p className="fm-serif">
+                        Eine Angabe genügt. Sie entscheidet, welche Ebene wir zuerst prüfen.
+                      </p>
+
+                      <div className="fm-situations" role="group" aria-label="Eure Situation">
+                        {BUSINESS_SITUATIONS.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            className="fm-situation"
+                            aria-pressed={situation === opt.id}
+                            onClick={() => {
+                              setSituation(opt.id);
+                              track("first_move_business_context_selected", {
+                                surface: variant,
+                                situation: opt.id,
+                                category: outcome.category,
+                              });
+                            }}
+                          >
+                            <span className="fm-situation-l">{opt.label}</span>
+                            {situation === opt.id ? (
+                              <span className="fm-situation-n">{opt.note}</span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="fm-actions">
+                        <button
+                          type="button"
+                          className="fm-btn"
+                          disabled={situation === null}
+                          onClick={() => advance("signals")}
+                        >
+                          Weiter →
+                        </button>
+                        <span className="fm-micro">{PRICE_FRAME}</span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* ── 03 Nicht-öffentliche Signale ───────────────────────
+                      Es gibt derzeit keine OAuth-Anbindung. Deshalb steht hier
+                      kein Verbinden-Button, der ins Leere führt, und der Weg
+                      ohne Zugang ist ein vollwertiger Weg, kein Notausgang. */}
+                  {step === "signals" ? (
+                    <div className="fm-verdict">
+                      <span className="fm-badge">{SIGNALS_STEP.label}</span>
+                      <h3 className="fm-verdict-title">{SIGNALS_STEP.headline}</h3>
+                      <p className="fm-serif">{SIGNALS_STEP.body}</p>
+
+                      <ul className="fm-sources">
+                        {SIGNAL_SOURCES.map((src) => (
+                          <li key={src.id} data-available={src.available}>
+                            <span className="fm-sources-l">{src.label}</span>
+                            <span className="fm-sources-a">{src.answers}</span>
+                            {src.available && src.connectPath ? (
+                              <a
+                                href={src.connectPath}
+                                className="fm-btn fm-btn--ghost fm-btn--sm"
+                                onClick={() =>
+                                  track("first_move_data_connection_started", {
+                                    surface: variant,
+                                    source: src.id,
+                                  })
+                                }
+                              >
+                                Read-only verbinden
+                              </a>
+                            ) : (
+                              <span className="fm-sources-s">Im Kickoff, lesend</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {!connectable ? (
+                        <p className="fm-block-v fm-verify">{SIGNALS_STEP.unavailableNote}</p>
+                      ) : null}
+
+                      <div className="fm-actions">
+                        <button
+                          type="button"
+                          className="fm-btn"
+                          onClick={() => {
+                            track("first_move_continue_without_data", {
+                              surface: variant,
+                              category: outcome.category,
+                            });
+                            track("first_move_recommendation_generated", {
+                              surface: variant,
+                              category: outcome.category,
+                              confidence: outcome.confidence,
+                              with_data: false,
+                            });
+                            advance("move");
+                          }}
+                        >
+                          {connectable ? SIGNALS_STEP.skipCta : SIGNALS_STEP.continueCta} →
+                        </button>
+                        <span className="fm-micro">{SIGNALS_STEP.skipNote}</span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* ── 04 Der First Move ──────────────────────────────────
+                      Kein Preis. Kein Beratungsgespräch. Ein Move mit
+                      Begründung, Belegen und Rahmen. */}
+                  {step === "move" && move ? (
+                    <div className="fm-verdict fm-move">
+                      <span className="fm-badge fm-badge--move">First Move</span>
+                      <h3 className="fm-verdict-title">{move.title}</h3>
+
+                      <div className="fm-block">
+                        <span className="fm-block-k">Warum dieser Move</span>
+                        <p className="fm-serif">{move.rationale}</p>
+                      </div>
+
+                      {move.evidence.length ? (
+                        <div className="fm-block">
+                          <span className="fm-block-k">Evidenz</span>
+                          <dl className="fm-readout">
+                            {move.evidence.map((e) => (
+                              <div key={e.id} data-status={e.status}>
+                                <dt>{e.label}</dt>
+                                <dd>{e.value}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </div>
+                      ) : null}
+
+                      {/* Kein erfundener Prozentwert. Impact steht nur, wenn ein
+                          gemessener Befund ihn trägt; Sicherheit steht als Band,
+                          weil dahinter keine kalibrierte Wahrscheinlichkeit liegt. */}
+                      <dl className="fm-move-facts">
+                        {move.expectedImpact ? (
+                          <div>
+                            <dt>Erwarteter Impact</dt>
+                            <dd>{LEVEL_LABEL[move.expectedImpact]}</dd>
+                          </div>
+                        ) : null}
+                        <div>
+                          <dt>Sicherheit</dt>
+                          <dd>{CONFIDENCE_BAND_LABEL[move.confidence]}</dd>
+                        </div>
+                        <div>
+                          <dt>Aufwand bei euch</dt>
+                          <dd>{move.clientEffort}</dd>
+                        </div>
+                        <div>
+                          <dt>Lieferung</dt>
+                          <dd>{move.deliveryWindow}</dd>
+                        </div>
+                        <div>
+                          <dt>Messfenster</dt>
+                          <dd>{move.measurementWindow}</dd>
+                        </div>
+                      </dl>
+
+                      <details className="fm-details">
+                        <summary>Was die Umsetzung einschließt</summary>
+                        <div className="fm-details-body">
+                          <ul className="fm-evidence">
+                            {move.scope.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </details>
+
+                      <div className="fm-actions">
+                        <button type="button" className="fm-btn" onClick={goToOffer}>
+                          Diesen Move starten →
+                        </button>
+                        <span className="fm-micro">{PRICE_PROMISE}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="fm-link-secondary"
+                        onClick={() => setEmailOpen((v) => !v)}
+                        aria-expanded={emailOpen}
+                      >
+                        Ergebnis per E-Mail senden
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
 
               {/* Sekundärer Weg: Kontakt per Mail. Erst nach einem sichtbaren Ergebnis. */}

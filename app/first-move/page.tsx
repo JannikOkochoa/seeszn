@@ -75,11 +75,10 @@ export default function FirstMovePage() {
               eyebrow="SEESZN First Move"
               headline={
                 <>
-                  Finde den nächsten <span className="fm-acid">Engpass</span>, den wir belegen und
-                  direkt beheben können.
+                  Wo bleibt gerade <span className="fm-acid">Wachstum</span> liegen?
                 </>
               }
-              lead="Wir prüfen deine Domain auf öffentliche Signale. Wenn sich ein relevanter Befund zeigt, siehst du ihn direkt. Vor einer Umsetzung verifizieren wir ihn."
+              lead="Gib deine Domain ein. SEESZN liest die öffentlich verfügbaren Signale, schließt aus, was die Situation nicht erklärt, und benennt den nächsten Move."
             />
           }
           heroPlate={<HeroPlate />}

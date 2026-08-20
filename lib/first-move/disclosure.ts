@@ -49,6 +49,7 @@ export function toPublicFinding(finding: FirstMoveFinding): PublicFinding {
   return {
     id: finding.id,
     route: finding.route,
+    category: finding.category,
     status: finding.status,
     title: stripLocators(finding.title),
     summary: stripLocators(finding.summary),
@@ -88,6 +89,18 @@ export const PUBLIC_INTERVENTION_LABEL = "Möglicher First Move";
 // davon gut getragen. Jetzt hat jeder Zustand seinen eigenen Satz, und jeder
 // Satz sagt genau das, was gemessen wurde.
 //
+// Zwei Regeln, die diese Texte seit dem Umbau im August 2026 zusätzlich halten:
+//
+//   1. Kein Zustand formuliert ein Nichtergebnis. "Kein starkes Signal", "kein
+//      Befund" und "trotzdem prüfen" gibt es nicht mehr. Ein Zustand ohne
+//      dominanten Engpass ist ein Ergebnis: er grenzt ein, wo die Ursache NICHT
+//      liegt, und das ist eine Information, die der Besucher vorher nicht hatte.
+//
+//   2. Kein Zustand fragt den Besucher, welche Marketingdisziplin sein Problem
+//      ist. Diese Einordnung ist die Arbeit, die er hier sucht. Sie ihm
+//      zurückzugeben war der eigentliche Konstruktionsfehler des alten Funnels.
+//      Die Frage nach der Geschäftslage steht in ./outcome.
+//
 // Was in KEINEM dieser Texte steht, weil ein öffentlicher Scan es nicht sehen
 // kann: Rankings, Conversion, Paid-Effizienz, Umsatz.
 
@@ -104,8 +117,6 @@ interface StateCopy {
   limits: string;
   /** Beschriftung des weiterführenden CTA. */
   cta: string;
-  /** Die Frage nach dem Kanal, passend zum Zustand gestellt. */
-  question: string;
 }
 
 export const DIAGNOSIS_COPY: Record<PublicDiagnosisState, StateCopy> = {
@@ -115,35 +126,31 @@ export const DIAGNOSIS_COPY: Record<PublicDiagnosisState, StateCopy> = {
     body: "",
     limits:
       "Der Befund stützt sich auf öffentlich abrufbare Signale. Vor einer Umsetzung verifizieren wir ihn mit den nötigen Zugängen.",
-    cta: "Diesen Engpass vertiefen",
-    question: "Wo merkst du den Engpass aktuell am stärksten?",
+    cta: "First Move finden",
   },
   mixed_signal: {
-    label: "Gemischtes Signalbild",
-    title: "Kein einzelner Engpass dominiert das Bild.",
-    body: "Die öffentlich sichtbaren Signale ergeben kein eindeutiges Hauptproblem. Ein Teil der Grundlage trägt, ein Teil nicht.",
+    label: "Eingegrenzt",
+    title: "Ein Bereich fällt auf, trägt aber allein noch keine Empfehlung.",
+    body: "Ein Teil der öffentlich prüfbaren Grundlage trägt, ein Teil nicht. Damit ist die Richtung benannt und der Rest ausgeschlossen.",
     limits:
-      "Für eine belastbare Priorisierung zwischen Search, AI Search und Paid Acquisition fehlen interne Leistungsdaten. Search Console, Analytics und der Google-Ads-Account sind von außen nicht lesbar.",
-    cta: "First Move vertiefen",
-    question: "Wo spürst du aktuell am meisten Unsicherheit?",
+      "Ob dieser Bereich wirklich der Engpass ist, entscheiden eure Leistungsdaten. Search Console, Analytics und der Google-Ads-Account sind von außen nicht lesbar.",
+    cta: "First Move finden",
   },
   healthy_public_foundation: {
-    label: "Solide öffentliche Basis",
-    title: "Öffentlich sieht die Grundlage solide aus.",
-    body: "In den öffentlich prüfbaren Signalen zeigt sich aktuell kein technischer oder struktureller Engpass.",
+    label: "Öffentliche Prüfung",
+    title: "Der offensichtliche Fehler ist es nicht.",
+    body: "Eure öffentlich sichtbare Basis ist sauber. Wir sehen keinen einzelnen technischen oder strukturellen Fehler, der die Situation ausreichend erklärt.",
     limits:
-      "Das schließt Probleme bei Rankings, AI Search, Conversion oder Paid Performance nicht aus. Diese Bereiche sind mit öffentlichen Website-Signalen allein nicht messbar.",
-    cta: "Interne Signale prüfen",
-    question: "Welchen Bereich möchtest du trotzdem genauer prüfen?",
+      "Rankings, Suchvolumen, Conversion-Raten und Paid-Effizienz sind mit öffentlichen Website-Signalen allein nicht messbar.",
+    cta: "First Move finden",
   },
   insufficient_public_evidence: {
-    label: "Begrenzte öffentliche Daten",
-    title: "Öffentlich ist noch zu wenig sichtbar.",
+    label: "Öffentliche Prüfung",
+    title: "Öffentlich ist zu wenig lesbar, um daraus etwas abzuleiten.",
     body: "", // Kommt aus LIMITATION_BODY, damit der Grund konkret benannt wird.
     limits:
-      "Ohne belastbare öffentliche Evidenz raten wir hier nichts. Eine tiefere Diagnose braucht Zugriff auf Search Console, Analytics oder das Ads-Konto.",
-    cta: "Mit internen Daten weiterprüfen",
-    question: "Welchen Bereich sollen wir mit internen Daten zuerst vertiefen?",
+      "Ohne belastbare öffentliche Evidenz raten wir hier nichts. Die nächste belastbare Ebene sind eure eigenen Leistungsdaten.",
+    cta: "First Move finden",
   },
 };
 
@@ -164,35 +171,31 @@ export const PAID_DIAGNOSIS_COPY: Record<PublicDiagnosisState, StateCopy> = {
     body: "",
     limits:
       "Der Befund beschreibt den öffentlich sichtbaren Aufbau der Einstiegsseite. Über Kampagnen, Gebote, Suchbegriffe und die tatsächliche Conversion Rate sagt er nichts; das liegt im Konto und braucht lesenden Zugriff.",
-    cta: "Diesen Engpass vertiefen",
-    question: "Wo merkst du den Engpass aktuell am stärksten?",
+    cta: "First Move finden",
   },
   mixed_signal: {
-    label: "Gemischtes Signalbild",
-    title: "Kein einzelner Conversion-Engpass dominiert das Bild.",
-    body: "Die öffentlich sichtbare Landingpage zeigt sowohl solide als auch uneindeutige Signale. Ein Teil des Aufbaus trägt, ein Teil ist von außen nicht beurteilbar.",
+    label: "Eingegrenzt",
+    title: "Ein Teil des Aufbaus fällt auf, trägt aber allein noch keine Empfehlung.",
+    body: "Die Einstiegsseite zeigt sowohl solide als auch uneindeutige Signale. Damit ist die Richtung benannt und der Rest ausgeschlossen.",
     limits:
-      "Für eine belastbare Priorisierung fehlen Kampagnen- und Conversion-Daten. Suchbegriffe, Attribution, Budgetverteilung und Leadqualität sind öffentlich nicht lesbar.",
-    cta: "First Move vertiefen",
-    question: "Wo spürst du aktuell am meisten Unsicherheit?",
+      "Ob dieser Punkt wirklich der Engpass ist, entscheidet das Konto. Suchbegriffe, Attribution, Budgetverteilung und Leadqualität sind öffentlich nicht lesbar.",
+    cta: "First Move finden",
   },
   healthy_public_foundation: {
-    label: "Solide öffentliche Basis",
+    label: "Öffentliche Prüfung",
     title: "Die öffentlich sichtbare Conversion-Basis wirkt solide.",
-    body: "Im öffentlich prüfbaren Aufbau der Einstiegsseite zeigt sich aktuell kein technischer oder struktureller Conversion-Engpass.",
+    body: "Im öffentlich prüfbaren Aufbau der Einstiegsseite zeigt sich kein struktureller Engpass, der die Situation ausreichend erklärt.",
     limits:
       "Ob Kampagnen, Zielgruppen, Angebote und tatsächliche Conversion-Raten effizient arbeiten, lässt sich ohne interne Daten nicht beurteilen. Das ist eine Aussage über den Aufbau der Seite, keine über die Wirtschaftlichkeit deiner Paid Acquisition.",
-    cta: "Account-Ebene prüfen",
-    question: "Welchen Bereich möchtest du trotzdem genauer prüfen?",
+    cta: "First Move finden",
   },
   insufficient_public_evidence: {
-    label: "Begrenzte öffentliche Daten",
-    title: "Die Landingpage ist öffentlich nicht ausreichend prüfbar.",
+    label: "Öffentliche Prüfung",
+    title: "Die Landingpage ist öffentlich nicht ausreichend lesbar.",
     body: "",
     limits:
-      "Ohne belastbare öffentliche Evidenz raten wir hier nichts. Für einen echten Paid-Befund brauchen wir lesenden Zugriff auf das Google-Ads-Konto.",
-    cta: "Mit Account-Daten weiterprüfen",
-    question: "Welchen Bereich sollen wir mit internen Daten zuerst vertiefen?",
+      "Ohne belastbare öffentliche Evidenz raten wir hier nichts. Die nächste belastbare Ebene ist der lesende Zugriff auf das Google-Ads-Konto.",
+    cta: "First Move finden",
   },
 };
 

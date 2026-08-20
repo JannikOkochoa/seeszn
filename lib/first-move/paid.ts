@@ -178,6 +178,9 @@ export function qualifyPublicPaid(input: PaidCheckInput): PaidFinding | null {
   return {
     id: `fmp_${Date.now().toString(36)}`,
     route: "paid_acquisition",
+    // Der Paid-Check liest den Aufbau der Einstiegsseite. Was er messen kann,
+    // liegt hinter dem Klick, nie davor: deshalb immer CONVERSION_GAP.
+    category: "CONVERSION_GAP",
     paidCategory: category,
     status: "qualified",
     title,

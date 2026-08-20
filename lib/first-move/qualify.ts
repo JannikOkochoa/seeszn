@@ -16,6 +16,7 @@ import type {
   EligibilityState,
   EvidenceItem,
   FirstMoveFinding,
+  DiagnosisCategory,
   FirstMoveRoute,
   Level,
   SurfaceKind,
@@ -182,6 +183,11 @@ function brandTokenSet(domain: string, home: PageSurface): Set<string> {
 
 interface Candidate {
   route: FirstMoveRoute;
+  /**
+   * Die Art des Engpasses. Jeder Kandidat deklariert sie selbst, damit die
+   * Ergebnisansicht sie nicht aus dem Titeltext raten muss.
+   */
+  category: DiagnosisCategory;
   title: string;
   summary: string;
   evidence: EvidenceItem[];
@@ -304,6 +310,7 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
 
   return {
     route: "search",
+    category: "DEMAND_CAPTURE_GAP",
     title: `${best.pages.length} Seiten konkurrieren um dieselbe kommerzielle Absicht.`,
     summary:
       "Mehrere eigenständig indexierbare Seiten adressieren dieselbe Suchabsicht. Relevanz, interne Verlinkung und externe Signale verteilen sich auf mehrere Ziele, statt sich auf einem zu bündeln.",
@@ -345,6 +352,7 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
   if (robots.state === "blocks") {
     return {
       route: "search",
+      category: "TECHNICAL_GAP",
       title: "Die robots.txt sperrt den generischen Crawler für die gesamte Domain.",
       summary:
         "Die öffentliche robots.txt enthält für User-agent * ein Disallow auf das Wurzelverzeichnis. Damit ist die gesamte Domain für reguläres Crawling gesperrt.",
@@ -396,6 +404,7 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
   if (home.noindex) {
     return {
       route: "search",
+      category: "TECHNICAL_GAP",
       title: "Die Startseite ist auf noindex gesetzt.",
       summary:
         "Die Startseite liefert eine noindex-Anweisung aus. Sie kann damit nicht als Einstiegs- und Autoritätsseite wirken.",
@@ -508,6 +517,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
 
   return {
     route: "search",
+    category: "TECHNICAL_GAP",
     title: "Ein Template-Defekt flacht die Struktur über viele Seiten hinweg ab.",
     summary:
       "Der Defekt tritt nicht auf einer Einzelseite auf, sondern systematisch über den geprüften Seitentyp. Damit verlieren alle Seiten dieses Templates gleichzeitig an semantischer Schärfe.",
@@ -611,6 +621,7 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
 
   return {
     route: "ai_search",
+    category: "AI_VISIBILITY_GAP",
     title: !strong
       ? "Die Inhalte sind für Antwortsysteme schwer zitierbar."
       : broadBlock
@@ -765,6 +776,7 @@ export function qualify(input: QualifyInput): FirstMoveFinding | null {
   return {
     id: `fm_${Date.now().toString(36)}`,
     route: best.route,
+    category: best.category,
     status: "qualified",
     title: best.title,
     summary: best.summary,

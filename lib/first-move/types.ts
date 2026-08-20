@@ -16,6 +16,23 @@ import type { PublicDiagnosis } from "./diagnosis";
 /** Diagnosepfad. Keine kaufbare Auswahl, nur die Richtung der ersten Suche. */
 export type FirstMoveRoute = "search" | "ai_search" | "paid_acquisition" | "unsure";
 
+/**
+ * Die Art des Engpasses. Sie gehört an den Befund, nicht in die Oberfläche:
+ * vorher hätte die Ergebnisansicht sie aus Titeltexten raten müssen. Jeder
+ * Kandidat in qualify() deklariert seine Kategorie selbst.
+ *
+ * Die Bedeutung der einzelnen Kategorien und die Regel, warum SEARCH_GAP aus
+ * öffentlichen Signalen nie entsteht, stehen in ./outcome.
+ */
+export type DiagnosisCategory =
+  | "SEARCH_GAP"
+  | "AI_VISIBILITY_GAP"
+  | "DEMAND_CAPTURE_GAP"
+  | "CONVERSION_GAP"
+  | "AUTHORITY_GAP"
+  | "TECHNICAL_GAP"
+  | "HIDDEN_SIGNAL";
+
 /** Reifegrad eines Befunds. */
 export type FindingStatus =
   | "candidate"
@@ -128,6 +145,8 @@ export interface EligibilityState {
 export interface FirstMoveFinding {
   id: string;
   route: FirstMoveRoute;
+  /** Die Art des Engpasses. Vom Kandidaten deklariert, nie aus Text abgeleitet. */
+  category: DiagnosisCategory;
   status: FindingStatus;
   title: string;
   summary: string;
@@ -169,6 +188,7 @@ export interface PublicEvidencePoint {
 export interface PublicFinding {
   id: string;
   route: FirstMoveRoute;
+  category: DiagnosisCategory;
   status: FindingStatus;
   /** Die Beobachtung, nicht die Umsetzung. */
   title: string;
@@ -284,7 +304,10 @@ export const SPEND_BANDS: readonly { id: SpendBand; label: string }[] = [
   { id: "10k_50k", label: "10.000–50.000 €" },
   { id: "50k_250k", label: "50.000–250.000 €" },
   { id: "gt_250k", label: "> 250.000 €" },
-  { id: "unknown", label: "Weiß ich nicht" },
+  // "Keine Angabe" statt "Weiß ich nicht": das Band ist eine Formularangabe zum
+  // Mediabudget, keine Selbsteinschätzung. Die alte Formulierung stammte aus der
+  // abgeschafften Kanalauswahl und klang hier wie ein Eingeständnis.
+  { id: "unknown", label: "Keine Angabe" },
 ];
 
 // ─── Fit Check ────────────────────────────────────────────────────────────────

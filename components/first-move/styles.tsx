@@ -660,17 +660,234 @@ export default function FirstMoveStyles() {
 .fm-block-v { font-size: 14px; line-height: 1.6; color: var(--text-body); max-width: 68ch; }
 .fm-block-v strong { color: var(--ink-strong); font-weight: 600; }
 
-.fm-channel { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.fm-channel-legend {
-  font-family: var(--font-body), sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink-strong);
+/* ── Die Ergebnissequenz ─────────────────────────────────────────────────── */
+/* Vier Schritte an derselben Stelle. Der Rahmen bleibt stehen, nur der Inhalt
+   wechselt: sonst springt bei jedem Schritt das halbe Layout. */
+.fm-outcome { display: flex; flex-direction: column; gap: 20px; }
+
+/* Der Fortschritt. Keine Prozentanzeige, nur vier benannte Stationen. */
+.fm-seq {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
   padding: 0;
+  border-top: 1px solid var(--line);
 }
-.fm-channel-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); }
-.fm-channel-opts .fm-fit-opt { border-bottom: none; }
-.fm-channel-opts .fm-fit-opt:last-child { border-right: none; }
+.fm-seq li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 9px 10px 9px 0;
+  border-top: 2px solid transparent;
+  margin-top: -1px;
+}
+.fm-seq li[data-state="done"] { border-top-color: var(--line-strong); }
+.fm-seq li[data-state="current"] { border-top-color: var(--warm-black); }
+.fm-seq-n {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+.fm-seq-l {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fm-seq li[data-state="current"] .fm-seq-n,
+.fm-seq li[data-state="current"] .fm-seq-l { color: var(--ink-strong); }
+
+/* Ein Schritt. Der Befund ist der Hero, nicht das Formular darunter. */
+.fm-verdict { display: flex; flex-direction: column; gap: 16px; }
+.fm-verdict-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(27px, 3.1vw, 44px);
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  color: var(--ink-strong);
+  margin: 0;
+  max-width: 22ch;
+}
+
+/* Die kommerzielle Einordnung. Sie trägt die Aussage des Screens und steht
+   deshalb ausgezeichnet, aber ohne Kasten und ohne Farbe. */
+.fm-narrowing {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(16px, 1.35vw, 19px);
+  line-height: 1.5;
+  color: var(--ink-strong);
+  margin: 0;
+  max-width: 46ch;
+  border-left: 2px solid var(--signal);
+  padding-left: 16px;
+}
+
+/* Was ausgeschlossen wurde. Die Haken stehen nur an Punkten, die wirklich
+   positiv gemessen wurden; die Auswahl passiert in buildOutcome(). */
+.fm-ruled { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.fm-ruled li {
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-body);
+  max-width: 62ch;
+}
+.fm-ruled li::before {
+  content: "✓";
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--ink-strong);
+}
+
+.fm-badge[data-kind="hidden_signal"],
+.fm-badge[data-kind="limited_read"] { border-style: dashed; }
+.fm-badge--move { background: var(--signal); border-color: var(--warm-black); }
+
+/* ── Schritt 02: Geschäftslage ───────────────────────────────────────────── */
+/* Vier Aussagen über das Geschäft. Bewusst keine Kanäle: welche Disziplin
+   greift, ist die Arbeit, die hier gekauft wird. */
+.fm-situations { display: flex; flex-direction: column; border: 1px solid var(--line); }
+.fm-situation {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 14px 16px 14px 38px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body), sans-serif;
+  color: var(--text-body);
+  transition: background 180ms ease;
+}
+.fm-situation:last-child { border-bottom: none; }
+.fm-situation::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--line-strong);
+}
+.fm-situation:hover { background: var(--surface-raised); }
+.fm-situation[aria-pressed="true"] { background: var(--surface-raised); }
+.fm-situation[aria-pressed="true"]::before { background: var(--signal); border-color: var(--warm-black); }
+.fm-situation-l { font-size: 15px; line-height: 1.4; color: var(--ink-strong); }
+.fm-situation[aria-pressed="true"] .fm-situation-l { font-weight: 500; }
+/* Erscheint erst nach der Auswahl: sie sagt, was die Angabe ändert. */
+.fm-situation-n { font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); max-width: 56ch; }
+
+/* ── Schritt 03: nicht-öffentliche Signale ───────────────────────────────── */
+/* Solange keine Verbindungsroute existiert, sind das beschriebene Quellen und
+   keine Buttons. Ein CTA, der ins Leere führt, ist schlimmer als keiner. */
+.fm-sources { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.fm-sources li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.fm-sources-l {
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.fm-sources-a {
+  grid-column: 1 / -1;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-body);
+  max-width: 60ch;
+}
+.fm-sources-s {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Schritt 04: der Move ────────────────────────────────────────────────── */
+.fm-move-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.fm-move-facts > div {
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.fm-move-facts dt {
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fm-move-facts dd {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-strong);
+}
+
+/* ── Die Prüfung als fünf Stufen ─────────────────────────────────────────── */
+.fm-stages { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.fm-stages li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 14px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+  transition: color 200ms ease;
+}
+.fm-stages li[data-state="done"] { color: var(--text-body); }
+.fm-stages li[data-state="current"] { color: var(--ink-strong); }
+.fm-stages-n {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+.fm-stages-l {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(15px, 1.5vw, 20px);
+  line-height: 1.2;
+}
+.fm-stages li[data-state="current"] .fm-stages-l { font-weight: 600; }
+/* Die laufende Stufe pulsiert dezent. Sie zeigt Arbeit, nicht Fortschritt in
+   Prozent: wie lange sie dauert, wissen wir vorher nicht. */
+.fm-stages li[data-state="current"] .fm-stages-n { animation: fm-pulse 1.6s ease-in-out infinite; }
+@keyframes fm-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .fm-stages li[data-state="current"] .fm-stages-n { animation: none; }
+}
+
+/* Die Belege im Ergebnis tragen dieselbe Randmarke wie die Ablesung. */
+.fm-readout > div[data-status="positive"] { border-left-color: var(--signal); }
+.fm-readout > div[data-status="neutral"] { border-left-color: var(--line-strong); }
+.fm-readout > div[data-status="opportunity"] { border-left-color: var(--ink-strong); }
 
 .fm-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding-top: 4px; }
 .fm-link-secondary {
@@ -1005,12 +1222,6 @@ export default function FirstMoveStyles() {
 .fm-skip:focus { left: 0; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 1180px) {
-  .fm-channel-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fm-channel-opts .fm-fit-opt:nth-child(2n) { border-right: none; }
-  .fm-channel-opts .fm-fit-opt:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
-}
-
 @media (max-width: 1024px) {
   /* minmax(0, 1fr) statt 1fr: eine implizite min-content-Untergrenze hat den
      Hero auf sehr schmalen Geräten (320px) über den Viewport hinausgedrückt und
@@ -1018,13 +1229,24 @@ export default function FirstMoveStyles() {
   .fm-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .fm-hero-plate { order: -1; }
   .fm-hero-img { aspect-ratio: 16 / 9; }
-  .fm-stage-body { grid-template-columns: 1fr; }
+  /* Die Spalten stapeln nicht in Quellreihenfolge. Links steht das Protokoll
+     der technischen Prüfung, rechts der Befund: übereinandergelegt hieße das,
+     der Besucher liest auf dem Telefon zuerst robots.txt und Sitemap und erst
+     danach, was das für sein Geschäft bedeutet. Die Reihenfolge dreht sich
+     deshalb um. Das Protokoll bleibt vollständig erhalten, es steht nur unter
+     der Aussage statt darüber. */
+  .fm-stage-body { grid-template-columns: 1fr; display: flex; flex-direction: column; }
   .fm-stage-log {
+    order: 2;
     border-right: none;
-    border-bottom: 1px solid var(--line);
-    padding: 20px 0;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 0;
   }
-  .fm-stage-result { padding: 22px 0 0; min-height: 0; }
+  .fm-stage-result { order: 1; padding: 22px 0; min-height: 0; }
+  /* Während der Prüfung ist das Protokoll die eigentliche Information: es gibt
+     rechts noch kein Ergebnis, auf das es warten könnte. */
+  .fm-stage-body:has(.fm-stages) .fm-stage-log { order: 1; border-top: none; }
+  .fm-stage-body:has(.fm-stages) .fm-stage-result { order: 2; }
   .fm-relevant { grid-template-columns: 1fr; gap: 18px; align-items: start; }
   .fm-offer { grid-template-columns: 1fr; gap: 36px; }
   .fm-proof-grid { grid-template-columns: 1fr; gap: 48px; }
@@ -1058,9 +1280,14 @@ export default function FirstMoveStyles() {
   .fm-case-plate { aspect-ratio: 4 / 3; }
   .fm-fit-opts { grid-template-columns: 1fr; }
   .fm-fit-opt { border-right: none; }
-  .fm-channel-opts { grid-template-columns: 1fr; }
-  .fm-channel-opts .fm-fit-opt { border-right: none; border-bottom: 1px solid var(--line); }
-  .fm-channel-opts .fm-fit-opt:last-child { border-bottom: none; }
+  /* Die Stationsleiste wird auf zwei Reihen gebrochen statt auf vier Spalten
+     zusammengequetscht. Vier 9px-Labels nebeneinander sind auf 320px nicht
+     mehr lesbar. */
+  .fm-seq { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fm-narrowing { padding-left: 12px; }
+  .fm-sources li { grid-template-columns: 1fr; }
+  .fm-sources-s { white-space: normal; }
+  .fm-move-facts { grid-template-columns: 1fr; }
   .fm-reassure { grid-template-columns: 1fr; }
   .fm-bands-grid { flex-direction: column; align-items: stretch; }
   .fm-header-in { padding: 12px var(--gutter); }
