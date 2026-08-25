@@ -7,6 +7,13 @@
 // einzelner Schritt aus, degradiert der Scan, statt abzubrechen.
 
 import { normalizeUrl, SafeFetchError } from "@/lib/scan/fetcher";
+import {
+  DIAGNOSIS_STRINGS,
+  QUALIFY_STRINGS,
+  SCAN_STRINGS,
+  type FmLocale,
+  type ScanStrings,
+} from "./copy";
 import { readPage, readRobots, readSitemap, type PageSurface } from "./surface";
 import { qualify } from "./qualify";
 import { diagnose, diagnosePaid, type PublicDiagnosis } from "./diagnosis";
@@ -117,48 +124,56 @@ export async function runFirstMoveScan(
   input: string,
   route: FirstMoveRoute,
   emit: Emit,
+  /** Sprache des sichtbaren Protokolls und des öffentlichen Befunds. */
+  locale: FmLocale = "de",
 ): Promise<ScanOutcome> {
-  state(emit, "normalizing_domain", "Domain wird normalisiert");
+  const t = SCAN_STRINGS[locale];
+  state(emit, "normalizing_domain", t.normalizing);
   const target = normalizeUrl(input);
   const host = target.hostname.toLowerCase().replace(/^www\./, "");
 
   const home = await readPage(target);
   const displayDomain = new URL(home.url).hostname.replace(/^www\./, "");
-  state(emit, "domain_reachable", "Domain erkannt", `${displayDomain} antwortet mit ${home.status}`);
+  state(
+    emit,
+    "domain_reachable",
+    t.domainReachable,
+    t.domainReachableDetail(displayDomain, home.status),
+  );
 
   const origin = new URL(new URL(home.url).origin);
   const robots = await readRobots(origin);
   state(
     emit,
     "robots_checked",
-    "robots.txt geprüft",
+    t.robotsChecked,
     robots.state === "missing"
-      ? "keine robots.txt gefunden"
+      ? t.robotsMissing
       : robots.state === "blocks"
-        ? "Disallow auf / für User-agent *"
-        : `Crawling erlaubt, ${robots.sitemapUrls.length} Sitemap-Verweise`,
+        ? t.robotsBlocks
+        : t.robotsAllows(robots.sitemapUrls.length),
   );
 
   const sitemap = await readSitemap(origin, robots.sitemapUrls);
   state(
     emit,
     "sitemap_checked",
-    "Sitemap geprüft",
-    sitemap.state === "found" ? `${sitemap.urls.length} URLs gelesen` : "keine lesbare Sitemap",
+    t.sitemapChecked,
+    sitemap.state === "found" ? t.sitemapFound(sitemap.urls.length) : t.sitemapMissing,
   );
 
   const picks = pickSamplePages(home, sitemap.urls, host);
   state(
     emit,
     "scope_detected",
-    "Scope bestimmt",
+    t.scopeDetected,
     sitemap.state === "found"
-      ? `${sitemap.urls.length} URLs im Index-Angebot${sitemap.partial ? ", Teilmenge gelesen" : ""}`
-      : `${home.internalLinks.length} interne Links auf der Startseite`,
+      ? t.scopeFromSitemap(sitemap.urls.length, Boolean(sitemap.partial))
+      : t.scopeFromLinks(home.internalLinks.length),
   );
 
   const samples = await readSamples(picks);
-  state(emit, "public_pages_read", "Relevante Seiten verglichen", `${samples.length + 1} Seiten geprüft`);
+  state(emit, "public_pages_read", t.pagesRead, t.pagesReadDetail(samples.length + 1));
 
   // Dieselbe Grundmenge wie in der Diagnose-Dimension "Technische Basis":
   // Startseite plus Stichprobe. Zwei verschiedene Nenner für dieselbe Aussage
@@ -168,34 +183,36 @@ export async function runFirstMoveScan(
   state(
     emit,
     "technical_signals_checked",
-    "Technische Signale geprüft",
-    `${indexable} von ${readable.length} geprüften Seiten indexierbar`,
+    t.technicalChecked,
+    t.technicalDetail(indexable, readable.length),
   );
 
   const templates = new Set(
     samples.map((p) => `${p.h1.length}:${p.h2.length > 0 ? "h2" : "flat"}`),
   ).size;
-  state(
-    emit,
-    "semantic_patterns_found",
-    "Muster abgeglichen",
-    `${templates} unterscheidbare Seitentemplates`,
-  );
+  state(emit, "semantic_patterns_found", t.patternsChecked, t.patternsDetail(templates));
 
-  state(emit, "finding_qualifying", "Signale werden abgeglichen");
-  const candidate = qualify({ route, domain: displayDomain, home, samples, robots, sitemap });
+  state(emit, "finding_qualifying", t.qualifying);
+  const candidate = qualify(
+    { route, domain: displayDomain, home, samples, robots, sitemap },
+    QUALIFY_STRINGS[locale],
+  );
 
   // Die Diagnose entscheidet, ob ein Kandidat eine öffentliche Empfehlung trägt.
   // Sie läuft immer, auch wenn qualify() nichts gefunden hat: ein Scan ohne
   // Empfehlung ist trotzdem ein Scan mit Ergebnis.
-  const diagnosis = diagnose({ home, samples, robots, sitemap }, candidate);
+  const diagnosis = diagnose(
+    { home, samples, robots, sitemap },
+    candidate,
+    DIAGNOSIS_STRINGS[locale],
+  );
   const finding = diagnosis.state === "clear_signal" ? candidate : null;
 
   state(
     emit,
     diagnosis.state === "clear_signal" ? "finding_ready" : "not_qualified",
-    FINAL_STATE_LABEL[diagnosis.state],
-    finding ? finding.title : finalStateDetail(diagnosis),
+    t.finalLabel[diagnosis.state],
+    finding ? finding.title : finalStateDetail(diagnosis, t),
   );
 
   return {
@@ -203,41 +220,33 @@ export async function runFirstMoveScan(
     url: home.url,
     finding,
     diagnosis,
-    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis),
+    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis, t),
   };
 }
-
-/** Die letzte Zeile des Protokolls. Sie benennt den Zustand, nicht ein Urteil. */
-const FINAL_STATE_LABEL: Record<PublicDiagnosis["state"], string> = {
-  clear_signal: "Relevantes Signal erkannt",
-  mixed_signal: "Signalbild abgeglichen",
-  healthy_public_foundation: "Öffentliche Basis geprüft",
-  insufficient_public_evidence: "Öffentliche Datenlage begrenzt",
-};
 
 /**
  * Warum es so ausgegangen ist, in einem Satz und aus dem Gemessenen abgeleitet.
  * Nur bei fehlender Evidenz nennt der Satz die konkrete Grenze.
  */
-function finalStateDetail(d: PublicDiagnosis): string {
+function finalStateDetail(d: PublicDiagnosis, t: ScanStrings): string {
   const { readablePages, contentPages } = d.evidenceBase;
   switch (d.state) {
     case "clear_signal":
-      return "Ein Muster trägt eine Empfehlung.";
+      return t.finalClearSignal;
     case "healthy_public_foundation":
-      return `${readablePages} Seiten gelesen, keine gemessene Schwäche in den öffentlichen Signalen`;
+      return t.finalHealthy(readablePages);
     case "mixed_signal":
-      return `${readablePages} Seiten gelesen, kein einzelner Engpass dominiert`;
+      return t.finalMixed(readablePages);
     case "insufficient_public_evidence":
       switch (d.limitation) {
         case "surface_not_readable":
-          return "Die Oberfläche ist für einen automatisierten Abruf nicht lesbar";
+          return t.finalSurfaceUnreadable;
         case "pages_without_content":
-          return `nur ${contentPages} von ${readablePages} gelesenen Seiten liefern Text im HTML aus`;
+          return t.finalPagesWithoutContent(contentPages, readablePages);
         case "too_few_pages":
-          return `nur ${readablePages} Seite(n) öffentlich lesbar`;
+          return t.finalTooFewPages(readablePages);
         default:
-          return "zu wenige belastbar messbare Signale";
+          return t.finalTooLittleMeasured;
       }
   }
 }
@@ -334,8 +343,8 @@ export async function runPaidPublicCheck(
   state(
     emit,
     diagnosis.state === "clear_signal" ? "public_finding_ready" : "not_qualified",
-    FINAL_STATE_LABEL[diagnosis.state],
-    finding ? finding.title : finalStateDetail(diagnosis),
+    SCAN_STRINGS.de.finalLabel[diagnosis.state],
+    finding ? finding.title : finalStateDetail(diagnosis, SCAN_STRINGS.de),
   );
 
   // Der Hinweis auf die Kontoebene gilt in jedem Ausgang: was öffentlich nicht
@@ -352,7 +361,7 @@ export async function runPaidPublicCheck(
     url: landing.url,
     finding,
     diagnosis,
-    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis),
+    notQualifiedReason: finding ? undefined : finalStateDetail(diagnosis, SCAN_STRINGS.de),
   };
 }
 

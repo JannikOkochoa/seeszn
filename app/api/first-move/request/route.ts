@@ -1,8 +1,11 @@
 // ─── POST /api/first-move/request ─────────────────────────────────────────────
-// Der einzige Schreibpfad des First-Move-Kaufwegs. Zwei Absichten:
+// Der einzige Schreibpfad des First-Move-Kaufwegs. Drei Absichten:
 //
 //   intent: "checkout"      verbindliche Anfrage für den First Move
 //   intent: "result_email"  der qualifizierte Befund geht per Mail raus
+//   intent: "review"        "Befund gemeinsam prüfen", der nachgeordnete Weg
+//                           von der Startseite. Keine Bestellung, keine Zahlung,
+//                           dieselbe Strecke und derselbe Scan-Kontext.
 //
 // Reihenfolge wie in /api/contact: erst den Lead speichern, dann versenden,
 // danach den Versandstatus nachtragen. Ein Mailfehler darf einen Kaufwunsch nie
@@ -30,6 +33,12 @@ import {
   internalVerificationContext,
   recallScan,
 } from "@/lib/first-move/scanStore";
+import { fmLocale } from "@/lib/first-move/copy";
+import {
+  DELIVERY_DISPLAY_EN,
+  PRICE_DISPLAY_NET_EN,
+  RISK_REVERSAL_SHORT_EN,
+} from "@/lib/first-move/productEn";
 import { mailIsRedirected, mailRecipient, outboundGuard } from "@/lib/devGuard";
 import type { PublicFinding } from "@/lib/first-move/types";
 
@@ -41,7 +50,7 @@ const LEAD_DEFAULT = "hello@seeszn.com";
 const LIMIT = 5;
 const WINDOW_MS = 10 * 60 * 1000;
 
-type Intent = "checkout" | "result_email";
+type Intent = "checkout" | "result_email" | "review";
 
 interface RequestResponse {
   ok: true;
@@ -123,7 +132,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const b = (body ?? {}) as Record<string, unknown>;
-  const intent: Intent = b.intent === "result_email" ? "result_email" : "checkout";
+  const intent: Intent =
+    b.intent === "result_email" ? "result_email" : b.intent === "review" ? "review" : "checkout";
   const email = str(b.email, 200);
   const name = str(b.name, 120);
   const note = str(b.note, 600);
@@ -132,6 +142,9 @@ export async function POST(request: Request): Promise<Response> {
   // Kanalkontext wird nur erfragt, wenn öffentlich kein Signal entstanden ist.
   const channelContext = str(b.channelContext, 60);
   const surface = b.surface === "google_ads" ? PAID_PATH : MASTER_PATH;
+  // Sprache der Bestätigungsmail an den Absender. Die interne Benachrichtigung
+  // bleibt deutsch: sie liest ein Mensch bei SEESZN.
+  const locale = fmLocale(b.locale);
   const finding = sanitizeFinding(b.finding);
 
   // Der Browser kennt nur die redigierte Sicht. Die vollständige Auswertung des
@@ -161,8 +174,15 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: COMPANY_EMAIL_ERROR, code: "freemail" }, { status: 422 });
   }
 
+  const intentLine =
+    intent === "checkout"
+      ? "Verbindliche First-Move-Anfrage"
+      : intent === "review"
+        ? "Befund gemeinsam prüfen"
+        : "Ergebnisversand angefordert";
+
   const message = [
-    intent === "checkout" ? "Verbindliche First-Move-Anfrage" : "Ergebnisversand angefordert",
+    intentLine,
     fitCheck ? `Fit Check: ${fitCheck}` : "",
     channelContext ? `Kanalkontext: ${channelContext}` : "",
     note,
@@ -193,9 +213,14 @@ export async function POST(request: Request): Promise<Response> {
     name,
     message,
     companyDomain,
-    source: intent === "checkout" ? "first_move_request" : "first_move_result_email",
+    source:
+      intent === "checkout"
+        ? "first_move_request"
+        : intent === "review"
+          ? "first_move_review"
+          : "first_move_result_email",
     page: surface,
-    locale: "de",
+    locale,
     status: honeypot ? "spam_suspected" : "new",
     // Öffentliche Sicht plus, falls noch vorhanden, die vollständige interne
     // Auswertung. Die Spalte ist ausschließlich intern lesbar. Die CRM-Ansicht
@@ -251,9 +276,11 @@ export async function POST(request: Request): Promise<Response> {
       subject:
         intent === "checkout"
           ? `First Move Anfrage: ${companyDomain || senderDomain}`
-          : `First Move Ergebnisversand: ${companyDomain || senderDomain}`,
+          : intent === "review"
+            ? `First Move Befundprüfung: ${companyDomain || senderDomain}`
+            : `First Move Ergebnisversand: ${companyDomain || senderDomain}`,
       text: [
-        intent === "checkout" ? "Verbindliche First-Move-Anfrage" : "Ergebnisversand angefordert",
+        intentLine,
         `Seite: ${surface}`,
         `Domain: ${companyDomain || "nicht angegeben"}`,
         `Name: ${name || "nicht angegeben"}`,
@@ -279,11 +306,49 @@ export async function POST(request: Request): Promise<Response> {
   let userEmailSent = false;
   try {
     const headline =
-      intent === "checkout"
-        ? "Deine First-Move-Anfrage ist da."
-        : "Dein Befund im Überblick.";
-    const bodyText =
-      intent === "checkout"
+      locale === "en"
+        ? intent === "checkout"
+          ? "Your First Move request is in."
+          : intent === "review"
+            ? "We are looking at your finding."
+            : "Your finding at a glance."
+        : intent === "checkout"
+          ? "Deine First-Move-Anfrage ist da."
+          : intent === "review"
+            ? "Wir sehen uns deinen Befund an."
+            : "Dein Befund im Überblick.";
+    const bodyText = locale === "en"
+      ? intent === "review"
+        ? [
+            "We have your finding and are working through it.",
+            "",
+            "You will get a reading from us: what the finding supports, what it does not yet support and which verification route makes sense next. Nothing is ordered by this.",
+            "",
+            findingLines(finding),
+          ].join("\n")
+        : intent === "checkout"
+          ? [
+              `We received your request for the SEESZN First Move at the fixed price of ${PRICE_DISPLAY_NET_EN}.`,
+              "",
+              "What happens next:",
+              "1. We verify the finding and confirm the scope in writing.",
+              "2. With that scope confirmation you receive the invoice.",
+              `3. ${DELIVERY_DISPLAY_EN}.`,
+              "",
+              `Risk reversal: ${RISK_REVERSAL_SHORT_EN}.`,
+              "",
+              findingLines(finding),
+            ].join("\n")
+          : ["Here is the finding from your check.", "", findingLines(finding)].join("\n")
+      : intent === "review"
+        ? [
+            "Wir haben deinen Befund erhalten und gehen ihn durch.",
+            "",
+            "Du bekommst von uns eine Einordnung: was der Befund trägt, was er noch nicht trägt und welche Prüfroute als Nächstes sinnvoll ist. Es ist dadurch nichts bestellt.",
+            "",
+            findingLines(finding),
+          ].join("\n")
+        : intent === "checkout"
         ? [
             `Wir haben deine Anfrage für den SEESZN First Move zum Festpreis von ${PRICE_DISPLAY_NET} erhalten.`,
             "",

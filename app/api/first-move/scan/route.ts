@@ -14,6 +14,7 @@
 // V6: das Ergebnis verlässt den Server nur als öffentliche Sicht. Umsetzungsplan,
 // Zielseiten und Messhypothese bleiben hier und gehören zum bezahlten Produkt.
 
+import { fmLocale, type FmLocale } from "@/lib/first-move/copy";
 import { toPublicFinding } from "@/lib/first-move/disclosure";
 import { runFirstMoveScan, scanErrorCode } from "@/lib/first-move/scan";
 import { createScanContextId, rememberScan } from "@/lib/first-move/scanStore";
@@ -30,13 +31,23 @@ const ROUTES: FirstMoveRoute[] = ["search", "ai_search", "paid_acquisition", "un
 
 type ErrorCode = ScanErrorEvent["code"];
 
-const ERROR_TEXT: Record<ErrorCode, string> = {
-  invalid_domain: "Diese Eingabe können wir nicht prüfen. Bitte gib eine öffentliche Domain ein.",
-  blocked_target: "Dieses Ziel können wir nicht prüfen.",
-  unreachable: "Wir konnten die Website nicht abrufen. Prüfe die Schreibweise, oder der Server blockiert automatisierte Abrufe.",
-  timeout: "Die Website hat zu lange gebraucht.",
-  internal: "Die Prüfung ist fehlgeschlagen.",
-  rate_limited: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.",
+const ERROR_TEXT: Record<FmLocale, Record<ErrorCode, string>> = {
+  de: {
+    invalid_domain: "Diese Eingabe können wir nicht prüfen. Bitte gib eine öffentliche Domain ein.",
+    blocked_target: "Dieses Ziel können wir nicht prüfen.",
+    unreachable: "Wir konnten die Website nicht abrufen. Prüfe die Schreibweise, oder der Server blockiert automatisierte Abrufe.",
+    timeout: "Die Website hat zu lange gebraucht.",
+    internal: "Die Prüfung ist fehlgeschlagen.",
+    rate_limited: "Zu viele Anfragen. Bitte versuche es in wenigen Minuten erneut.",
+  },
+  en: {
+    invalid_domain: "We cannot check that input. Please enter a public domain.",
+    blocked_target: "We cannot check this target.",
+    unreachable: "We could not reach the website. Check the spelling, or the server is blocking automated requests.",
+    timeout: "The website took too long to answer.",
+    internal: "The check failed.",
+    rate_limited: "Too many requests. Please try again in a few minutes.",
+  },
 };
 
 function line(event: ScanEvent): string {
@@ -44,8 +55,8 @@ function line(event: ScanEvent): string {
 }
 
 /** Einzelne Fehlerzeile als vollständiger Stream, damit das Frontend nur einen Pfad kennt. */
-function errorStream(code: ErrorCode, status: number): Response {
-  const body = line({ type: "error", code, message: ERROR_TEXT[code] });
+function errorStream(code: ErrorCode, status: number, locale: FmLocale = "de"): Response {
+  const body = line({ type: "error", code, message: ERROR_TEXT[locale][code] });
   return new Response(body, {
     status,
     headers: {
@@ -66,9 +77,16 @@ export async function POST(request: Request): Promise<Response> {
     return errorStream("invalid_domain", 400);
   }
 
-  const { domain, route } = (body ?? {}) as { domain?: unknown; route?: unknown };
+  const { domain, route, locale: rawLocale } = (body ?? {}) as {
+    domain?: unknown;
+    route?: unknown;
+    locale?: unknown;
+  };
+  // Die Sprache steuert ausschließlich die Sätze. Prüflogik, Schwellen und
+  // Bewertung sind für beide Sprachen identisch.
+  const locale = fmLocale(rawLocale);
   if (typeof domain !== "string" || !domain.trim()) {
-    return errorStream("invalid_domain", 400);
+    return errorStream("invalid_domain", 400, locale);
   }
   const picked: FirstMoveRoute =
     typeof route === "string" && (ROUTES as string[]).includes(route)
@@ -87,7 +105,7 @@ export async function POST(request: Request): Promise<Response> {
       };
 
       try {
-        const outcome = await runFirstMoveScan(domain, picked, send);
+        const outcome = await runFirstMoveScan(domain, picked, send, locale);
 
         // Die vollständige Auswertung bleibt serverseitig verfügbar, damit eine
         // spätere Anfrage nicht bei null anfängt. Die Kontext-ID ist zugleich
@@ -123,7 +141,7 @@ export async function POST(request: Request): Promise<Response> {
         });
       } catch (err) {
         const code = scanErrorCode(err);
-        send({ type: "error", code, message: ERROR_TEXT[code] });
+        send({ type: "error", code, message: ERROR_TEXT[locale][code] });
       } finally {
         controller.close();
       }

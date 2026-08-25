@@ -18,12 +18,21 @@
 // Was hier ausdrücklich nicht passiert: eine Kategorie behaupten, die aus den
 // vorliegenden Signalen nicht ableitbar ist. Siehe SEARCH_GAP.
 
+import { outcomeStringsEn, type FmLocale, type OutcomeStrings } from "./copy";
+import {
+  CLIENT_EFFORT_DISPLAY_EN,
+  DELIVERY_DISPLAY_EN,
+  MEASUREMENT_DISPLAY_EN,
+} from "./productEn";
+import { SIGNALS_STEP, SIGNAL_SOURCES } from "./signals";
 import type { DimensionId, PublicDiagnosis } from "./diagnosis";
 import {
   DIAGNOSIS_COPY,
   LIMITATION_BODY,
+  OBSERVATIONS_LABEL,
   PAID_DIAGNOSIS_COPY,
   PAID_LIMITATION_BODY,
+  PUBLIC_EVIDENCE_LABEL,
 } from "./disclosure";
 import {
   CLIENT_EFFORT_DISPLAY,
@@ -217,12 +226,21 @@ export const HIDDEN_SIGNAL_COPY = {
   ctaMicro: "Dafür brauchen wir noch 2 bis 3 Signale. Das dauert etwa eine Minute.",
 } as const;
 
-/** Der Fall, in dem die Oberfläche selbst nicht ausreichend lesbar war. */
+/**
+ * Der Fall, in dem die Oberfläche selbst nicht ausreichend lesbar war.
+ *
+ * Die Überschrift lautete bis August 2026 "Öffentlich ist zu wenig lesbar, um
+ * daraus etwas abzuleiten." Das war eine Sackgasse: sie beschreibt einen
+ * Fehlschlag und lässt den Besucher ohne Fortsetzung stehen, obwohl es eine
+ * gibt. Sie sagt jetzt, was der Zustand für die Entscheidung bedeutet und
+ * welche Route als Nächstes trägt. Erfunden wird dabei nichts: die Grenze der
+ * Methode bleibt genauso deutlich benannt.
+ */
 export const LIMITED_READ_COPY = {
   label: "Öffentliche Prüfung",
-  headline: "Öffentlich ist zu wenig lesbar, um daraus etwas abzuleiten.",
+  headline: "Die öffentlichen Signale reichen noch nicht für einen verantwortbaren First Move.",
   narrowing:
-    "Auch das grenzt ein: was von außen nicht lesbar ist, beantworten eure eigenen Leistungsdaten zuverlässiger als jede weitere öffentliche Prüfung.",
+    "Zwei zusätzliche Angaben öffnen die nächste Prüfroute: was von außen nicht lesbar ist, beantworten eure eigenen Leistungsdaten zuverlässiger als jede weitere öffentliche Prüfung.",
   cta: "First Move finden",
 } as const;
 
@@ -337,13 +355,88 @@ function categoryFromWeakness(diagnosis: PublicDiagnosis): DiagnosisCategory | n
  * zurückgibt. Damit ist ausgeschlossen, dass die Oberfläche aus `null` wieder
  * einen Dead-End-Zustand baut.
  */
+/**
+ * Die deutschen Sätze der Ergebnisansicht, zusammengesetzt aus den bestehenden
+ * Konstanten. Sie bleiben die einzige Quelle: diese Funktion kopiert keinen
+ * Text, sie bündelt ihn nur in dieselbe Form wie die englische Fassung.
+ */
+function outcomeStringsDe(): OutcomeStrings {
+  return {
+    confidence: CONFIDENCE_BAND_LABEL,
+    observationsLabel: OBSERVATIONS_LABEL,
+    evidenceLabel: PUBLIC_EVIDENCE_LABEL,
+    category: CATEGORY_COPY,
+    state: DIAGNOSIS_COPY,
+    limitation: LIMITATION_BODY,
+    hiddenSignal: HIDDEN_SIGNAL_COPY,
+    limitedRead: LIMITED_READ_COPY,
+    cta: HIDDEN_SIGNAL_COPY.cta,
+    ctaMicro: HIDDEN_SIGNAL_COPY.ctaMicro,
+    situations: {
+      low_demand: {
+        label: BUSINESS_SITUATIONS[0].label,
+        note: BUSINESS_SITUATIONS[0].note,
+        rationale: SITUATION_RATIONALE.low_demand,
+      },
+      traffic_no_business: {
+        label: BUSINESS_SITUATIONS[1].label,
+        note: BUSINESS_SITUATIONS[1].note,
+        rationale: SITUATION_RATIONALE.traffic_no_business,
+      },
+      growth_stalled: {
+        label: BUSINESS_SITUATIONS[2].label,
+        note: BUSINESS_SITUATIONS[2].note,
+        rationale: SITUATION_RATIONALE.growth_stalled,
+      },
+      unclear_lever: {
+        label: BUSINESS_SITUATIONS[3].label,
+        note: BUSINESS_SITUATIONS[3].note,
+        rationale: SITUATION_RATIONALE.unclear_lever,
+      },
+    },
+    moveTitle: MOVE_TITLE,
+    rationaleHidden:
+      "Die öffentlich prüfbare Basis trägt. Den nächsten Erkenntnisgewinn bringt deshalb keine weitere öffentliche Prüfung. Er liegt in euren eigenen Leistungsdaten.",
+    rationaleNarrowed:
+      "Die öffentliche Prüfung benennt die Richtung, trägt aber allein noch keine Empfehlung. Der Move beginnt deshalb damit, sie zu bestätigen oder zu verwerfen.",
+    signals: {
+      label: SIGNALS_STEP.label,
+      headline: SIGNALS_STEP.headline,
+      body: SIGNALS_STEP.body,
+      unavailableNote: SIGNALS_STEP.unavailableNote,
+      skipCta: SIGNALS_STEP.skipCta,
+      skipNote: SIGNALS_STEP.skipNote,
+      continueCta: SIGNALS_STEP.continueCta,
+      connectCta: "Read-only verbinden",
+      inKickoff: "Im Kickoff, lesend",
+      sources: {
+        search_console: SIGNAL_SOURCES[0].answers,
+        analytics: SIGNAL_SOURCES[1].answers,
+        google_ads: SIGNAL_SOURCES[2].answers,
+      },
+    },
+  };
+}
+
+/** Die Sätze der Ergebnisansicht in der gewünschten Sprache. */
+export function outcomeStrings(locale: FmLocale = "de"): OutcomeStrings {
+  return locale === "en" ? outcomeStringsEn() : outcomeStringsDe();
+}
+
 export function buildOutcome(
   diagnosis: PublicDiagnosis,
   finding: PublicFinding | null,
   isPaid = false,
+  /**
+   * Nur die Sprache der Sätze. Kategorie, Art und Sicherheit des Ergebnisses
+   * entstehen aus denselben Regeln und sind für beide Sprachen identisch.
+   * Der Paid Check bleibt deutsch: er hat keine englische Oberfläche.
+   */
+  locale: FmLocale = "de",
 ): FunnelOutcome {
-  const stateCopy = (isPaid ? PAID_DIAGNOSIS_COPY : DIAGNOSIS_COPY)[diagnosis.state];
-  const limitationBody = isPaid ? PAID_LIMITATION_BODY : LIMITATION_BODY;
+  const c = isPaid ? outcomeStringsDe() : outcomeStrings(locale);
+  const stateCopy = isPaid ? PAID_DIAGNOSIS_COPY[diagnosis.state] : c.state[diagnosis.state];
+  const limitationBody = isPaid ? PAID_LIMITATION_BODY : c.limitation;
   const evidence = evidenceFromDimensions(diagnosis);
   const ruledOut = ruledOutFrom(diagnosis);
 
@@ -354,10 +447,10 @@ export function buildOutcome(
     return {
       category,
       kind: "measured_signal",
-      label: CATEGORY_COPY[category].name,
+      label: c.category[category].name,
       headline: finding.title,
       body: finding.summary,
-      meaning: CATEGORY_COPY[category].meaning,
+      meaning: c.category[category].meaning,
       ruledOut,
       evidence: [
         ...finding.evidence.map((e) => ({
@@ -370,7 +463,7 @@ export function buildOutcome(
       ],
       limits: stateCopy.limits,
       confidence: bandFrom(finding.confidence),
-      cta: HIDDEN_SIGNAL_COPY.cta,
+      cta: c.cta,
     };
   }
 
@@ -380,17 +473,17 @@ export function buildOutcome(
     return {
       category: "HIDDEN_SIGNAL",
       kind: "limited_read",
-      label: LIMITED_READ_COPY.label,
-      headline: LIMITED_READ_COPY.headline,
+      label: c.limitedRead.label,
+      headline: c.limitedRead.headline,
       body: diagnosis.limitation
         ? limitationBody[diagnosis.limitation]
         : stateCopy.body,
-      meaning: LIMITED_READ_COPY.narrowing,
+      meaning: c.limitedRead.narrowing,
       ruledOut,
       evidence,
       limits: stateCopy.limits,
       confidence: "limited",
-      cta: LIMITED_READ_COPY.cta,
+      cta: c.cta,
     };
   }
 
@@ -402,15 +495,15 @@ export function buildOutcome(
     return {
       category: narrowed,
       kind: "narrowed",
-      label: CATEGORY_COPY[narrowed].name,
+      label: c.category[narrowed].name,
       headline: stateCopy.title,
       body: stateCopy.body,
-      meaning: CATEGORY_COPY[narrowed].meaning,
+      meaning: c.category[narrowed].meaning,
       ruledOut,
       evidence,
       limits: stateCopy.limits,
       confidence: diagnosis.confidence === "high" ? "medium" : "limited",
-      cta: HIDDEN_SIGNAL_COPY.cta,
+      cta: c.cta,
     };
   }
 
@@ -420,15 +513,15 @@ export function buildOutcome(
   return {
     category: "HIDDEN_SIGNAL",
     kind: "hidden_signal",
-    label: HIDDEN_SIGNAL_COPY.label,
-    headline: HIDDEN_SIGNAL_COPY.headline,
-    body: HIDDEN_SIGNAL_COPY.body,
-    meaning: HIDDEN_SIGNAL_COPY.narrowing,
+    label: c.hiddenSignal.label,
+    headline: c.hiddenSignal.headline,
+    body: c.hiddenSignal.body,
+    meaning: c.hiddenSignal.narrowing,
     ruledOut,
     evidence,
-    limits: HIDDEN_SIGNAL_COPY.limits,
+    limits: c.hiddenSignal.limits,
     confidence: diagnosis.confidence === "high" ? "medium" : "limited",
-    cta: HIDDEN_SIGNAL_COPY.cta,
+    cta: c.cta,
   };
 }
 
@@ -468,18 +561,20 @@ export function buildFirstMove(
   situation: BusinessSituation | null,
   finding: PublicFinding | null,
   scope: readonly string[],
+  /** Nur die Sprache. Auswahl und Rahmen des Moves sind identisch. */
+  locale: FmLocale = "de",
 ): FirstMoveProposal {
+  const c = outcomeStrings(locale);
   const measured = outcome.kind === "measured_signal";
-  const title =
-    (measured ? finding?.interventionType : null) ?? MOVE_TITLE[outcome.category];
+  const title = (measured ? finding?.interventionType : null) ?? c.moveTitle[outcome.category];
 
   const rationale = [
     measured
       ? outcome.body
       : outcome.kind === "hidden_signal"
-        ? "Die öffentlich prüfbare Basis trägt. Der nächste Erkenntnisgewinn liegt deshalb nicht in einer weiteren öffentlichen Prüfung, sondern in euren eigenen Leistungsdaten."
-        : "Die öffentliche Prüfung benennt die Richtung, trägt aber allein noch keine Empfehlung. Der Move beginnt deshalb damit, sie zu bestätigen oder zu verwerfen.",
-    situation ? SITUATION_RATIONALE[situation] : "",
+        ? c.rationaleHidden
+        : c.rationaleNarrowed,
+    situation ? c.situations[situation].rationale : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -492,9 +587,9 @@ export function buildFirstMove(
     evidence: outcome.evidence.slice(0, 4),
     expectedImpact: measured ? finding?.impact : undefined,
     confidence: outcome.confidence,
-    clientEffort: CLIENT_EFFORT_DISPLAY,
-    deliveryWindow: DELIVERY_DISPLAY,
-    measurementWindow: MEASUREMENT_DISPLAY,
+    clientEffort: locale === "en" ? CLIENT_EFFORT_DISPLAY_EN : CLIENT_EFFORT_DISPLAY,
+    deliveryWindow: locale === "en" ? DELIVERY_DISPLAY_EN : DELIVERY_DISPLAY,
+    measurementWindow: locale === "en" ? MEASUREMENT_DISPLAY_EN : MEASUREMENT_DISPLAY,
     scope,
   };
 }

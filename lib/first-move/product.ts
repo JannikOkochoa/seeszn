@@ -66,6 +66,8 @@ export const DELAY_CLAUSE =
 
 /** Kanonische Produkt-URLs. */
 export const MASTER_PATH = "/first-move";
+/** Die englische Fassung derselben Produktseite. */
+export const EN_MASTER_PATH = "/en/first-move";
 export const PAID_PATH = "/google-ads/first-move";
 
 /**

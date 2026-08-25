@@ -304,8 +304,8 @@ export const LANDING_PAGES: Record<string, LandingPage> = {
     h1: "SEO Agentur aus Bremen für B2B-Marken im DACH-Raum",
     lead: "SEESZN verbindet klassische SEO-Architektur mit KI-Sichtbarkeit, für Unternehmen in Bremen und dem gesamten deutschsprachigen Raum.",
     answer: {
-      question: "Was bietet SEESZN als SEO-Studio mit Bezug zu Bremen?",
-      body: "SEESZN ist ein Sichtbarkeitsstudio mit Bezug zu Bremen und Projekten im gesamten DACH-Raum. Wir verbinden technische SEO, Content-Architektur und KI-Sichtbarkeit (GEO/AIO) zu einem System. Die Arbeit ist nicht auf einen Standort beschränkt: wir betreuen B2B-Marken remote und vor Ort.",
+      question: "Was bietet SEESZN für Unternehmen mit Bezug zu Bremen?",
+      body: "SEESZN arbeitet mit Bezug zu Bremen und mit Projekten im gesamten DACH-Raum. Technische SEO, Content-Architektur und KI-Sichtbarkeit (GEO/AIO) greifen dabei als ein System ineinander. Die Arbeit ist nicht auf einen Standort beschränkt: wir betreuen B2B-Marken remote und vor Ort.",
     },
     forWhom: {
       intro: "Relevant für:",

@@ -146,7 +146,7 @@ export const DIAGNOSIS_COPY: Record<PublicDiagnosisState, StateCopy> = {
   },
   insufficient_public_evidence: {
     label: "Öffentliche Prüfung",
-    title: "Öffentlich ist zu wenig lesbar, um daraus etwas abzuleiten.",
+    title: "Die öffentlichen Signale reichen noch nicht für einen verantwortbaren First Move.",
     body: "", // Kommt aus LIMITATION_BODY, damit der Grund konkret benannt wird.
     limits:
       "Ohne belastbare öffentliche Evidenz raten wir hier nichts. Die nächste belastbare Ebene sind eure eigenen Leistungsdaten.",

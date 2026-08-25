@@ -64,13 +64,23 @@ import {
   PUBLIC_EVIDENCE_LABEL,
   PUBLIC_INTERVENTION_LABEL,
 } from "@/lib/first-move/disclosure";
-import { EXAMPLE_FINDING, EXAMPLE_FINDING_PAID } from "@/lib/first-move/example";
+import { EXAMPLE_FINDING, EXAMPLE_FINDING_EN, EXAMPLE_FINDING_PAID } from "@/lib/first-move/example";
+import { FUNNEL_STRINGS, REQUEST_STRINGS, type FmLocale } from "@/lib/first-move/copy";
+import {
+  DELIVERY_DISPLAY_EN,
+  HERO_FACT_LINE_EN,
+  INCLUDED_EN,
+  PRICE_DISPLAY_NET_EN,
+  PRICE_FRAME_EN,
+  PRICE_PROMISE_EN,
+  RISK_REVERSAL_SHORT_EN,
+} from "@/lib/first-move/productEn";
+import { clearHandoff, readHandoff } from "@/lib/first-move/handoff";
 import {
   BUSINESS_SITUATIONS,
-  CONFIDENCE_BAND_LABEL,
-  HIDDEN_SIGNAL_COPY,
   buildFirstMove,
   buildOutcome,
+  outcomeStrings,
   type BusinessSituation,
 } from "@/lib/first-move/outcome";
 import { READ_ONLY_GUARANTEES, READ_ONLY_UNLOCKS } from "@/lib/first-move/paid";
@@ -85,7 +95,6 @@ import {
   RISK_REVERSAL_SHORT,
 } from "@/lib/first-move/product";
 import {
-  SIGNALS_STEP,
   SIGNAL_SOURCES,
   hasConnectableSource,
 } from "@/lib/first-move/signals";
@@ -122,12 +131,6 @@ const STEP_ORDER: Record<Step, number> = {
   move: 3,
 };
 
-const STEP_LABEL: Record<Step, string> = {
-  diagnosis: "Befund",
-  context: "Situation",
-  signals: "Signale",
-  move: "First Move",
-};
 type Lane = "discovery" | "fast";
 /**
  * Von welchem Einstieg aus die Prüfung gestartet wurde. Zwei Aufgaben: die
@@ -138,6 +141,8 @@ type Entry = "hero" | "instrument" | "final";
 
 interface FunnelProps {
   variant: Variant;
+  /** Sprache der Seite. Der Paid Check bleibt deutsch. */
+  locale?: FmLocale;
   adsOAuthEnabled?: boolean;
   /** Eyebrow, H1 und Lead. Server-gerendert. */
   heroCopy: ReactNode;
@@ -151,28 +156,18 @@ interface FunnelProps {
   final: ReactNode;
 }
 
-const IMPLEMENTATION_OPTIONS: { id: ImplementationPath; label: string }[] = [
-  { id: "seeszn_access", label: "SEESZN bekommt Zugriff" },
-  { id: "internal_team", label: "Unser internes Team setzt um" },
-  { id: "existing_agency", label: "Unsere Agentur oder Entwickler setzen um" },
-  { id: "none", label: "Aktuell gibt es keinen Umsetzungsweg" },
+/** Reihenfolge der Optionen. Die Beschriftungen liegen in ./copy. */
+const IMPLEMENTATION_OPTIONS: ImplementationPath[] = [
+  "seeszn_access",
+  "internal_team",
+  "existing_agency",
+  "none",
 ];
 
-const APPROVAL_OPTIONS: { id: ApprovalPath; label: string }[] = [
-  { id: "direct", label: "Direkte Entscheidung möglich" },
-  { id: "internal_small", label: "Interne Abstimmung, 1 bis 2 Personen" },
-  { id: "external", label: "Externe Freigabe nötig" },
-  { id: "unknown", label: "Noch unklar" },
-];
+const APPROVAL_OPTIONS: ApprovalPath[] = ["direct", "internal_small", "external", "unknown"];
 
-const COMPLEXITY_OPTIONS: { id: Complexity; label: string }[] = [
-  { id: "simple", label: "Einfach" },
-  { id: "medium", label: "Mittel" },
-  { id: "high", label: "Hoch" },
-  { id: "very_high", label: "Sehr hoch" },
-];
+const COMPLEXITY_OPTIONS: Complexity[] = ["simple", "medium", "high", "very_high"];
 
-const LEVEL_LABEL: Record<string, string> = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 
 /**
  * Die Beschriftung des Instruments. Eine Frage, eine Erwartung, eine Handlung,
@@ -267,6 +262,7 @@ const PAID_READS: string[] = [
 
 export default function FirstMoveFunnel({
   variant,
+  locale = "de",
   adsOAuthEnabled = false,
   heroCopy,
   heroPlate,
@@ -278,8 +274,16 @@ export default function FirstMoveFunnel({
 }: FunnelProps) {
   const isPaid = variant === "paid";
   const uid = useId();
-  // Das Beispiel folgt dem Kanal der Seite, damit der Message Match hält.
-  const example = isPaid ? EXAMPLE_FINDING_PAID : EXAMPLE_FINDING;
+  /** Die Sprache der gesamten Seite. Der Paid Check läuft nur deutsch. */
+  const pageLocale: FmLocale = isPaid ? "de" : locale;
+  const f = FUNNEL_STRINGS[pageLocale];
+  const oc = outcomeStrings(pageLocale);
+  // Das Beispiel folgt Kanal und Sprache der Seite, damit der Message Match hält.
+  const example = isPaid
+    ? EXAMPLE_FINDING_PAID
+    : pageLocale === "en"
+      ? EXAMPLE_FINDING_EN
+      : EXAMPLE_FINDING;
 
   const [domain, setDomain] = useState("");
   const [spendBand, setSpendBand] = useState<SpendBand>("unknown");
@@ -312,8 +316,21 @@ export default function FirstMoveFunnel({
   const [complexity, setComplexity] = useState<Complexity | null>(null);
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [sending, setSending] = useState<false | "checkout" | "result_email">(false);
-  const [sent, setSent] = useState<null | "checkout" | "result_email">(null);
+  /**
+   * Der nachgeordnete Weg von der Startseite: "Befund gemeinsam prüfen". Er
+   * benutzt dieselbe Anfragestrecke, überspringt aber den Fit Check. Der Fit
+   * Check entscheidet über die Eignung für den Festpreis, und das ist hier noch
+   * gar nicht die Frage.
+   */
+  const [reviewMode, setReviewMode] = useState(false);
+  /**
+   * Die Sprache der Anfragestrecke. Sie kommt aus dem Übergang: wer auf /en
+   * geprüft hat, bekommt das Panel in seiner Sprache. Standard bleibt Deutsch,
+   * denn /first-move ist die deutsche Produktseite.
+   */
+  const [requestLocale, setRequestLocale] = useState<FmLocale>(isPaid ? "de" : locale);
+  const [sending, setSending] = useState<false | "checkout" | "result_email" | "review">(false);
+  const [sent, setSent] = useState<null | "checkout" | "result_email" | "review">(null);
   const [formError, setFormError] = useState("");
   const [emailOpen, setEmailOpen] = useState(false);
   /**
@@ -331,6 +348,8 @@ export default function FirstMoveFunnel({
   const offerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const viewedRef = useRef(false);
+  /** Nur eine gerade gelaufene Prüfung zieht den Fokus in das Ergebnis. */
+  const justScannedRef = useRef(false);
   /**
    * Die zuletzt klassifizierte Kategorie. Als Ref, damit sie in Ereignisse
    * einfließt, ohne die Callbacks bei jedem Rerender neu zu erzeugen.
@@ -384,7 +403,7 @@ export default function FirstMoveFunnel({
         // Eine leere Eingabe ist ein Bedienfehler, kein Prüfergebnis: die Meldung
         // bleibt am Einstieg stehen, der Fokus geht zurück ins Feld, und es wird
         // nicht zu einem Abschnitt gescrollt, den der Besucher gar nicht sucht.
-        setErrorMsg("Bitte gib eine Domain ein, zum Beispiel deine-domain.de");
+        setErrorMsg(f.emptyDomain);
         setErrorAt(entry);
         setPhase("error");
         (entry === "hero" ? heroInputRef : stageInputRef).current?.focus();
@@ -411,7 +430,7 @@ export default function FirstMoveFunnel({
       // nicht die Vermutung des Besuchers bestätigen.
       const payload = isPaid
         ? { domain: value, spendBand }
-        : { domain: value, route: "unsure" };
+        : { domain: value, route: "unsure", locale: pageLocale };
 
       try {
         const res = await fetch(endpoint, {
@@ -463,12 +482,13 @@ export default function FirstMoveFunnel({
               // Ein Ergebnis ist ein Ergebnis, mit oder ohne Empfehlung. Es gibt
               // deshalb nur noch einen Zielzustand.
               setStep("diagnosis");
+              justScannedRef.current = true;
               setPhase("settled");
 
               // Die Klassifikation, nicht nur das Ob. Erst damit ist auswertbar,
               // wie oft die Prüfung in HIDDEN_SIGNAL endet und ob dieser Zustand
               // anders konvertiert als ein gemessener Befund.
-              const classified = buildOutcome(event.diagnosis, event.finding, isPaid);
+              const classified = buildOutcome(event.diagnosis, event.finding, isPaid, pageLocale);
               track("first_move_result_classified", {
                 surface: variant,
                 category: classified.category,
@@ -500,12 +520,12 @@ export default function FirstMoveFunnel({
         }
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return;
-        setErrorMsg("Die Prüfung ist fehlgeschlagen. Bitte versuche es erneut.");
+        setErrorMsg(f.scanFailed);
         setErrorAt("instrument");
         setPhase("error");
       }
     },
-    [domain, isPaid, resetForNewScan, spendBand, variant],
+    [domain, f, isPaid, pageLocale, resetForNewScan, spendBand, variant],
   );
 
   // Das Domainfeld im Abschluss startet dieselbe Prüfung, statt einen zweiten
@@ -520,6 +540,56 @@ export default function FirstMoveFunnel({
     window.addEventListener("fm:start", onExternalStart as EventListener);
     return () => window.removeEventListener("fm:start", onExternalStart as EventListener);
   }, [start]);
+
+  /*
+    Übergang von der Startseite. Wer dort geprüft hat und weitergegangen ist,
+    kommt hier mit seinem Befund an: Domain, Kontext-ID, öffentlicher Befund und
+    Diagnosezustand stehen bereits im Zustand dieser Komponente. Der Besucher
+    tippt nichts zweimal, und die Anfrage startet nicht bei null.
+
+    Der Übergang liegt in sessionStorage, nie in der URL, und er gilt sechs
+    Stunden. Siehe lib/first-move/handoff.
+  */
+  useEffect(() => {
+    if (isPaid) return;
+    // Nach dem ersten Frame: der Übergang ist Clientwissen und darf im
+    // ausgelieferten HTML nicht vorkommen.
+    const frame = requestAnimationFrame(() => {
+      const saved = readHandoff();
+      if (!saved) return;
+
+      setDomain(saved.domain);
+      setScannedDomain(saved.domain);
+      setDiagnosis(saved.diagnosis);
+      setFinding(saved.finding);
+      if (saved.finding?.suggestedComplexity) setComplexity(saved.finding.suggestedComplexity);
+      setPhase("settled");
+      setStep("diagnosis");
+      setLane("discovery");
+      setRequestLocale(saved.locale);
+
+      if (saved.intent === "review") {
+        setReviewMode(true);
+        setCheckoutOpen(true);
+      } else {
+        setFitOpen(true);
+      }
+      track("first_move_context_restored", {
+        surface: variant,
+        intent: saved.intent,
+        category: saved.category,
+        kind: saved.kind,
+        has_context: Boolean(saved.contextId),
+      });
+      window.setTimeout(
+        () => fitRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+        120,
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+    // Nur beim Mounten. Ein späterer Lauf würde eine laufende Prüfung überschreiben.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Das Instrument trägt alle Zustände. Wer im Hero oder im Abschluss startet,
@@ -544,7 +614,9 @@ export default function FirstMoveFunnel({
   // ohne verschobenen Fokus bliebe eine Tastatur- oder Screenreader-Bedienung
   // im vorigen Schritt stehen.
   useEffect(() => {
-    if (phase === "settled") {
+    // Ein wiederhergestellter Befund zieht den Fokus nicht: beim Laden der Seite
+    // gehört er dorthin, wo der Besucher selbst hinnavigiert.
+    if (phase === "settled" && justScannedRef.current) {
       resultRef.current?.focus({ preventScroll: true });
     }
   }, [phase, step]);
@@ -578,42 +650,27 @@ export default function FirstMoveFunnel({
   }
 
   // ── Eligibility ────────────────────────────────────────────────────────────
+  /** Die Sprache der Anfragestrecke. Siehe requestLocale. */
+  const rc = REQUEST_STRINGS[requestLocale];
+  /*
+    Preis und Lieferfrist in der Schreibweise der Anfragesprache. Der Betrag
+    kommt aus denselben gesperrten Produktwerten; nur die Form unterscheidet
+    sich: "2.490 € netto" gegen "€2,490 excl. VAT".
+  */
+  const price = requestLocale === "en" ? PRICE_DISPLAY_NET_EN : PRICE_DISPLAY_NET;
+  const delivery = requestLocale === "en" ? DELIVERY_DISPLAY_EN : DELIVERY_DISPLAY;
+  const reassurance = requestLocale === "en" ? RISK_REVERSAL_SHORT_EN : RISK_REVERSAL_SHORT;
+
   const gate = (() => {
-    if (implementation === "none") {
-      return {
-        k: "Kein Checkout",
-        t: "Ohne Umsetzungsweg gibt es keinen First Move.",
-        b: "Ein First Move ist eine Umsetzung. Wir klären zuerst, wer die Änderung live bringen kann. Danach ist der Festpreis wieder die richtige Form.",
-        next: "Umsetzungsweg klären",
-      };
-    }
-    if (approval === "unknown") {
-      return {
-        k: "Checkout pausiert",
-        t: "Der Freigabeweg ist noch offen.",
-        b: "Ohne geklärte Freigabe startet die Lieferfrist nicht. Wir klären den Freigabeweg kurz vorab, damit die Frist hält.",
-        next: "Freigabeweg klären",
-      };
-    }
-    if (complexity === "very_high") {
-      return {
-        k: "Scoped Review",
-        t: "Dieser Scope ist für den direkten Kauf zu groß.",
-        b: "Bei sehr hoher Komplexität grenzen wir den Move vorher gemeinsam ein, damit der Festpreis trägt. Der Preis steigt dadurch nicht, geprüft wird die Eignung.",
-        next: "Scope eingrenzen",
-      };
-    }
+    if (implementation === "none") return rc.gates.noPath;
+    if (approval === "unknown") return rc.gates.approvalOpen;
+    if (complexity === "very_high") return rc.gates.tooComplex;
     if (
       finding &&
       !finding.eligibility.eligible &&
       finding.eligibility.reason !== "paid_read_only_required"
     ) {
-      return {
-        k: "Scoped Review",
-        t: "Der Scope braucht vorab eine Eingrenzung.",
-        b: finding.eligibility.nextAction ?? "",
-        next: "Scope eingrenzen",
-      };
+      return { ...rc.gates.scopedReview, b: finding.eligibility.nextAction ?? "" };
     }
     return null;
   })();
@@ -635,16 +692,17 @@ export default function FirstMoveFunnel({
   }, [fitComplete]);
 
   // ── Absenden ───────────────────────────────────────────────────────────────
-  async function submit(intent: "checkout" | "result_email", form: HTMLFormElement) {
+  async function submit(intent: "checkout" | "result_email" | "review", form: HTMLFormElement) {
     const data = new FormData(form);
     const email = String(data.get("email") ?? "").trim();
     if (!email.includes("@")) {
-      setFormError("Bitte gib eine gültige Firmen-E-Mail an.");
+      setFormError(rc.checkout.emailInvalid);
       return;
     }
     setFormError("");
     setSending(intent);
     if (intent === "checkout") track("first_move_request_start", { surface: variant, lane });
+    if (intent === "review") track("first_move_review_request", { surface: variant, lane });
 
     try {
       const res = await fetch("/api/first-move/request", {
@@ -658,6 +716,9 @@ export default function FirstMoveFunnel({
           companyUrlConfirm: String(data.get("companyUrlConfirm") ?? ""),
           domain: scannedDomain || domain.trim(),
           surface: isPaid ? "google_ads" : "master",
+          // Die Sprache der Anfrage. Sie steuert nur die Bestätigungsmail an den
+          // Absender; die interne Benachrichtigung bleibt deutsch.
+          locale: requestLocale,
           // Die Geschäftslage, nicht der vermutete Kanal. Der Feldname bleibt,
           // damit bestehende Leads und Auswertungen weiterlaufen. Übertragen
           // wird das Label, nicht die interne ID: die Notiz landet in einer
@@ -677,15 +738,17 @@ export default function FirstMoveFunnel({
         devReason?: string;
       } | null;
       if (!res.ok) {
-        setFormError(body?.error ?? "Das hat nicht geklappt. Bitte versuche es erneut.");
+        setFormError(body?.error ?? rc.checkout.failed);
         setSending(false);
         return;
       }
       setDevNotice(body?.devSuppressed ? (body.devReason ?? "") : "");
       setSent(intent);
+      // Der Übergang hat seinen Zweck erfüllt. Er bleibt nicht liegen.
+      if (intent !== "result_email") clearHandoff();
       if (intent === "checkout") track("first_move_request_submit", { surface: variant, lane });
     } catch {
-      setFormError("Das hat nicht geklappt. Bitte versuche es erneut.");
+      setFormError(rc.checkout.failed);
     } finally {
       setSending(false);
     }
@@ -704,13 +767,13 @@ export default function FirstMoveFunnel({
         ]
       : null;
 
-  const scopeLabel = gate ? gate.k : "geeignet für den Festpreis";
+  const scopeLabel = gate ? gate.k : f.scopeEligible;
 
   // Die Fehlermeldung erscheint genau einmal, und zwar dort, wo der Besucher
   // gerade steht.
   const heroError = phase === "error" && errorAt === "hero" && errorMsg !== "";
   const instrumentError = phase === "error" && errorAt !== "hero" && errorMsg !== "";
-  const copy = isPaid ? INSTRUMENT.paid : INSTRUMENT.master;
+  const copy = isPaid ? INSTRUMENT.paid : f.instrument;
   const idle = phase === "idle" || phase === "error";
   const settled = phase === "settled";
 
@@ -723,14 +786,23 @@ export default function FirstMoveFunnel({
    * Oberfläche kann aus diesem Zustand keinen Dead End mehr bauen.
    */
   const outcome = useMemo(
-    () => (diagnosis ? buildOutcome(diagnosis, finding, isPaid) : null),
-    [diagnosis, finding, isPaid],
+    () => (diagnosis ? buildOutcome(diagnosis, finding, isPaid, pageLocale) : null),
+    [diagnosis, finding, isPaid, pageLocale],
   );
 
   /** Der vorgeschlagene Move. Entsteht erst, wenn die Geschäftslage vorliegt. */
   const move = useMemo(
-    () => (outcome ? buildFirstMove(outcome, situation, finding, INCLUDED) : null),
-    [outcome, situation, finding],
+    () =>
+      outcome
+        ? buildFirstMove(
+            outcome,
+            situation,
+            finding,
+            pageLocale === "en" ? INCLUDED_EN : INCLUDED,
+            pageLocale,
+          )
+        : null,
+    [outcome, situation, finding, pageLocale],
   );
 
   const connectable = hasConnectableSource();
@@ -800,7 +872,7 @@ export default function FirstMoveFunnel({
               >
                 <div className="fm-field">
                   <label htmlFor={`${uid}-domain`} className="fm-skip">
-                    Deine Domain
+                    {f.heroFieldLabel}
                   </label>
                   <input
                     id={`${uid}-domain`}
@@ -811,7 +883,7 @@ export default function FirstMoveFunnel({
                     inputMode="url"
                     autoComplete="url"
                     spellCheck={false}
-                    placeholder="deine-domain.de"
+                    placeholder={f.instrument.placeholder}
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     aria-describedby={
@@ -821,10 +893,10 @@ export default function FirstMoveFunnel({
                   />
                   <button type="submit" className="fm-btn" disabled={phase === "scanning"}>
                     {phase === "scanning"
-                      ? "Prüfung läuft"
+                      ? f.heroCtaBusy
                       : isPaid
                         ? "Paid Check starten"
-                        : "Domain prüfen"}
+                        : f.heroCta}
                   </button>
                 </div>
 
@@ -851,12 +923,12 @@ export default function FirstMoveFunnel({
                 ) : null}
 
                 <p id={`${uid}-facts`} className="fm-facts">
-                  {HERO_FACT_LINE}
+                  {pageLocale === "en" ? HERO_FACT_LINE_EN : HERO_FACT_LINE}
                 </p>
                 <p className="fm-micro">
                   {isPaid
                     ? "Öffentliche Daten. Kein Login, kein Google-Ads-Zugriff. Etwa 20 Sekunden."
-                    : "Öffentliche Daten. Kein Login. Etwa 20 Sekunden."}
+                    : f.heroMicro}
                 </p>
                 {heroError ? (
                   <p id={`${uid}-hero-error`} className="fm-error" role="alert">
@@ -884,19 +956,19 @@ export default function FirstMoveFunnel({
           <div className="fm-stage-head">
             <span className="fm-eyebrow">
               {phase === "scanning"
-                ? "Prüfung läuft"
+                ? f.stageEyebrowScanning
                 : settled
-                  ? `Schritt ${STEP_ORDER[step] + 1} von 4`
-                  : "Öffentliche Prüfung"}
+                  ? f.stageStep(STEP_ORDER[step] + 1, 4)
+                  : f.stageEyebrowIdle}
             </span>
             <h2 id="fm-stage-h" className="fm-stage-title">
               {settled && outcome
                 ? outcome.label
                 : phase === "scanning"
-                  ? `Wir lesen ${scannedDomain || "die Oberfläche"}`
+                  ? f.stageTitleScanning(scannedDomain || f.surfaceFallback)
                   : isPaid
                     ? "Zuerst der öffentliche Befund, dann der Account"
-                    : "Zuerst der Befund, dann der nächste Move"}
+                    : f.stageTitleIdle}
             </h2>
           </div>
 
@@ -911,7 +983,7 @@ export default function FirstMoveFunnel({
                     <span className="fm-probe-pip" aria-hidden="true" />
                     {copy.label}
                   </span>
-                  <span className="fm-probe-free">Kostenlos</span>
+                  <span className="fm-probe-free">{pageLocale === "en" ? "Free" : "Kostenlos"}</span>
                 </div>
 
                 {idle ? (
@@ -981,7 +1053,7 @@ export default function FirstMoveFunnel({
                 ) : (
                   <div className="fm-probe-body">
                     <p className="fm-probe-target">
-                      <span className="fm-probe-target-k">Geprüft</span>
+                      <span className="fm-probe-target-k">{f.checked}</span>
                       <span className="fm-probe-target-v">{scannedDomain || domain.trim()}</span>
                     </p>
 
@@ -1012,7 +1084,7 @@ export default function FirstMoveFunnel({
                           window.setTimeout(() => stageInputRef.current?.focus(), 0);
                         }}
                       >
-                        Andere Domain prüfen
+                        {f.again}
                       </button>
                     ) : null}
                   </div>
@@ -1021,10 +1093,10 @@ export default function FirstMoveFunnel({
 
               <p className="fm-micro fm-stage-note">
                 {phase === "scanning"
-                  ? "Die Prüfung läuft gegen die echte Oberfläche. Jeder Zustand erscheint erst, wenn der Schritt fertig ist."
+                  ? f.runningNote
                   : isPaid
                     ? "Ohne Account-Zugriff und ohne E-Mail. Was hier nicht öffentlich sichtbar ist, behaupten wir auch nicht."
-                    : "Ohne Zugriff auf deine Systeme und ohne E-Mail. Nur was öffentlich abrufbar ist."}
+                    : f.idleNote}
               </p>
             </div>
 
@@ -1090,15 +1162,12 @@ export default function FirstMoveFunnel({
                         <span className="fm-stages-l">
                           {isPaid && stage.id === "04"
                             ? "Conversion-Signale vergleichen"
-                            : stage.label}
+                            : (f.stages[i] ?? stage.label)}
                         </span>
                       </li>
                     ))}
                   </ol>
-                  <p className="fm-micro">
-                    Wir ordnen gerade ein, wo bei euch der größte Unterschied zwischen Aufwand und
-                    Ergebnis liegt.
-                  </p>
+                  <p className="fm-micro">{f.stagesNote}</p>
                 </div>
               ) : null}
 
@@ -1122,7 +1191,7 @@ export default function FirstMoveFunnel({
                         aria-current={step === id ? "step" : undefined}
                       >
                         <span className="fm-seq-n">{`0${i + 1}`}</span>
-                        <span className="fm-seq-l">{STEP_LABEL[id]}</span>
+                        <span className="fm-seq-l">{f.stepLabels[i]}</span>
                       </li>
                     ))}
                   </ol>
@@ -1137,7 +1206,7 @@ export default function FirstMoveFunnel({
                           {outcome.label}
                         </span>
                         <span className="fm-confidence">
-                          Öffentliche Lesung · {CONFIDENCE_BAND_LABEL[outcome.confidence]}
+                          {f.confidencePrefix} · {oc.confidence[outcome.confidence]}
                         </span>
                       </div>
 
@@ -1157,7 +1226,7 @@ export default function FirstMoveFunnel({
                           erscheint hier nie. */}
                       {outcome.ruledOut.length ? (
                         <div className="fm-block">
-                          <span className="fm-block-k">Was wir ausschließen konnten</span>
+                          <span className="fm-block-k">{f.ruledOutLabel}</span>
                           <ul className="fm-ruled">
                             {outcome.ruledOut.map((line) => (
                               <li key={line}>{line}</li>
@@ -1242,7 +1311,7 @@ export default function FirstMoveFunnel({
                         >
                           {outcome.cta} →
                         </button>
-                        <span className="fm-micro">{HIDDEN_SIGNAL_COPY.ctaMicro}</span>
+                        <span className="fm-micro">{oc.ctaMicro}</span>
                       </div>
                       <button
                         type="button"
@@ -1250,7 +1319,7 @@ export default function FirstMoveFunnel({
                         onClick={() => setEmailOpen((v) => !v)}
                         aria-expanded={emailOpen}
                       >
-                        Ergebnis per E-Mail senden
+                        {f.emailCta}
                       </button>
                     </div>
                   ) : null}
@@ -1260,15 +1329,11 @@ export default function FirstMoveFunnel({
                       es löst, entscheidet SEESZN, nicht der Besucher. */}
                   {step === "context" ? (
                     <div className="fm-verdict">
-                      <span className="fm-badge">Schritt 02</span>
-                      <h3 className="fm-verdict-title">
-                        Was beschreibt eure Situation am ehesten?
-                      </h3>
-                      <p className="fm-serif">
-                        Eine Angabe genügt. Sie entscheidet, welche Ebene wir zuerst prüfen.
-                      </p>
+                      <span className="fm-badge">{f.context.badge}</span>
+                      <h3 className="fm-verdict-title">{f.context.headline}</h3>
+                      <p className="fm-serif">{f.context.body}</p>
 
-                      <div className="fm-situations" role="group" aria-label="Eure Situation">
+                      <div className="fm-situations" role="group" aria-label={f.context.groupLabel}>
                         {BUSINESS_SITUATIONS.map((opt) => (
                           <button
                             key={opt.id}
@@ -1284,9 +1349,9 @@ export default function FirstMoveFunnel({
                               });
                             }}
                           >
-                            <span className="fm-situation-l">{opt.label}</span>
+                            <span className="fm-situation-l">{oc.situations[opt.id].label}</span>
                             {situation === opt.id ? (
-                              <span className="fm-situation-n">{opt.note}</span>
+                              <span className="fm-situation-n">{oc.situations[opt.id].note}</span>
                             ) : null}
                           </button>
                         ))}
@@ -1299,9 +1364,11 @@ export default function FirstMoveFunnel({
                           disabled={situation === null}
                           onClick={() => advance("signals")}
                         >
-                          Weiter →
+                          {f.context.next} →
                         </button>
-                        <span className="fm-micro">{PRICE_FRAME}</span>
+                        <span className="fm-micro">
+                          {pageLocale === "en" ? PRICE_FRAME_EN : PRICE_FRAME}
+                        </span>
                       </div>
                     </div>
                   ) : null}
@@ -1312,15 +1379,15 @@ export default function FirstMoveFunnel({
                       ohne Zugang ist ein vollwertiger Weg, kein Notausgang. */}
                   {step === "signals" ? (
                     <div className="fm-verdict">
-                      <span className="fm-badge">{SIGNALS_STEP.label}</span>
-                      <h3 className="fm-verdict-title">{SIGNALS_STEP.headline}</h3>
-                      <p className="fm-serif">{SIGNALS_STEP.body}</p>
+                      <span className="fm-badge">{oc.signals.label}</span>
+                      <h3 className="fm-verdict-title">{oc.signals.headline}</h3>
+                      <p className="fm-serif">{oc.signals.body}</p>
 
                       <ul className="fm-sources">
                         {SIGNAL_SOURCES.map((src) => (
                           <li key={src.id} data-available={src.available}>
                             <span className="fm-sources-l">{src.label}</span>
-                            <span className="fm-sources-a">{src.answers}</span>
+                            <span className="fm-sources-a">{oc.signals.sources[src.id]}</span>
                             {src.available && src.connectPath ? (
                               <a
                                 href={src.connectPath}
@@ -1332,17 +1399,17 @@ export default function FirstMoveFunnel({
                                   })
                                 }
                               >
-                                Read-only verbinden
+                                {oc.signals.connectCta}
                               </a>
                             ) : (
-                              <span className="fm-sources-s">Im Kickoff, lesend</span>
+                              <span className="fm-sources-s">{oc.signals.inKickoff}</span>
                             )}
                           </li>
                         ))}
                       </ul>
 
                       {!connectable ? (
-                        <p className="fm-block-v fm-verify">{SIGNALS_STEP.unavailableNote}</p>
+                        <p className="fm-block-v fm-verify">{oc.signals.unavailableNote}</p>
                       ) : null}
 
                       <div className="fm-actions">
@@ -1363,9 +1430,9 @@ export default function FirstMoveFunnel({
                             advance("move");
                           }}
                         >
-                          {connectable ? SIGNALS_STEP.skipCta : SIGNALS_STEP.continueCta} →
+                          {connectable ? oc.signals.skipCta : oc.signals.continueCta} →
                         </button>
-                        <span className="fm-micro">{SIGNALS_STEP.skipNote}</span>
+                        <span className="fm-micro">{oc.signals.skipNote}</span>
                       </div>
                     </div>
                   ) : null}
@@ -1375,17 +1442,17 @@ export default function FirstMoveFunnel({
                       Begründung, Belegen und Rahmen. */}
                   {step === "move" && move ? (
                     <div className="fm-verdict fm-move">
-                      <span className="fm-badge fm-badge--move">First Move</span>
+                      <span className="fm-badge fm-badge--move">{f.move.badge}</span>
                       <h3 className="fm-verdict-title">{move.title}</h3>
 
                       <div className="fm-block">
-                        <span className="fm-block-k">Warum dieser Move</span>
+                        <span className="fm-block-k">{f.move.why}</span>
                         <p className="fm-serif">{move.rationale}</p>
                       </div>
 
                       {move.evidence.length ? (
                         <div className="fm-block">
-                          <span className="fm-block-k">Evidenz</span>
+                          <span className="fm-block-k">{f.move.evidence}</span>
                           <dl className="fm-readout">
                             {move.evidence.map((e) => (
                               <div key={e.id} data-status={e.status}>
@@ -1403,30 +1470,30 @@ export default function FirstMoveFunnel({
                       <dl className="fm-move-facts">
                         {move.expectedImpact ? (
                           <div>
-                            <dt>Erwarteter Impact</dt>
-                            <dd>{LEVEL_LABEL[move.expectedImpact]}</dd>
+                            <dt>{f.move.expectedImpact}</dt>
+                            <dd>{f.levels[move.expectedImpact]}</dd>
                           </div>
                         ) : null}
                         <div>
-                          <dt>Sicherheit</dt>
-                          <dd>{CONFIDENCE_BAND_LABEL[move.confidence]}</dd>
+                          <dt>{f.move.confidence}</dt>
+                          <dd>{oc.confidence[move.confidence]}</dd>
                         </div>
                         <div>
-                          <dt>Aufwand bei euch</dt>
+                          <dt>{f.move.clientEffort}</dt>
                           <dd>{move.clientEffort}</dd>
                         </div>
                         <div>
-                          <dt>Lieferung</dt>
+                          <dt>{f.move.delivery}</dt>
                           <dd>{move.deliveryWindow}</dd>
                         </div>
                         <div>
-                          <dt>Messfenster</dt>
+                          <dt>{f.move.measurement}</dt>
                           <dd>{move.measurementWindow}</dd>
                         </div>
                       </dl>
 
                       <details className="fm-details">
-                        <summary>Was die Umsetzung einschließt</summary>
+                        <summary>{f.move.scopeSummary}</summary>
                         <div className="fm-details-body">
                           <ul className="fm-evidence">
                             {move.scope.map((item) => (
@@ -1438,9 +1505,11 @@ export default function FirstMoveFunnel({
 
                       <div className="fm-actions">
                         <button type="button" className="fm-btn" onClick={goToOffer}>
-                          Diesen Move starten →
+                          {f.move.cta} →
                         </button>
-                        <span className="fm-micro">{PRICE_PROMISE}</span>
+                        <span className="fm-micro">
+                          {pageLocale === "en" ? PRICE_PROMISE_EN : PRICE_PROMISE}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1448,7 +1517,7 @@ export default function FirstMoveFunnel({
                         onClick={() => setEmailOpen((v) => !v)}
                         aria-expanded={emailOpen}
                       >
-                        Ergebnis per E-Mail senden
+                        {f.emailCta}
                       </button>
                     </div>
                   ) : null}
@@ -1465,7 +1534,7 @@ export default function FirstMoveFunnel({
                   }}
                 >
                   <label htmlFor={`${uid}-mail`} className="fm-block-k">
-                    Firmen-E-Mail
+                    {f.emailLabel}
                   </label>
                   <div className="fm-field">
                     <input
@@ -1475,10 +1544,10 @@ export default function FirstMoveFunnel({
                       required
                       autoComplete="email"
                       className="fm-input"
-                      placeholder="name@unternehmen.de"
+                      placeholder={f.emailPlaceholder}
                     />
                     <button type="submit" className="fm-btn fm-btn--sm" disabled={sending !== false}>
-                      {sending === "result_email" ? "Wird gesendet" : "Senden"}
+                      {sending === "result_email" ? f.emailSending : f.emailSend}
                     </button>
                   </div>
                   <input
@@ -1499,7 +1568,7 @@ export default function FirstMoveFunnel({
 
               {sent === "result_email" ? (
                 <p className="fm-micro" role="status">
-                  Das ist unterwegs. Wenn nichts ankommt, schreib uns kurz an hello@seeszn.com.
+                  {f.emailSent}
                   {devNotice ? ` ${devNotice}` : ""}
                 </p>
               ) : null}
@@ -1510,7 +1579,7 @@ export default function FirstMoveFunnel({
           {relevantCase ? (
             <div className="fm-relevant">
               <div className="fm-relevant-k">
-                <span className="fm-eyebrow">Passendes Ergebnis</span>
+                <span className="fm-eyebrow">{f.relevantCase.label}</span>
                 <span className="fm-relevant-name">{relevantCase.name}</span>
                 <span className="fm-case-desc">{relevantCase.descriptor}</span>
               </div>
@@ -1527,7 +1596,7 @@ export default function FirstMoveFunnel({
                   className="fm-link-secondary"
                   onClick={() => track("proof_expand", { surface: variant, case: relevantCase.id })}
                 >
-                  Weitere Ergebnisse ansehen
+                  {f.relevantCase.more}
                 </a>
               </div>
             </div>
@@ -1543,50 +1612,56 @@ export default function FirstMoveFunnel({
       {/* ── Fit Check und Start ──────────────────────────────────────────── */}
       <section className="fm-section fm-start" id="start" aria-labelledby="fm-start-h">
         <div className="fm-wrap">
-          {!fitOpen ? (
+          {!fitOpen && !reviewMode ? (
             <div className="fm-start-lead">
               <h2 id="fm-start-h" className="fm-h2">
-                Drei Fragen entscheiden, ob der Festpreis trägt.
+                {rc.fit.leadTitle}
               </h2>
-              <p className="fm-body">
-                Umsetzungsweg, Freigabeweg und Komplexität. Danach siehst du, ob wir direkt starten
-                können oder den Scope vorher gemeinsam eingrenzen.
-              </p>
+              <p className="fm-body">{rc.fit.leadBody}</p>
               <div className="fm-actions">
                 <button type="button" className="fm-btn" onClick={openFitCheck}>
-                  First Move starten
+                  {rc.fit.leadCta}
                 </button>
                 <span className="fm-micro">
-                  {PRICE_DISPLAY_NET} · {DELIVERY_DISPLAY}
+                  {price} · {delivery}
                 </span>
               </div>
             </div>
           ) : (
             <div className="fm-fit" ref={fitRef}>
               <div>
-                <span className="fm-eyebrow">Fit Check</span>
+                <span className="fm-eyebrow">
+                  {reviewMode ? rc.review.eyebrow : rc.fit.eyebrow}
+                </span>
                 <h2 id="fm-start-h" className="fm-h2 fm-h2--sm">
-                  Passt dieser Move in den Festpreis?
+                  {reviewMode ? rc.review.title : rc.fit.title}
                 </h2>
+                {reviewMode ? (
+                  <p className="fm-body" style={{ marginTop: 12 }}>
+                    {scannedDomain ? rc.review.lead(scannedDomain) : rc.review.leadNoDomain}
+                  </p>
+                ) : null}
               </div>
 
+              {reviewMode ? null : (
+              <>
               <fieldset className="fm-fit-q">
                 <legend className="fm-fit-legend">
-                  <span>01</span> Wie kann der Move umgesetzt werden?
+                  <span>01</span> {rc.fit.q1}
                 </legend>
                 <div className="fm-fit-opts">
-                  {IMPLEMENTATION_OPTIONS.map((opt) => (
+                  {IMPLEMENTATION_OPTIONS.map((id) => (
                     <button
-                      key={opt.id}
+                      key={id}
                       type="button"
                       className="fm-fit-opt"
-                      aria-pressed={implementation === opt.id}
+                      aria-pressed={implementation === id}
                       onClick={() => {
-                        setImplementation(opt.id);
-                        track("fit_check_step", { surface: variant, step: 1, answer: opt.id });
+                        setImplementation(id);
+                        track("fit_check_step", { surface: variant, step: 1, answer: id });
                       }}
                     >
-                      {opt.label}
+                      {rc.fit.implementation[id]}
                     </button>
                   ))}
                 </div>
@@ -1594,21 +1669,21 @@ export default function FirstMoveFunnel({
 
               <fieldset className="fm-fit-q">
                 <legend className="fm-fit-legend">
-                  <span>02</span> Wie ist der Freigabeweg?
+                  <span>02</span> {rc.fit.q2}
                 </legend>
                 <div className="fm-fit-opts">
-                  {APPROVAL_OPTIONS.map((opt) => (
+                  {APPROVAL_OPTIONS.map((id) => (
                     <button
-                      key={opt.id}
+                      key={id}
                       type="button"
                       className="fm-fit-opt"
-                      aria-pressed={approval === opt.id}
+                      aria-pressed={approval === id}
                       onClick={() => {
-                        setApproval(opt.id);
-                        track("fit_check_step", { surface: variant, step: 2, answer: opt.id });
+                        setApproval(id);
+                        track("fit_check_step", { surface: variant, step: 2, answer: id });
                       }}
                     >
-                      {opt.label}
+                      {rc.fit.approval[id]}
                     </button>
                   ))}
                 </div>
@@ -1616,28 +1691,28 @@ export default function FirstMoveFunnel({
 
               <fieldset className="fm-fit-q">
                 <legend className="fm-fit-legend">
-                  <span>03</span> Wie komplex ist die Umsetzung?
+                  <span>03</span> {rc.fit.q3}
                 </legend>
                 <div className="fm-fit-opts">
-                  {COMPLEXITY_OPTIONS.map((opt) => (
+                  {COMPLEXITY_OPTIONS.map((id) => (
                     <button
-                      key={opt.id}
+                      key={id}
                       type="button"
                       className="fm-fit-opt"
-                      aria-pressed={complexity === opt.id}
+                      aria-pressed={complexity === id}
                       onClick={() => {
-                        setComplexity(opt.id);
-                        track("fit_check_step", { surface: variant, step: 3, answer: opt.id });
+                        setComplexity(id);
+                        track("fit_check_step", { surface: variant, step: 3, answer: id });
                       }}
                     >
-                      {opt.label}
+                      {rc.fit.complexity[id]}
                     </button>
                   ))}
                 </div>
                 <p className="fm-micro">
                   {finding?.suggestedComplexity
-                    ? "Aus der Prüfung vorgeschlagen, du kannst korrigieren. Die Komplexität verändert den Preis nicht, sie entscheidet über die Eignung."
-                    : "Die Komplexität verändert den Preis nicht, sie entscheidet über die Eignung."}
+                    ? rc.fit.complexityNoteSuggested
+                    : rc.fit.complexityNote}
                 </p>
               </fieldset>
 
@@ -1670,46 +1745,62 @@ export default function FirstMoveFunnel({
                       track("first_move_request_start", { surface: variant, lane });
                     }}
                   >
-                    First Move starten
+                    {rc.start}
                   </button>
                   <span className="fm-micro">
-                    {PRICE_DISPLAY_NET} · {DELIVERY_DISPLAY} · {RISK_REVERSAL_SHORT}
+                    {price} · {delivery} · {reassurance}
                   </span>
                 </div>
               ) : null}
+              </>
+              )}
 
               {checkoutOpen && !sent ? (
                 <form
                   className="fm-checkout"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    void submit("checkout", e.currentTarget);
+                    void submit(reviewMode ? "review" : "checkout", e.currentTarget);
                   }}
                 >
-                  {/* Zusammenfassung vor dem Absenden. Kein Zahlungsvorgang. */}
+                  {/* Zusammenfassung vor dem Absenden. Kein Zahlungsvorgang.
+                      Die geprüfte Domain steht hier sichtbar: sie wurde bereits
+                      eingegeben und wird deshalb nicht erneut abgefragt. */}
                   <dl className="fm-summary">
+                    {scannedDomain || domain.trim() ? (
+                      <div>
+                        <dt>{rc.checkout.domain}</dt>
+                        <dd>{scannedDomain || domain.trim()}</dd>
+                      </div>
+                    ) : null}
                     <div>
-                      <dt>Produkt</dt>
-                      <dd>SEESZN First Move</dd>
+                      <dt>{reviewMode ? rc.review.occasion : rc.checkout.product}</dt>
+                      <dd>{reviewMode ? rc.review.occasionValue : "SEESZN First Move"}</dd>
                     </div>
+                    {reviewMode ? null : (
+                      <>
+                        <div>
+                          <dt>{rc.checkout.price}</dt>
+                          <dd>{price}</dd>
+                        </div>
+                        <div>
+                          <dt>{rc.checkout.scope}</dt>
+                          <dd>{scopeLabel}</dd>
+                        </div>
+                        <div>
+                          <dt>{rc.checkout.delivery}</dt>
+                          <dd>{delivery}</dd>
+                        </div>
+                      </>
+                    )}
                     <div>
-                      <dt>Preis</dt>
-                      <dd>{PRICE_DISPLAY_NET}</dd>
-                    </div>
-                    <div>
-                      <dt>Umfang</dt>
-                      <dd>{scopeLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>Lieferung</dt>
-                      <dd>{DELIVERY_DISPLAY}</dd>
-                    </div>
-                    <div>
-                      <dt>Nächster Schritt</dt>
+                      <dt>{rc.checkout.nextStep}</dt>
                       <dd>
-                        {gate
-                          ? "Wir melden uns, um den Punkt oben zu klären."
-                          : "Wir verifizieren den Befund und bestätigen den Scope schriftlich. Danach folgt die Rechnung."}
+                        {reviewMode
+                          ? rc.review.nextStep
+                          : gate
+                            ? rc.checkout.nextStepGate
+                            : rc.checkout.nextStepDefault}
                       </dd>
                     </div>
                   </dl>
@@ -1717,7 +1808,7 @@ export default function FirstMoveFunnel({
                   <div className="fm-cols2">
                     <div>
                       <label htmlFor={`${uid}-name`} className="fm-block-k">
-                        Name
+                        {rc.checkout.name}
                       </label>
                       <div className="fm-field">
                         <input
@@ -1725,13 +1816,13 @@ export default function FirstMoveFunnel({
                           name="name"
                           className="fm-input"
                           autoComplete="name"
-                          placeholder="Vor- und Nachname"
+                          placeholder={rc.checkout.namePlaceholder}
                         />
                       </div>
                     </div>
                     <div>
                       <label htmlFor={`${uid}-cemail`} className="fm-block-k">
-                        Firmen-E-Mail
+                        {rc.checkout.email}
                       </label>
                       <div className="fm-field">
                         <input
@@ -1741,21 +1832,21 @@ export default function FirstMoveFunnel({
                           required
                           autoComplete="email"
                           className="fm-input"
-                          placeholder="name@unternehmen.de"
+                          placeholder={rc.checkout.emailPlaceholder}
                         />
                       </div>
                     </div>
                   </div>
                   <div>
                     <label htmlFor={`${uid}-note`} className="fm-block-k">
-                      Kontext, optional
+                      {rc.checkout.note}
                     </label>
                     <div className="fm-field">
                       <input
                         id={`${uid}-note`}
                         name="note"
                         className="fm-input"
-                        placeholder="Was wir vorab wissen sollten"
+                        placeholder={rc.checkout.notePlaceholder}
                       />
                     </div>
                   </div>
@@ -1774,14 +1865,16 @@ export default function FirstMoveFunnel({
                   ) : null}
                   <div className="fm-actions">
                     <button type="submit" className="fm-btn" disabled={sending !== false}>
-                      {sending === "checkout"
-                        ? "Wird gesendet"
-                        : gate
-                          ? "Anfrage senden"
-                          : "First Move anfragen"}
+                      {sending !== false
+                        ? rc.checkout.sending
+                        : reviewMode
+                          ? rc.review.submit
+                          : gate
+                            ? rc.checkout.submitGate
+                            : rc.checkout.submit}
                     </button>
                     <span className="fm-micro">
-                      Die Anfrage ist verbindlich für den Festpreis. Eine Zahlung erfolgt hier nicht.
+                      {reviewMode ? rc.review.micro : rc.checkout.micro}
                     </span>
                   </div>
                 </form>
@@ -1789,13 +1882,22 @@ export default function FirstMoveFunnel({
 
               {sent === "checkout" ? (
                 <div className="fm-gate" role="status">
-                  <span className="fm-gate-k">Angenommen</span>
-                  <span className="fm-gate-t">Deine Anfrage liegt bei uns.</span>
+                  <span className="fm-gate-k">{rc.checkout.sentKicker}</span>
+                  <span className="fm-gate-t">{rc.checkout.sentTitle}</span>
                   <p className="fm-block-v">
-                    Wir verifizieren den Befund und bestätigen dir den Scope schriftlich. Mit der
-                    Scope-Bestätigung bekommst du die Rechnung über {PRICE_DISPLAY_NET}.{" "}
-                    {DELIVERY_DISPLAY}.
+                    {requestLocale === "en"
+                      ? `We verify the finding and confirm the scope in writing. With that confirmation you receive the invoice for ${price}. ${delivery}.`
+                      : `Wir verifizieren den Befund und bestätigen dir den Scope schriftlich. Mit der Scope-Bestätigung bekommst du die Rechnung über ${price}. ${delivery}.`}
                   </p>
+                  {devNotice ? <p className="fm-micro">{devNotice}</p> : null}
+                </div>
+              ) : null}
+
+              {sent === "review" ? (
+                <div className="fm-gate" role="status">
+                  <span className="fm-gate-k">{rc.checkout.sentKicker}</span>
+                  <span className="fm-gate-t">{rc.review.sentTitle}</span>
+                  <p className="fm-block-v">{rc.review.sentBody}</p>
                   {devNotice ? <p className="fm-micro">{devNotice}</p> : null}
                 </div>
               ) : null}

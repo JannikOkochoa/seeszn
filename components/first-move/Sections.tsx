@@ -11,7 +11,23 @@
 // braucht keinen Client-Code. Sichtbarer Text und Crawler-Text sind identisch.
 
 import Image from "next/image";
+import { SECTION_STRINGS, type FmLocale } from "@/lib/first-move/copy";
 import { PROOF_CASES, type ProofCase } from "@/lib/first-move/proof";
+import { PROOF_CASES_EN } from "@/lib/first-move/proofEn";
+import {
+  DELAY_CLAUSE_EN,
+  INCLUDED_EN,
+  NOT_INCLUDED_EN,
+  OFFER_FACTS_EN,
+  OFFER_POSITIONING_EN,
+  PRICE_DISPLAY_EN,
+  PRICE_PROMISE_EN,
+  PROCESS_STEPS_EN,
+  QUALIFICATION_RULE_EN,
+  REASSURANCE_EN,
+  RISK_REVERSAL_FULL_EN,
+} from "@/lib/first-move/productEn";
+import { PRODUCT_DEFINITION_EN } from "@/lib/first-move/productEn";
 import type { FaqItem } from "@/lib/first-move/faq";
 import {
   ASSETS,
@@ -76,24 +92,26 @@ export function HeroPlate() {
 
 // ── Ablauf ────────────────────────────────────────────────────────────────────
 
-export function Process() {
+export function Process({ locale = "de" }: { locale?: FmLocale }) {
+  const t = SECTION_STRINGS[locale].process;
+  const steps = locale === "en" ? PROCESS_STEPS_EN : PROCESS_STEPS;
   return (
     <section className="fm-section" aria-labelledby="fm-process" id="ablauf">
       <div className="fm-wrap">
         <div className="fm-cols2">
           <div>
-            <span className="fm-eyebrow">Ablauf</span>
+            <span className="fm-eyebrow">{t.eyebrow}</span>
             <h2 id="fm-process" className="fm-h2" style={{ marginTop: 14, maxWidth: "16ch" }}>
-              So läuft ein First Move ab
+              {t.headline}
             </h2>
           </div>
           <p className="fm-serif" style={{ alignSelf: "end" }}>
-            {PRODUCT_DEFINITION}
+            {locale === "en" ? PRODUCT_DEFINITION_EN : PRODUCT_DEFINITION}
           </p>
         </div>
 
         <div className="fm-steps">
-          {PROCESS_STEPS.map((step) => (
+          {steps.map((step) => (
             <div className="fm-step" key={step.num}>
               <span className="fm-step-num">{step.num}</span>
               <span className="fm-step-title">{step.title}</span>
@@ -104,19 +122,13 @@ export function Process() {
 
         <div className="fm-disclose">
           <details className="fm-details">
-            <summary>Wie wir prüfen, bevor wir etwas empfehlen</summary>
+            <summary>{t.disclosureSummary}</summary>
             <div className="fm-details-body">
-              <p className="fm-body">{QUALIFICATION_RULE}</p>
               <p className="fm-body">
-                Ein einzelner Checklistenpunkt reicht nie: fehlende Alt-Texte, eine Meta-Länge oder
-                ein Tool-Score werden bei uns nicht zum Engpass erklärt. Antwortet eine Seite dem
-                automatisierten Abruf mit einer Bot-Schutzseite, leiten wir daraus keinen Befund ab.
+                {locale === "en" ? QUALIFICATION_RULE_EN : QUALIFICATION_RULE}
               </p>
-              <p className="fm-body">
-                Der öffentliche Scan zeigt ein Signal. Ob es die Ursache ist, entscheidet die
-                Verifikation mit den nötigen Zugängen. Für Google Ads gilt zusätzlich: was im Konto
-                liegt, behaupten wir nicht von außen.
-              </p>
+              <p className="fm-body">{t.disclosureBody1}</p>
+              <p className="fm-body">{t.disclosureBody2}</p>
             </div>
           </details>
         </div>
@@ -152,7 +164,7 @@ function ProofPlate({ item }: { item: ProofCase }) {
   );
 }
 
-function ProofCard({ item }: { item: ProofCase }) {
+function ProofCard({ item, evidenceSummary }: { item: ProofCase; evidenceSummary: string }) {
   return (
     <article className="fm-case">
       <ProofPlate item={item} />
@@ -181,7 +193,7 @@ function ProofCard({ item }: { item: ProofCase }) {
         {item.note ? <span className="fm-case-note">{item.note}</span> : null}
 
         <details className="fm-details" data-fm-evidence={item.id}>
-          <summary>Messgrößen und Methodik</summary>
+          <summary>{evidenceSummary}</summary>
           <div className="fm-details-body">
             {item.evidence.map((row) => (
               <div className="fm-ev" key={row.label}>
@@ -196,16 +208,18 @@ function ProofCard({ item }: { item: ProofCase }) {
   );
 }
 
-export function Proof({ order }: { order: ProofCase["id"][] }) {
+export function Proof({ order, locale = "de" }: { order: ProofCase["id"][]; locale?: FmLocale }) {
+  const t = SECTION_STRINGS[locale].proof;
+  const cases = locale === "en" ? PROOF_CASES_EN : PROOF_CASES;
   return (
     <section className="fm-section" aria-labelledby="fm-proof" id="proof">
       <div className="fm-wrap">
         <h2 id="fm-proof" className="fm-h2" style={{ maxWidth: "18ch" }}>
-          Ausgewählte Ergebnisse
+          {t.headline}
         </h2>
         <div className="fm-proof-grid">
           {order.map((id) => (
-            <ProofCard key={id} item={PROOF_CASES[id]} />
+            <ProofCard key={id} item={cases[id]} evidenceSummary={t.evidenceSummary} />
           ))}
         </div>
       </div>
@@ -215,7 +229,9 @@ export function Proof({ order }: { order: ProofCase["id"][] }) {
 
 // ── Angebot ───────────────────────────────────────────────────────────────────
 
-export function Offer() {
+export function Offer({ locale = "de" }: { locale?: FmLocale }) {
+  const t = SECTION_STRINGS[locale].offer;
+  const en = locale === "en";
   return (
     <section className="fm-section" aria-labelledby="fm-offer" id="angebot">
       <div className="fm-wrap">
@@ -229,17 +245,17 @@ export function Offer() {
                 und vor jeder Bindung. Versteckt wird er nirgends, er kommt nur
                 nicht mehr vor dem Ergebnis. */}
             <p className="fm-micro" style={{ marginTop: 20 }}>
-              {PRICE_PROMISE}
+              {en ? PRICE_PROMISE_EN : PRICE_PROMISE}
             </p>
             <p className="fm-price" style={{ marginTop: 12 }}>
-              {PRICE_DISPLAY}
+              {en ? PRICE_DISPLAY_EN : PRICE_DISPLAY}
             </p>
-            <span className="fm-price-sub">Netto · Festpreis</span>
+            <span className="fm-price-sub">{t.priceSub}</span>
             <p className="fm-serif" style={{ marginTop: 24, maxWidth: "30ch" }}>
-              {OFFER_POSITIONING}
+              {en ? OFFER_POSITIONING_EN : OFFER_POSITIONING}
             </p>
             <ul className="fm-reassure">
-              {REASSURANCE.map((line) => (
+              {(en ? REASSURANCE_EN : REASSURANCE).map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>
@@ -247,7 +263,7 @@ export function Offer() {
 
           <div className="fm-offer-detail">
             <dl className="fm-facts-grid">
-              {OFFER_FACTS.map((fact) => (
+              {(en ? OFFER_FACTS_EN : OFFER_FACTS).map((fact) => (
                 <div key={fact.k}>
                   <dt>{fact.k}</dt>
                   <dd>{fact.v}</dd>
@@ -255,28 +271,28 @@ export function Offer() {
               ))}
             </dl>
 
-            <p className="fm-body">{RISK_REVERSAL_FULL}</p>
+            <p className="fm-body">{en ? RISK_REVERSAL_FULL_EN : RISK_REVERSAL_FULL}</p>
 
             <details className="fm-details">
-              <summary>Was enthalten ist und was nicht</summary>
+              <summary>{t.summary}</summary>
               <div className="fm-details-body">
                 <div className="fm-cols2">
                   <div>
                     <span className="fm-eyebrow" style={{ marginBottom: 12 }}>
-                      Enthalten
+                      {t.includedLabel}
                     </span>
                     <ul className="fm-list fm-list--in">
-                      {INCLUDED.map((line) => (
+                      {(en ? INCLUDED_EN : INCLUDED).map((line) => (
                         <li key={line}>{line}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
                     <span className="fm-eyebrow" style={{ marginBottom: 12 }}>
-                      Nicht enthalten
+                      {t.notIncludedLabel}
                     </span>
                     <ul className="fm-list fm-list--out">
-                      {NOT_INCLUDED.map((line) => (
+                      {(en ? NOT_INCLUDED_EN : NOT_INCLUDED).map((line) => (
                         <li key={line}>{line}</li>
                       ))}
                     </ul>
@@ -293,12 +309,14 @@ export function Offer() {
 
 // ── FAQ und Bedingungen ───────────────────────────────────────────────────────
 
-export function Faq({ items }: { items: readonly FaqItem[] }) {
+export function Faq({ items, locale = "de" }: { items: readonly FaqItem[]; locale?: FmLocale }) {
+  const t = SECTION_STRINGS[locale].faq;
+  const en = locale === "en";
   return (
     <section className="fm-section" aria-labelledby="fm-faq" id="faq">
       <div className="fm-wrap">
         <h2 id="fm-faq" className="fm-h2" style={{ maxWidth: "16ch" }}>
-          Häufige Fragen
+          {t.headline}
         </h2>
         <div className="fm-faq">
           {items.map((item) => (
@@ -312,10 +330,10 @@ export function Faq({ items }: { items: readonly FaqItem[] }) {
         </div>
 
         <div id="leistungsbedingungen" style={{ marginTop: 56 }}>
-          <span className="fm-eyebrow">Leistungsbedingungen</span>
+          <span className="fm-eyebrow">{t.termsLabel}</span>
           <div className="fm-cols2" style={{ marginTop: 16 }}>
-            <p className="fm-body">{RISK_REVERSAL_FULL}</p>
-            <p className="fm-body">{DELAY_CLAUSE}</p>
+            <p className="fm-body">{en ? RISK_REVERSAL_FULL_EN : RISK_REVERSAL_FULL}</p>
+            <p className="fm-body">{en ? DELAY_CLAUSE_EN : DELAY_CLAUSE}</p>
           </div>
         </div>
       </div>
@@ -325,7 +343,14 @@ export function Faq({ items }: { items: readonly FaqItem[] }) {
 
 // ── Abschluss ─────────────────────────────────────────────────────────────────
 
-export function FinalCta({ paid = false }: { paid?: boolean }) {
+export function FinalCta({
+  paid = false,
+  locale = "de",
+}: {
+  paid?: boolean;
+  locale?: FmLocale;
+}) {
+  const t = SECTION_STRINGS[locale].final;
   return (
     <section className="fm-final" aria-labelledby="fm-final">
       <div className="fm-final-texture" aria-hidden="true">
@@ -341,12 +366,13 @@ export function FinalCta({ paid = false }: { paid?: boolean }) {
       <div className="fm-final-in">
         <div className="fm-wrap">
           <h2 id="fm-final" className="fm-h2" style={{ maxWidth: "16ch" }}>
-            Der nächste sinnvolle Move
+            {t.line1}
             <br />
-            beginnt mit deiner <span className="fm-acid">Domain</span>.
+            {t.line2}
+            <span className="fm-acid">{t.accent}</span>.
           </h2>
           <div style={{ marginTop: 34 }}>
-            <FinalCtaForm paid={paid} />
+            <FinalCtaForm paid={paid} locale={locale} />
           </div>
         </div>
       </div>

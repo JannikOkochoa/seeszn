@@ -51,15 +51,56 @@ const PARTICLES: Array<{
   });
 })();
 
-export default function Hero() {
+/**
+ * Optionale Überschreibungen für die Startseite des Produkts.
+ *
+ * Der Hero bleibt eine einzige Implementierung: Schriften, Partikelfeld,
+ * Blur-Auflösung, Scan-Linie, Bildparallaxe und alle Zeiten liegen weiterhin
+ * nur hier. Die Produktfassung ändert Wortlaut, Zeilenumbrüche und die
+ * Handlung, nichts an der Bewegung.
+ */
+export interface HeroProps {
+  /** "product" lässt den nächsten Abschnitt am unteren Rand anschneiden. */
+  variant?: "default" | "product";
+  /** Kleines Label über der Überschrift. Default ist die Sektionsnummer. */
+  eyebrow?: string;
+  line1?: string;
+  line2?: string;
+  /** Das eine Akzentwort in der Editorial-Serife. */
+  accent?: string;
+  /** Setzt das Akzentwort auf eine eigene Zeile. */
+  accentOwnLine?: boolean;
+  /** Das Geisterwort im Hintergrund. Default ist das Akzentwort. */
+  ghost?: string;
+  /** Der Fließtext unter der Regel. */
+  sub?: string;
+  /** Ersetzt den Standard-CTA, etwa durch das Domainfeld. */
+  action?: React.ReactNode;
+}
+
+export default function Hero({
+  variant = "default",
+  eyebrow,
+  line1,
+  line2,
+  accent,
+  accentOwnLine = false,
+  ghost,
+  sub,
+  action,
+}: HeroProps = {}) {
   const t = useTranslations();
   const h = t.hero;
   const diagHref = scanHref(t.locale);
   const reduced = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
+  const hl1 = line1 ?? h.line1;
+  const hl2 = line2 ?? h.line2;
+  const hlAccent = accent ?? h.italic;
+
   // Ghost word — the italic headline word, stripped to its bare form
-  const ghostWord = h.italic.replace(/[^\p{L}]/gu, "").toUpperCase();
+  const ghostWord = (ghost ?? hlAccent).replace(/[^\p{L}]/gu, "").toUpperCase();
 
   // ── Scroll parallax — image sinks and swells, ghost counter-drifts ──
   const { scrollYProgress } = useScroll({
@@ -85,12 +126,41 @@ export default function Hero() {
     my.set((e.clientY / innerHeight - 0.5) * -12);
   };
 
+  /*
+    Das Akzentwort mit seinem Partikelfeld. Als Variable, damit es entweder in
+    der zweiten Zeile steht oder eine eigene Zeile bekommt, ohne dass Markup
+    oder Animation zweimal existieren.
+  */
+  const accentNode = (
+    <span className="answer-wrap">
+      <em className="hero-hl-italic">{hlAccent}</em>
+      {PARTICLES.map((p, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="sig-node"
+          style={{
+            left:    p.left,
+            top:     p.top,
+            width:   p.size,
+            height:  p.size,
+            "--dx":    p.dx,
+            "--dy":    p.dy,
+            "--delay": p.delay,
+            "--pop":   p.pop,
+          } as React.CSSProperties}
+        />
+      ))}
+    </span>
+  );
+
   return (
     <section
       ref={sectionRef}
       onMouseMove={onMouseMove}
+      data-variant={variant}
       style={{
-        minHeight: "100vh",
+        minHeight: variant === "product" ? "86vh" : "100vh",
         display: "grid",
         gridTemplateColumns: "55% 45%",
         borderBottom: "1px solid var(--warm-black)",
@@ -105,8 +175,12 @@ export default function Hero() {
       </motion.span>
       {/* LEFT COLUMN */}
       <motion.div
+        className="hero-copy-col"
         style={{
-          padding: "var(--hero-y) clamp(40px, 4vw, 56px) var(--hero-y) var(--gutter)",
+          // --hero-pad-y ist nur in der Produktfassung gesetzt. Ohne sie gilt
+          // unverändert der Standardrhythmus --hero-y.
+          padding:
+            "var(--hero-pad-y, var(--hero-y)) clamp(40px, 4vw, 56px) var(--hero-pad-y, var(--hero-y)) var(--gutter)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -118,40 +192,27 @@ export default function Hero() {
       >
         {/* Section label */}
         <motion.span {...fadeUp(0)} style={labelStyle}>
-          01
+          {eyebrow ?? "01"}
         </motion.span>
 
         {/* Headline */}
+        {/*
+          .answer-wrap isolates the accent word:
+          overflow:hidden clips the scan-line to the word bounds
+          and keeps particles from visually bleeding into the roman lines
+        */}
         <motion.h1 {...fadeUp(0.1)} className="hero-headline">
-          <span className="hero-hl-roman">{h.line1}</span>
-          <span className="hero-hl-roman">
-            {h.line2}{" "}
-            {/*
-              .answer-wrap isolates the word:
-              overflow:hidden clips the scan-line to the word bounds
-              and keeps particles from visually bleeding into line2
-            */}
-            <span className="answer-wrap">
-              <em className="hero-hl-italic">{h.italic}</em>
-              {PARTICLES.map((p, i) => (
-                <span
-                  key={i}
-                  aria-hidden="true"
-                  className="sig-node"
-                  style={{
-                    left:    p.left,
-                    top:     p.top,
-                    width:   p.size,
-                    height:  p.size,
-                    "--dx":    p.dx,
-                    "--dy":    p.dy,
-                    "--delay": p.delay,
-                    "--pop":   p.pop,
-                  } as React.CSSProperties}
-                />
-              ))}
+          <span className="hero-hl-roman">{hl1}</span>
+          {accentOwnLine ? (
+            <>
+              <span className="hero-hl-roman">{hl2}</span>
+              <span className="hero-hl-roman">{accentNode}</span>
+            </>
+          ) : (
+            <span className="hero-hl-roman">
+              {hl2} {accentNode}
             </span>
-          </span>
+          )}
         </motion.h1>
 
         {/* Olive rule */}
@@ -167,17 +228,20 @@ export default function Hero() {
 
         {/* Sub */}
         <motion.p {...fadeUp(0.3)} style={subStyle}>
-          {h.sub.split("\n").map((line, i, arr) => (
+          {(sub ?? h.sub).split("\n").map((line, i, arr) => (
             <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
           ))}
         </motion.p>
 
-        {/* CTA */}
-        <motion.div {...fadeUp(0.4)} style={{ marginTop: 28 }}>
-          <Link href={diagHref} className="hero-cta">
-            {h.cta}{" "}
-            <span style={{ color: "var(--olive)" }}>→</span>
-          </Link>
+        {/* Action — Standard ist der CTA, die Produktfassung setzt hier das
+            Domainfeld ein. Es gibt nie beides. */}
+        <motion.div {...fadeUp(0.4)} style={{ marginTop: action ? 4 : 28 }}>
+          {action ?? (
+            <Link href={diagHref} className="hero-cta">
+              {h.cta}{" "}
+              <span style={{ color: "var(--olive)" }}>→</span>
+            </Link>
+          )}
         </motion.div>
 
         {/* Vertical location text — very subtle */}
@@ -488,6 +552,30 @@ export default function Hero() {
           .hero-img-col { display: none; }
           .hero-scroll-hint { display: none; }
           .hero-ghost { font-size: 36vw; bottom: -8vw; }
+        }
+
+        /*
+          Produktfassung. Der Hero trägt hier das Domainfeld, also muss die
+          Handlung auf kleinen Geräten früh im Bild stehen. Geändert werden
+          nur Schriftgrad und Innenabstand; Schriftfamilien, Kurven, Zeiten
+          und Reveal-Reihenfolge bleiben identisch.
+        */
+        /* Der Hero muss den nächsten Abschnitt anschneiden lassen. Dafür
+           atmet die Textspalte etwas enger als im Standard-Hero, in dem sie
+           allein steht. Der Rhythmus bleibt derselbe Clamp. */
+        section[data-variant="product"] { --hero-pad-y: clamp(48px, 5.2vw, 92px); }
+        /* Der kürzere Hero rückt die Copy näher an das Geisterwort. Es sitzt
+           deshalb etwas tiefer, damit die Mikrozeile darüber lesbar bleibt. */
+        section[data-variant="product"] .hero-ghost { bottom: -9vw; }
+
+        @media (max-width: 768px) {
+          section[data-variant="product"] {
+            padding-top: 88px;
+            --hero-pad-y: clamp(32px, 8vw, 64px);
+          }
+          section[data-variant="product"] .hero-hl-roman {
+            font-size: clamp(34px, 9.4vw, 52px);
+          }
         }
       `}</style>
     </section>

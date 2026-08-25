@@ -21,6 +21,7 @@ import type {
   Level,
   SurfaceKind,
 } from "./types";
+import { QUALIFY_STRINGS, type QualifyStrings } from "./copy";
 import type { PageSurface, RobotsResult, SitemapResult } from "./surface";
 import { MEASUREMENT_WEEKS_MAX, MEASUREMENT_WEEKS_MIN } from "./product";
 import { CONTENT_WORD_FLOOR } from "./diagnosis";
@@ -207,7 +208,7 @@ const LEVEL_SCORE: Record<Level, number> = { low: 1, medium: 2, high: 3 };
  * Verlangt: eine echte Gruppe, jede Seite eigenständig indexierbar, und eine
  * beobachtete Ungleichverteilung der internen Verlinkung.
  */
-function candidateCompetingIntent(input: QualifyInput): Candidate | null {
+function candidateCompetingIntent(input: QualifyInput, c: QualifyStrings): Candidate | null {
   const brand = brandTokenSet(input.domain, input.home);
   const pages = contentPages(input.samples).filter(
     (p) =>
@@ -283,7 +284,7 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
     ev({
       source: "content",
       type: "competing_intent_cluster",
-      observation: `${best.pages.length} indexierbare Seiten tragen eine weitgehend deckungsgleiche Titel- und H1-Signatur.`,
+      observation: c.competingIntent.signature(best.pages.length),
       scope: { urls },
       measuredValue: best.pages.length,
       reproducible: true,
@@ -291,15 +292,14 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
     ev({
       source: "public_html",
       type: "canonical_state",
-      observation:
-        "Keine dieser Seiten verweist per Canonical auf eine der anderen. Sie stehen als eigenständige Ziele nebeneinander.",
+      observation: c.competingIntent.noCanonical,
       scope: { urls },
       reproducible: true,
     }),
     ev({
       source: "internal_linking",
       type: "internal_support_split",
-      observation: `Die Startseite verlinkt ${linked} von ${best.pages.length} dieser Seiten direkt. Die interne Unterstützung verteilt sich statt zu bündeln.`,
+      observation: c.competingIntent.internalLinks(linked, best.pages.length),
       measuredValue: `${linked}/${best.pages.length}`,
       scope: { urls },
       reproducible: true,
@@ -311,15 +311,14 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
   return {
     route: "search",
     category: "DEMAND_CAPTURE_GAP",
-    title: `${best.pages.length} Seiten konkurrieren um dieselbe kommerzielle Absicht.`,
-    summary:
-      "Mehrere eigenständig indexierbare Seiten adressieren dieselbe Suchabsicht. Relevanz, interne Verlinkung und externe Signale verteilen sich auf mehrere Ziele, statt sich auf einem zu bündeln.",
+    title: c.competingIntent.title(best.pages.length),
+    summary: c.competingIntent.summary,
     evidence,
     impact,
     confidence: "medium",
     effort: "low",
     move: {
-      interventionType: "Konsolidierung auf eine zentrale Zielseite",
+      interventionType: c.competingIntent.interventionType,
       title: "Konsolidierung auf eine kanonische Zielseite.",
       scope:
         "Eine Zielseite wird als kanonisches Ziel bestimmt. Die konkurrierenden Seiten werden zusammengeführt oder per Canonical und interner Verlinkung eindeutig auf dieses Ziel ausgerichtet. Inhalte bleiben erhalten, es entsteht kein Relaunch.",
@@ -346,21 +345,20 @@ function candidateCompetingIntent(input: QualifyInput): Candidate | null {
 }
 
 /** B) Crawl- oder Indexierungsdefekt. Direkt messbar, deshalb hohe Confidence. */
-function candidateIndexationDefect(input: QualifyInput): Candidate | null {
+function candidateIndexationDefect(input: QualifyInput, c: QualifyStrings): Candidate | null {
   const { robots, sitemap, home } = input;
 
   if (robots.state === "blocks") {
     return {
       route: "search",
       category: "TECHNICAL_GAP",
-      title: "Die robots.txt sperrt den generischen Crawler für die gesamte Domain.",
-      summary:
-        "Die öffentliche robots.txt enthält für User-agent * ein Disallow auf das Wurzelverzeichnis. Damit ist die gesamte Domain für reguläres Crawling gesperrt.",
+      title: c.robotsBlock.title,
+      summary: c.robotsBlock.summary,
       evidence: [
         ev({
           source: "robots",
           type: "disallow_root",
-          observation: "robots.txt setzt für User-agent * ein Disallow auf /.",
+          observation: c.robotsBlock.observation,
           scope: { urls: [`https://${input.domain}/robots.txt`] },
           reproducible: true,
         }),
@@ -379,7 +377,7 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
       confidence: "high",
       effort: "low",
       move: {
-        interventionType: "Crawling und Indexierbarkeit freigeben",
+        interventionType: c.robotsBlock.interventionType,
         title: "Crawling gezielt freigeben und die Freigabe verifizieren.",
         scope:
           "Die robots.txt wird so korrigiert, dass die kommerziell relevanten Bereiche crawlbar sind. Danach werden Abruf, Indexierbarkeit und Sitemap-Auslieferung gegengeprüft.",
@@ -405,15 +403,13 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
     return {
       route: "search",
       category: "TECHNICAL_GAP",
-      title: "Die Startseite ist auf noindex gesetzt.",
-      summary:
-        "Die Startseite liefert eine noindex-Anweisung aus. Sie kann damit nicht als Einstiegs- und Autoritätsseite wirken.",
+      title: c.homeNoindex.title,
+      summary: c.homeNoindex.summary,
       evidence: [
         ev({
           source: "public_html",
           type: "robots_meta_noindex",
-          observation:
-            "Bei unserem Abruf liefert die Startseite mit Status 200 eine noindex-Anweisung aus, per robots-Meta oder X-Robots-Tag.",
+          observation: c.homeNoindex.observation,
           scope: { urls: [home.url] },
           reproducible: true,
         }),
@@ -432,7 +428,7 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
       confidence: "high",
       effort: "low",
       move: {
-        interventionType: "Indexierbarkeit der Einstiegsseite herstellen",
+        interventionType: c.homeNoindex.interventionType,
         title: "Indexierbarkeit der Einstiegsseite herstellen und verifizieren.",
         scope:
           "Die noindex-Anweisung wird auf der Startseite und auf den kommerziell relevanten Einstiegen entfernt. Danach wird die Auslieferung serverseitig gegengeprüft.",
@@ -460,7 +456,7 @@ function candidateIndexationDefect(input: QualifyInput): Candidate | null {
  * C) Ein Template-Defekt flacht die semantische Struktur systematisch ab.
  * Verlangt zwei unabhängige Bedingungen über mindestens drei Seiten.
  */
-function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
+function candidateTemplateFlattening(input: QualifyInput, c: QualifyStrings): Candidate | null {
   const pages = contentPages(input.samples);
   if (pages.length < 4) return null;
 
@@ -480,7 +476,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
       ev({
         source: "public_html",
         type: "h1_structure",
-        observation: `${badH1.length} von ${pages.length} geprüften Seiten liefern keine H1 aus. Die Hauptaussage der Seite ist maschinell nicht eindeutig.`,
+        observation: c.templateDefect.missingH1(badH1.length, pages.length),
         measuredValue: `${badH1.length}/${pages.length}`,
         scope: { urls: badH1.slice(0, 6).map((p) => p.url) },
         reproducible: true,
@@ -492,7 +488,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
       ev({
         source: "public_html",
         type: "duplicate_titles",
-        observation: `${dupTitles + 1} geprüfte Seiten teilen sich denselben Title. Die Seiten sind in der Trefferliste nicht unterscheidbar.`,
+        observation: c.templateDefect.duplicateTitles(dupTitles + 1),
         measuredValue: dupTitles + 1,
         reproducible: true,
       }),
@@ -503,7 +499,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
       ev({
         source: "public_html",
         type: "duplicate_descriptions",
-        observation: `${dupDescs + 1} geprüfte Seiten teilen sich dieselbe Meta Description.`,
+        observation: c.templateDefect.duplicateDescriptions(dupDescs + 1),
         measuredValue: dupDescs + 1,
         reproducible: true,
       }),
@@ -518,15 +514,14 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
   return {
     route: "search",
     category: "TECHNICAL_GAP",
-    title: "Ein Template-Defekt flacht die Struktur über viele Seiten hinweg ab.",
-    summary:
-      "Der Defekt tritt nicht auf einer Einzelseite auf, sondern systematisch über den geprüften Seitentyp. Damit verlieren alle Seiten dieses Templates gleichzeitig an semantischer Schärfe.",
+    title: c.templateDefect.title,
+    summary: c.templateDefect.summary,
     evidence: conditions,
     impact: share >= 0.7 ? "high" : "medium",
     confidence: "medium",
     effort: "low",
     move: {
-      interventionType: "Template-Logik für einen Seitentyp korrigieren",
+      interventionType: c.templateDefect.interventionType,
       title: "Den Seitentyp an einer Stelle korrigieren.",
       scope:
         "Titel-, H1- und Description-Logik werden im betroffenen Template einmal sauber gesetzt und über alle Seiten dieses Typs ausgerollt. Kein Redesign, keine Migration.",
@@ -550,7 +545,7 @@ function candidateTemplateFlattening(input: QualifyInput): Candidate | null {
 }
 
 /** D) AI Search: die Oberfläche ist für Antwortsysteme schwer verwertbar. */
-function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
+function candidateAiSearchCitability(input: QualifyInput, c: QualifyStrings): Candidate | null {
   const pages = contentPages(input.samples);
   if (pages.length < 3) return null;
 
@@ -563,7 +558,7 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
       ev({
         source: "robots",
         type: "ai_crawler_disallow",
-        observation: `Die robots.txt sperrt ${input.robots.blocksAiCrawlers.join(", ")} vollständig. Diese Systeme können die Inhalte nicht als Quelle lesen.`,
+        observation: c.templateDefect.aiCrawlersBlocked(input.robots.blocksAiCrawlers.join(", ")),
         measuredValue: input.robots.blocksAiCrawlers.length,
         reproducible: true,
       }),
@@ -576,7 +571,7 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
       ev({
         source: "content",
         type: "answer_structure_absent",
-        observation: `${answerless.length} von ${pages.length} geprüften Seiten enthalten keine als Frage formulierte Überschrift und keine Frage-Antwort-Auszeichnung. Es gibt keinen klar abgrenzbaren Antwortblock zum Zitieren.`,
+        observation: c.templateDefect.answerless(answerless.length, pages.length),
         measuredValue: `${answerless.length}/${pages.length}`,
         reproducible: true,
       }),
@@ -589,8 +584,7 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
       ev({
         source: "entity_signal",
         type: "entity_definition_missing",
-        observation:
-          "Die Startseite trägt weder eine Organization-Auszeichnung noch einen og:site_name. Der Absender der Aussagen ist maschinell nicht eindeutig benannt.",
+        observation: c.templateDefect.noPublisher,
         scope: { urls: [input.home.url] },
         reproducible: true,
       }),
@@ -603,7 +597,7 @@ function candidateAiSearchCitability(input: QualifyInput): Candidate | null {
       ev({
         source: "content",
         type: "extractable_content_thin",
-        observation: `${thin.length} von ${pages.length} geprüften Seiten liefern unter 250 Wörter im ausgelieferten HTML. Für eine belastbare Passage reicht das selten.`,
+        observation: c.templateDefect.thinPages(thin.length, pages.length),
         measuredValue: `${thin.length}/${pages.length}`,
         scope: { urls: thin.slice(0, 6).map((p) => p.url) },
         reproducible: true,
@@ -700,7 +694,7 @@ export function complexityFromScope(urlCount: number): Complexity {
   return "simple";
 }
 
-function eligibilityFromScope(input: QualifyInput): EligibilityState {
+function eligibilityFromScope(input: QualifyInput, c: QualifyStrings): EligibilityState {
   // Nur echte Enterprise-Größe blockiert. Dass wir eine große Sitemap nur in
   // Teilen gelesen haben, ist unsere Lesegrenze und kein Grund, jemandem den
   // Kauf zu verwehren. Es erhöht die vorgeschlagene Komplexität, mehr nicht.
@@ -709,8 +703,7 @@ function eligibilityFromScope(input: QualifyInput): EligibilityState {
     return {
       eligible: false,
       reason: "enterprise_scale",
-      nextAction:
-        "Der Scope ist groß genug, dass wir den Move vor dem Kauf gemeinsam eingrenzen. Wir machen dafür ein kurzes Scoped Review.",
+      nextAction: c.eligibility.enterpriseScale,
     };
   }
   const markets = new Set(input.home.hreflangLocales.map((l) => l.split("-")[0]));
@@ -718,8 +711,7 @@ function eligibilityFromScope(input: QualifyInput): EligibilityState {
     return {
       eligible: false,
       reason: "multi_market_scope",
-      nextAction:
-        "Die Domain bedient vier oder mehr Märkte. Wir grenzen den Move vorab auf einen Markt ein, damit der Festpreis trägt.",
+      nextAction: c.eligibility.multiMarket,
     };
   }
   return { eligible: true };
@@ -732,7 +724,17 @@ function eligibilityFromScope(input: QualifyInput): EligibilityState {
  * dann Confidence, dann geringerer Aufwand. Gibt null zurück, wenn nichts die
  * Schwelle erreicht.
  */
-export function qualify(input: QualifyInput): FirstMoveFinding | null {
+export function qualify(
+  input: QualifyInput,
+  /**
+   * Die Sprachschicht des öffentlichen Befunds. Der Standard ist Deutsch, damit
+   * jeder bestehende Aufrufer unverändert dieselben Sätze bekommt. Interne
+   * Felder (Scope, Messhypothese, Umsetzungsnotizen) bleiben immer deutsch: sie
+   * verlassen den Server nie und werden von SEESZN gelesen.
+   */
+  copy: QualifyStrings = QUALIFY_STRINGS.de,
+): FirstMoveFinding | null {
+  const c = copy;
   // Harte Vorbedingung: ohne lesbare Startseite gibt es keinen Befund.
   //
   // Bot-Schutzseiten (Cloudflare, Akamai und Ähnliches) antworten mit 403 und
@@ -742,11 +744,11 @@ export function qualify(input: QualifyInput): FirstMoveFinding | null {
   if (input.home.status !== 200) return null;
 
   const candidates = [
-    candidateIndexationDefect(input),
-    candidateCompetingIntent(input),
-    candidateAiSearchCitability(input),
-    candidateTemplateFlattening(input),
-  ].filter((c): c is Candidate => c !== null);
+    candidateIndexationDefect(input, c),
+    candidateCompetingIntent(input, c),
+    candidateAiSearchCitability(input, c),
+    candidateTemplateFlattening(input, c),
+  ].filter((item): item is Candidate => item !== null);
 
   if (!candidates.length) return null;
 
@@ -771,7 +773,7 @@ export function qualify(input: QualifyInput): FirstMoveFinding | null {
   // Harte Gegenprüfung: ohne zwei Beobachtungen kein Befund.
   if (best.evidence.length < 2) return null;
 
-  const eligibility = eligibilityFromScope(input);
+  const eligibility = eligibilityFromScope(input, c);
 
   return {
     id: `fm_${Date.now().toString(36)}`,

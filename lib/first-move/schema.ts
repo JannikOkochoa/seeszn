@@ -16,6 +16,8 @@ import {
   PRODUCT_DEFINITION,
   PRODUCT_NAME,
 } from "./product";
+import { PRODUCT_DEFINITION_EN } from "./productEn";
+import type { FmLocale } from "./copy";
 import type { FaqItem } from "./faq";
 
 const abs = (path: string) => `${SITE_URL}${path}`;
@@ -24,6 +26,7 @@ export function firstMoveWebPage(input: {
   path: string;
   name: string;
   description: string;
+  locale?: FmLocale;
 }) {
   const url = abs(input.path);
   return {
@@ -33,7 +36,7 @@ export function firstMoveWebPage(input: {
     url,
     name: input.name,
     description: input.description,
-    inLanguage: "de-DE",
+    inLanguage: input.locale === "en" ? "en" : "de-DE",
     isPartOf: { "@id": `${SITE_URL}/#website` },
     about: { "@id": `${url}#service` },
     provider: { "@id": `${SITE_URL}/#organization` },
@@ -44,7 +47,9 @@ export function firstMoveService(input: {
   path: string;
   serviceType: string;
   description?: string;
+  locale?: FmLocale;
 }) {
+  const isEn = input.locale === "en";
   const url = abs(input.path);
   return {
     "@context": "https://schema.org",
@@ -52,7 +57,7 @@ export function firstMoveService(input: {
     "@id": `${url}#service`,
     name: PRODUCT_NAME,
     serviceType: input.serviceType,
-    description: input.description ?? PRODUCT_DEFINITION,
+    description: input.description ?? (isEn ? PRODUCT_DEFINITION_EN : PRODUCT_DEFINITION),
     url,
     provider: { "@id": `${SITE_URL}/#organization` },
     areaServed: [
@@ -60,7 +65,7 @@ export function firstMoveService(input: {
       { "@type": "Country", name: "Österreich" },
       { "@type": "Country", name: "Schweiz" },
     ],
-    availableLanguage: ["de"],
+    availableLanguage: isEn ? ["en", "de"] : ["de"],
     offers: {
       "@type": "Offer",
       "@id": `${url}#offer`,

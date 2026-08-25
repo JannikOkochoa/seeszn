@@ -27,6 +27,7 @@
 //     Conversion, Paid-Effizienz und Umsatz sind daraus nicht ableitbar und
 //     werden hier auch nicht behauptet.
 
+import { DIAGNOSIS_STRINGS, type DiagnosisStrings } from "./copy";
 import type { FirstMoveFinding, Level } from "./types";
 import type { PageSurface, RobotsResult, SitemapResult } from "./surface";
 
@@ -174,36 +175,22 @@ function dim(
 function indexabilityDimension(
   input: DiagnoseInput,
   readable: PageSurface[],
+  c: DiagnosisStrings,
 ): DiagnosisDimension {
-  const label = "Technische Basis";
+  const label = c.indexability.label;
   if (input.robots.state === "blocks") {
-    return dim(
-      "indexability",
-      label,
-      "weak",
-      "Die robots.txt sperrt den generischen Crawler für die gesamte Domain.",
-    );
+    return dim("indexability", label, "weak", c.indexability.robotsBlocked);
   }
   if (readable.length < 2) {
-    return dim(
-      "indexability",
-      label,
-      "unknown",
-      "Es waren zu wenige Seiten öffentlich lesbar, um die Indexierbarkeit zu beurteilen.",
-    );
+    return dim("indexability", label, "unknown", c.indexability.tooFewPages);
   }
 
   const indexable = readable.filter((p) => !p.noindex).length;
   const share = indexable / readable.length;
-  const observation = `${indexable} von ${readable.length} geprüften Seiten sind indexierbar.`;
+  const observation = c.indexability.share(indexable, readable.length);
 
   if (input.home.noindex) {
-    return dim(
-      "indexability",
-      label,
-      "weak",
-      `Die Startseite liefert eine noindex-Anweisung aus. ${observation}`,
-    );
+    return dim("indexability", label, "weak", c.indexability.homeNoindex(observation));
   }
   if (share < 0.75) return dim("indexability", label, "weak", observation);
   if (share >= 0.95) return dim("indexability", label, "solid", observation);
@@ -211,38 +198,27 @@ function indexabilityDimension(
 }
 
 /** 2) Wie gut ist die Oberfläche für einen Crawler überhaupt erschlossen? */
-function crawlAccessDimension(input: DiagnoseInput): DiagnosisDimension {
-  const label = "Crawl und Sitemap";
+function crawlAccessDimension(input: DiagnoseInput, c: DiagnosisStrings): DiagnosisDimension {
+  const label = c.crawlAccess.label;
   const urls = input.sitemap.urls.length;
   const links = input.home.internalLinks.length;
   const hasSitemap = input.sitemap.state === "found" && urls > 0;
 
   if (input.robots.state === "blocks") {
-    return dim("crawl_access", label, "weak", "Das Crawling ist per robots.txt für / gesperrt.");
+    return dim("crawl_access", label, "weak", c.crawlAccess.robotsBlocked);
   }
   if (hasSitemap) {
-    const partial = input.sitemap.partial ? ", davon eine Teilmenge gelesen" : "";
     return dim(
       "crawl_access",
       label,
       "solid",
-      `Eine Sitemap ist öffentlich erreichbar und bietet ${urls} URLs an${partial}.`,
+      c.crawlAccess.sitemap(urls, Boolean(input.sitemap.partial)),
     );
   }
   if (links >= 25) {
-    return dim(
-      "crawl_access",
-      label,
-      "mixed",
-      `Es ist keine lesbare Sitemap vorhanden. Die Erschließung läuft über ${links} interne Links auf der Startseite.`,
-    );
+    return dim("crawl_access", label, "mixed", c.crawlAccess.linksOnly(links));
   }
-  return dim(
-    "crawl_access",
-    label,
-    "weak",
-    `Es ist weder eine lesbare Sitemap noch eine dichte interne Verlinkung vorhanden; die Startseite verweist auf ${links} interne Ziele.`,
-  );
+  return dim("crawl_access", label, "weak", c.crawlAccess.sparse(links));
 }
 
 /**
@@ -252,15 +228,10 @@ function crawlAccessDimension(input: DiagnoseInput): DiagnosisDimension {
  * und Listenseiten setzen legitim mehrere H1. Das als Defekt zu werten hätte
  * technisch einwandfreie Seiten abgewertet.
  */
-function pageIdentityDimension(readable: PageSurface[]): DiagnosisDimension {
-  const label = "Seitenidentität";
+function pageIdentityDimension(readable: PageSurface[], c: DiagnosisStrings): DiagnosisDimension {
+  const label = c.pageIdentity.label;
   if (readable.length < MIN_READABLE_PAGES) {
-    return dim(
-      "page_identity",
-      label,
-      "unknown",
-      "Für einen Vergleich von Titeln und Überschriften waren zu wenige Seiten lesbar.",
-    );
+    return dim("page_identity", label, "unknown", c.pageIdentity.tooFewPages);
   }
 
   const titled = readable.filter((p) => (p.title ?? "").trim());
@@ -275,7 +246,7 @@ function pageIdentityDimension(readable: PageSurface[]): DiagnosisDimension {
       "page_identity",
       label,
       "weak",
-      `${dupTitles + 1} der ${readable.length} geprüften Seiten teilen sich denselben Title.`,
+      c.pageIdentity.duplicateTitles(dupTitles + 1, readable.length),
     );
   }
   if (dupDescs >= 3) {
@@ -283,87 +254,60 @@ function pageIdentityDimension(readable: PageSurface[]): DiagnosisDimension {
       "page_identity",
       label,
       "weak",
-      `${dupDescs + 1} der ${readable.length} geprüften Seiten tragen dieselbe Meta Description.`,
+      c.pageIdentity.duplicateDescriptions(dupDescs + 1, readable.length),
     );
   }
   if (missingShare >= 0.5) {
-    return dim(
-      "page_identity",
-      label,
-      "weak",
-      `${missingH1} von ${readable.length} geprüften Seiten liefern keine H1 aus.`,
-    );
+    return dim("page_identity", label, "weak", c.pageIdentity.missingH1(missingH1, readable.length));
   }
   if (dupTitles === 0 && dupDescs === 0 && missingShare <= 0.15 && titledShare >= 0.95) {
-    return dim(
-      "page_identity",
-      label,
-      "solid",
-      `Alle ${readable.length} geprüften Seiten tragen einen eigenen Title und eine eigene H1.`,
-    );
+    return dim("page_identity", label, "solid", c.pageIdentity.solid(readable.length));
   }
-  return dim(
-    "page_identity",
-    label,
-    "mixed",
-    `Die geprüften Seiten sind überwiegend eigenständig ausgezeichnet; ${missingH1} von ${readable.length} liefern keine H1 aus.`,
-  );
+  return dim("page_identity", label, "mixed", c.pageIdentity.mixed(missingH1, readable.length));
 }
 
 /** 4) Ist der Absender der Aussagen maschinell eindeutig benannt? */
-function entityDimension(input: DiagnoseInput, readable: PageSurface[]): DiagnosisDimension {
-  const label = "Absender und Auszeichnung";
+function entityDimension(
+  input: DiagnoseInput,
+  readable: PageSurface[],
+  c: DiagnosisStrings,
+): DiagnosisDimension {
+  const label = c.entity.label;
   const org = input.home.hasOrganizationSchema;
   const site = Boolean(input.home.ogSiteName);
   const types = input.home.jsonLdTypes.length;
   const canonical = readable.filter(isSelfCanonical).length;
 
   if (org && (site || types >= 3)) {
-    return dim(
-      "entity",
-      label,
-      "solid",
-      `Die Startseite benennt den Absender per Organization-Auszeichnung; ${types} strukturierte Typen sind ausgezeichnet, ${canonical} von ${readable.length} geprüften Seiten sind selbstkanonisch.`,
-    );
+    return dim("entity", label, "solid", c.entity.solid(types, canonical, readable.length));
   }
   if (org || site) {
     return dim(
       "entity",
       label,
       "mixed",
-      org
-        ? "Die Startseite trägt eine Organization-Auszeichnung, sonst aber wenig strukturierte Daten."
-        : "Die Startseite benennt sich per og:site_name, führt aber keine Organization-Auszeichnung.",
+      org ? c.entity.organizationOnly : c.entity.siteNameOnly,
     );
   }
-  return dim(
-    "entity",
-    label,
-    "weak",
-    "Die Startseite trägt weder eine Organization-Auszeichnung noch einen og:site_name. Der Absender ist maschinell nicht eindeutig benannt.",
-  );
+  return dim("entity", label, "weak", c.entity.weak);
 }
 
 /** 5) Gibt es abgrenzbare Antwortblöcke, aus denen zitiert werden kann? */
 function answerStructureDimension(
   input: DiagnoseInput,
   contentPages: PageSurface[],
+  c: DiagnosisStrings,
 ): DiagnosisDimension {
-  const label = "Antwortstruktur";
+  const label = c.answerStructure.label;
   if (contentPages.length < 4) {
-    return dim(
-      "answer_structure",
-      label,
-      "unknown",
-      "Für eine Aussage über zitierfähige Antwortblöcke waren zu wenige inhaltstragende Seiten lesbar.",
-    );
+    return dim("answer_structure", label, "unknown", c.answerStructure.tooFewPages);
   }
   if (input.robots.blocksAiCrawlers.length > 0) {
     return dim(
       "answer_structure",
       label,
       "weak",
-      `Die robots.txt sperrt ${input.robots.blocksAiCrawlers.join(", ")}. Diese Systeme können die Inhalte nicht als Quelle lesen.`,
+      c.answerStructure.aiCrawlersBlocked(input.robots.blocksAiCrawlers.join(", ")),
     );
   }
 
@@ -375,22 +319,17 @@ function answerStructureDimension(
       "answer_structure",
       label,
       "solid",
-      `${answering} von ${contentPages.length} inhaltstragenden Seiten enthalten als Frage formulierte Überschriften oder eine Frage-Antwort-Auszeichnung.`,
+      c.answerStructure.solid(answering, contentPages.length),
     );
   }
   if (answering === 0) {
-    return dim(
-      "answer_structure",
-      label,
-      "weak",
-      `Keine der ${contentPages.length} inhaltstragenden Seiten enthält eine als Frage formulierte Überschrift oder eine Frage-Antwort-Auszeichnung.`,
-    );
+    return dim("answer_structure", label, "weak", c.answerStructure.none(contentPages.length));
   }
   return dim(
     "answer_structure",
     label,
     "mixed",
-    `${answering} von ${contentPages.length} inhaltstragenden Seiten tragen einen abgrenzbaren Antwortblock.`,
+    c.answerStructure.mixed(answering, contentPages.length),
   );
 }
 
@@ -420,6 +359,11 @@ function interpretationConfidence(base: EvidenceBase): Level {
 export function diagnose(
   input: DiagnoseInput,
   finding: FirstMoveFinding | null,
+  /**
+   * Die Sprachschicht. Der Standard ist Deutsch, damit jeder bestehende
+   * Aufrufer und jeder Test unverändert dieselben Sätze bekommt.
+   */
+  c: DiagnosisStrings = DIAGNOSIS_STRINGS.de,
 ): PublicDiagnosis {
   const readable = readablePagesOf(input);
   const contentPages = readable.filter((p) => p.wordCount >= CONTENT_WORD_FLOOR);
@@ -432,11 +376,11 @@ export function diagnose(
   };
 
   const dimensions: DiagnosisDimension[] = [
-    indexabilityDimension(input, readable),
-    crawlAccessDimension(input),
-    pageIdentityDimension(readable),
-    entityDimension(input, readable),
-    answerStructureDimension(input, contentPages),
+    indexabilityDimension(input, readable, c),
+    crawlAccessDimension(input, c),
+    pageIdentityDimension(readable, c),
+    entityDimension(input, readable, c),
+    answerStructureDimension(input, contentPages, c),
   ];
 
   const measured = dimensions.filter((d) => d.verdict !== "unknown");

@@ -13,13 +13,19 @@
 // deshalb ohne JavaScript.
 
 import Link from "next/link";
+import type { FmLocale } from "@/lib/first-move/copy";
 import { PRODUCT_LABEL } from "@/lib/first-move/product";
 
-export function ProductHeader() {
+export function ProductHeader({ locale = "de" }: { locale?: FmLocale }) {
+  const en = locale === "en";
   return (
     <header className="fm-header">
       <div className="fm-header-in">
-        <Link href="/" aria-label="SEESZN, zur Startseite" className="fm-logo">
+        <Link
+          href={en ? "/en" : "/"}
+          aria-label={en ? "SEESZN, back to the home page" : "SEESZN, zur Startseite"}
+          className="fm-logo"
+        >
           SEESZN
         </Link>
         <div className="fm-header-right">
@@ -27,7 +33,7 @@ export function ProductHeader() {
             <span className="fm-header-label">{PRODUCT_LABEL}</span>
           </span>
           <a href="#angebot" className="fm-btn fm-btn--sm">
-            First Move starten
+            {en ? "Start the First Move" : "First Move starten"}
           </a>
         </div>
       </div>
@@ -35,19 +41,20 @@ export function ProductHeader() {
   );
 }
 
-export function ProductFooter() {
+export function ProductFooter({ locale = "de" }: { locale?: FmLocale }) {
+  const en = locale === "en";
   return (
     <footer className="fm-footer" role="contentinfo">
       <div className="fm-footer-in">
-        <nav className="fm-footer-links" aria-label="Rechtliches">
-          <Link href="/privacy" className="fm-footer-link">
-            Datenschutz
+        <nav className="fm-footer-links" aria-label={en ? "Legal" : "Rechtliches"}>
+          <Link href={en ? "/en/privacy" : "/privacy"} className="fm-footer-link">
+            {en ? "Privacy" : "Datenschutz"}
           </Link>
-          <Link href="/legal" className="fm-footer-link">
-            Impressum
+          <Link href={en ? "/en/legal" : "/legal"} className="fm-footer-link">
+            {en ? "Legal notice" : "Impressum"}
           </Link>
           <a href="#leistungsbedingungen" className="fm-footer-link">
-            Leistungsbedingungen
+            {en ? "Terms of service" : "Leistungsbedingungen"}
           </a>
           <a href="mailto:hello@seeszn.com" className="fm-footer-link">
             hello@seeszn.com

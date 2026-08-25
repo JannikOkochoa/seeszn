@@ -17,22 +17,26 @@ function CtaButton({
   onClick,
   reduced,
   mobile,
+  override,
 }: {
   onClick: () => void;
   reduced: boolean | null;
   mobile?: boolean;
+  /** Produktfassung: die Handlung der Seite ersetzt den generischen CTA. */
+  override?: { label: string; shortLabel?: string; href: string };
 }) {
   const [hovered, setHovered] = useState(false);
   const t = useTranslations();
   // "FIRST MOVE" ist ein generischer Produkt-CTA, kein Prüf-CTA: er führt an den
   // Anfang der Produktseite, nicht an das Instrument. Ziele stehen in lib/links.
-  const ctaHref = productHref(t.locale);
+  const ctaHref = override?.href ?? productHref(t.locale);
+  const ctaLabel = override?.label ?? t.nav.cta;
 
   return (
     <Link
       href={ctaHref}
       onClick={onClick}
-      aria-label={t.nav.cta}
+      aria-label={ctaLabel}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -55,7 +59,14 @@ function CtaButton({
         transition: "background 0.3s, border-color 0.3s",
       }}
     >
-      {t.nav.cta}
+      {override?.shortLabel && !mobile ? (
+        <>
+          <span className="nav-cta-long">{ctaLabel}</span>
+          <span className="nav-cta-short">{override.shortLabel}</span>
+        </>
+      ) : (
+        ctaLabel
+      )}
       <span
         aria-hidden="true"
         style={{
@@ -73,21 +84,45 @@ function CtaButton({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function Nav() {
+/**
+ * Zwei Rahmen, eine Implementierung.
+ *
+ *   full     die redaktionelle Navigation der Editorial- und Insight-Seiten
+ *   product  der fokussierte Produktkopf: Marke, Sprache, eine Handlung
+ *
+ * Der Produktkopf trägt keine Rubriken. Marke, Sprachumschalter, Theme-Schalter
+ * und CTA bleiben dieselben Bausteine mit derselben Bewegung; es fällt nur die
+ * Rubriknavigation weg. Interne Verlinkung läuft auf diesen Seiten über den
+ * Footer und über kontextuelle Links im Text.
+ */
+export interface NavProps {
+  variant?: "full" | "product";
+  /**
+   * Nur in der Produktfassung: die Handlung der Seite selbst. `shortLabel`
+   * greift unter 600px, wo die volle Beschriftung neben Wortmarke und
+   * Sprachumschalter nicht mehr in eine Zeile passt. Das Ziel bleibt dasselbe.
+   */
+  cta?: { label: string; shortLabel?: string; href: string };
+}
+
+export default function Nav({ variant = "full", cta }: NavProps = {}) {
   const nt = useTranslations();
   const n = nt.nav;
 
   const isDE = nt.locale === "de";
   // German is the root surface; English lives under /en.
   const base = isDE ? "" : "/en";
+  const isProduct = variant === "product";
 
   // All four nav links as direct links — no dropdown, no mega panel
-  const NAV_LINKS = [
-    { label: n.services, href: `${base}/services` },
-    { label: n.work,     href: `${base}/work`     },
-    { label: n.insights, href: `${base}/insights` },
-    { label: n.about,    href: `${base}/about`    },
-  ];
+  const NAV_LINKS = isProduct
+    ? []
+    : [
+        { label: n.services, href: `${base}/services` },
+        { label: n.work,     href: `${base}/work`     },
+        { label: n.insights, href: `${base}/insights` },
+        { label: n.about,    href: `${base}/about`    },
+      ];
 
   const [mobileOpen, setMobileOpen]   = useState(false);
   const [scrolled,   setScrolled]     = useState(false);
@@ -137,6 +172,14 @@ export default function Nav() {
     <>
       {/* ── Site-wide scroll HUD ─────────────────────────────────────────── */}
       <ScrollProgress />
+
+      <style>{`
+        .nav-cta-short { display: none; }
+        @media (max-width: 600px) {
+          .nav-cta-long  { display: none; }
+          .nav-cta-short { display: inline; }
+        }
+      `}</style>
 
       {/* ── Sticky nav shell ─────────────────────────────────────────────── */}
       <div
@@ -196,7 +239,9 @@ export default function Nav() {
             style={{
               maxWidth: 1280,
               margin: "0 auto",
-              padding: "0 64px",
+              // Bis August 2026 fest 64px. Zwischen 820 und 900px blieb damit
+              // zu wenig Platz, Wortmarke und erste Rubrik überlagerten sich.
+              padding: "0 clamp(20px, 4.4vw, 64px)",
               height: "100%",
               display: "flex",
               alignItems: "center",
@@ -245,8 +290,8 @@ export default function Nav() {
             {/* Desktop nav — four direct links, no dropdown */}
             <nav
               aria-label="Primary navigation"
-              className="hidden md:flex"
-              style={{ gap: 36, alignItems: "center" }}
+              className="hidden lg:flex"
+              style={{ gap: "clamp(20px, 2.6vw, 36px)", alignItems: "center" }}
             >
               {NAV_LINKS.map((item) => (
                 <Link
@@ -280,16 +325,21 @@ export default function Nav() {
               ))}
             </nav>
 
-            {/* Language switch + theme toggle + CTA */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: 12 }}>
+            {/* Language switch + theme toggle + CTA.
+                Der Produktkopf zeigt sie auf jeder Breite: ohne Rubriken gibt es
+                nichts, wofür sich eine Schublade lohnt. */}
+            <div
+              className={isProduct ? "flex" : "hidden lg:flex"}
+              style={{ alignItems: "center", gap: 12 }}
+            >
               <LanguageSwitch />
               <SignalAperture />
-              <CtaButton onClick={closeAll} reduced={reduced} />
+              <CtaButton onClick={closeAll} reduced={reduced} override={cta} />
             </div>
 
-            {/* Mobile menu toggle */}
+            {/* Mobile menu toggle. Entfällt im Produktkopf. */}
             <button
-              className="md:hidden"
+              className={isProduct ? "hidden" : "lg:hidden"}
               onClick={() => setMobileOpen((o) => !o)}
               aria-expanded={mobileOpen}
               aria-controls="mobile-drawer"

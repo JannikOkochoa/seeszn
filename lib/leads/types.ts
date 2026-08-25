@@ -25,7 +25,9 @@ export type LeadSource =
   | "diagnosis_result"
   | "brief_ki_sichtbarkeit"
   | "first_move_request"
-  | "first_move_result_email";
+  | "first_move_result_email"
+  /** Der nachgeordnete Weg von der Startseite: "Befund gemeinsam prüfen". */
+  | "first_move_review";
 
 /** Nicht mehr geschriebene Quellen. Nur für die Anzeige von Altbestand. */
 export type LegacyLeadSource = "first_move_checkout";
@@ -125,6 +127,7 @@ export const LEAD_SOURCE_LABEL: Record<string, string> = {
   brief_ki_sichtbarkeit: "KI-Sichtbarkeits-Brief",
   first_move_request: "First Move Anfrage",
   first_move_result_email: "First Move Ergebnisversand",
+  first_move_review: "First Move Befundprüfung",
   // Altbestand vor der Umbenennung im August 2026. Wird nicht mehr geschrieben.
   first_move_checkout: "First Move Anfrage (alt)",
 };

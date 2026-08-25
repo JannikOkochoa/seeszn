@@ -74,7 +74,14 @@ export type FirstMoveEvent =
   | "fit_check_step"
   | "fit_check_complete"
   | "first_move_request_start"
-  | "first_move_request_submit";
+  | "first_move_request_submit"
+  // ── Übergang von der Startseite in den Kaufweg ────────────────────────────
+  // Seit dem Umbau der Startseite läuft die Prüfung dort. Diese beiden
+  // Ereignisse machen sichtbar, wie oft ein Befund den Seitenwechsel übersteht
+  // und mit welcher Absicht er ankommt. Sie tragen keine Domain und keinen
+  // Befundtext, nur Kategorie, Art und Absicht.
+  | "first_move_context_restored"
+  | "first_move_review_request";
 
 type Payload = Record<string, string | number | boolean | undefined>;
 

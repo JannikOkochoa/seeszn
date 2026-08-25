@@ -85,3 +85,32 @@ export const EXAMPLE_FINDING_PAID: ExampleFinding = {
     "Im bezahlten First Move prüfen wir das mit Read-only-Zugriff auf den Google-Ads-Account, setzen ein sauber definiertes primäres Conversion-Signal und dokumentieren den Anteil der Klicks mit gültigem Signal vorher und nachher.",
   cta: "Gib deine Domain ein. Danach erscheint hier ein Befund zu deiner Einstiegsseite.",
 };
+
+/**
+ * Die englische Fassung desselben erfundenen Falls. Kein zweiter Beispieltyp:
+ * dieselbe Rolle, dieselben Regeln, andere Sprache.
+ */
+export const EXAMPLE_FINDING_EN: ExampleFinding = {
+  label: "Example · no check has run yet",
+  title: "Three pages compete for the same commercial intent.",
+  summary:
+    "An invented case for illustration: three separately indexable pages address one search intent. Relevance and internal links spread across several targets instead of concentrating on one.",
+  evidence: [
+    {
+      id: "x1",
+      observation:
+        "The pages are indexable and serve heavily overlapping topic and intent signals.",
+    },
+    {
+      id: "x2",
+      observation:
+        "None of the pages points to another through a canonical. They stand side by side as separate targets.",
+    },
+  ],
+  impact: "High",
+  confidence: "Medium",
+  interventionType: "Consolidation onto one central target page",
+  afterVerification:
+    "In the paid First Move we check, with access to Search Console and the website, which page becomes the target, implement the consolidation, then document clicks and position before and after.",
+  cta: "Enter your domain. A finding for your website appears here.",
+};

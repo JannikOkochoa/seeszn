@@ -134,9 +134,9 @@ export function organizationSchema() {
     url: SITE_URL,
     email: CONTACT_EMAIL,
     logo: abs(DEFAULT_OG_IMAGE),
-    slogan: "Sichtbarkeit für B2B-Marken in Google und KI-Antworten.",
+    slogan: "Ein System für messbare Wachstumsentscheidungen.",
     description:
-      "SEESZN ist ein Sichtbarkeitsstudio für B2B-Marken. Wir bauen Websites, Inhalte und Sucharchitekturen, die in Google, ChatGPT, Perplexity, Gemini und Google AI Overviews gefunden und zitiert werden.",
+      "SEESZN ist ein produktisiertes Entscheidungs- und Umsetzungssystem für B2B-Marken. SEESZN prüft öffentliche Signale in Search, AI Search und Google Ads, priorisiert den stärksten belegbaren Engpass und setzt den First Move um. Der Effekt wird über einen definierten Zeitraum dokumentiert.",
     knowsAbout: [
       "SEO",
       "Generative Engine Optimization (GEO)",
