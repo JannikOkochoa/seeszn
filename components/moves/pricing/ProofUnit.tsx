@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { PROOF_RECORDS } from "@/lib/moves/proof";
+import { FIGURES_EN } from "@/lib/case-studies/en";
 import { useCopy, usePricing } from "./PricingShell";
 
 export default function ProofUnit({ scope }: { scope: "fm" | "bl" }) {
@@ -16,7 +17,12 @@ export default function ProofUnit({ scope }: { scope: "fm" | "bl" }) {
 
   // Die deutschen Belegtexte stammen aus der freigegebenen Case Study. Für die
   // englische Fassung wird nur das übersetzt, was hier gezeigt wird; die Zahlen
-  // bleiben identisch.
+  // bleiben identisch. record.before/.after sind serverseitig fest auf
+  // Dezimalkomma formatiert (lib/moves/proof.ts); für Englisch wird deshalb die
+  // bereits freigegebene englische Schreibweise aus derselben Case Study
+  // verwendet, nicht neu formatiert.
+  const before = locale === "en" ? FIGURES_EN.aiPositionBefore : record.before;
+  const after = locale === "en" ? FIGURES_EN.aiPositionAfter : record.after;
   const metric =
     locale === "en"
       ? "Average brand position across a constant prompt set"
@@ -33,7 +39,7 @@ export default function ProofUnit({ scope }: { scope: "fm" | "bl" }) {
       <div className="mv-proof-unit">
         <div>
           <span className="mv-proof-figure">
-            {record.before} → {record.after}
+            {before} → {after}
           </span>
           <span className="mv-proof-metric">{metric}</span>
         </div>
