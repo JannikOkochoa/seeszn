@@ -522,7 +522,7 @@ export default function HomepageMockup({ activeId, onPinSelect }: HomepageMockup
         .kx-pin:hover { transform: scale(1.12); }
         .kx-pin:focus-visible { outline: 2px solid #1f1e1a; outline-offset: 3px; }
         .kx-pin.is-active {
-          background: var(--signal, #c4d83f);
+          background: var(--signal, #7a4e3b);
           color: #1f1e1a;
           transform: scale(1.12);
         }

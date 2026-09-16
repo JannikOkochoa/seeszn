@@ -63,7 +63,7 @@ export default function MockupNotice({ title, stand }: MockupNoticeProps) {
           width: 7px;
           height: 7px;
           border-radius: 50% !important;
-          background: #c4d83f;
+          background: var(--accent);
           flex: none;
         }
         .mn-meta {

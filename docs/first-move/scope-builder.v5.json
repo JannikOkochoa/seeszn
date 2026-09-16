@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "5.0.0",
+  "sourceOfTruth": {
+    "name": "SEESZN First Move V5",
+    "supersedes": [
+      "scope-builder.v2.json",
+      "SCAN_API_CONTRACT_v2.md",
+      "CLAUDE_PRODUCT_PAGE_v2.md",
+      "SEESZN First Move Product Page Strategy V4 where V5 conflicts"
+    ],
+    "rule": "If any older implementation, comment, document, mockup or configuration conflicts with V5, V5 wins.",
+    "supersededBy": "scope-builder.v6.json",
+    "supersededNote": "V6 replaces this file for the product page funnel: price 2490 EUR net, funnel sequencing, public disclosure, routing timing, contextual proof and copy rules. Where the two conflict, V6 wins."
+  },
+  "product": {
+    "name": "SEESZN First Move",
+    "headerLabel": "FIRST MOVE",
+    "internalSystemName": "Constraint Engine",
+    "price": {
+      "amount": 1490,
+      "currency": "EUR",
+      "taxMode": "net"
+    },
+    "delivery": {
+      "businessDaysMin": 5,
+      "businessDaysMax": 7,
+      "startsWhen": [
+        "complete required access is available",
+        "approval path is available"
+      ]
+    },
+    "clientEffort": {
+      "maxMinutes": 15,
+      "purpose": "access and approval"
+    },
+    "measurementWindow": {
+      "weeksMin": 4,
+      "weeksMax": 8
+    },
+    "dataRetentionDays": 30,
+    "hostingRegion": "France / EU",
+    "riskReversal": {
+      "ifConfirmedMoveCannotBeImplementedAfterVerification": [
+        "equivalent replacement move",
+        "100 percent refund"
+      ],
+      "customerChooses": true
+    },
+    "customerDelay": {
+      "accessDeadlineDays": 14,
+      "behavior": "service pauses if required access is not provided within 14 days",
+      "refundRule": "customer-caused delay does not create a refund claim arising from that delay"
+    },
+    "corePromise": "Identify the highest-value evidenced acquisition constraint, ship one bounded intervention, then document the before and after state."
+  },
+  "routes": {
+    "master": {
+      "path": "/first-move",
+      "canonical": "/first-move",
+      "indexing": "index,follow",
+      "traffic": [
+        "organic",
+        "direct",
+        "referral",
+        "brand",
+        "SEO",
+        "AI Search"
+      ],
+      "proofOrder": [
+        "transform",
+        "build",
+        "scale"
+      ]
+    },
+    "googleAds": {
+      "path": "/google-ads/first-move",
+      "canonical": "/google-ads/first-move",
+      "indexing": "index,follow",
+      "traffic": [
+        "Google Ads",
+        "retargeting",
+        "paid search",
+        "outreach"
+      ],
+      "proofOrder": [
+        "scale",
+        "transform",
+        "build"
+      ],
+      "sameProduct": true,
+      "samePrice": true
+    }
+  },
+  "routing": {
+    "question": "Wo vermutest du den größten Engpass?",
+    "countsAsFitQuestion": false,
+    "default": "unsure",
+    "options": {
+      "search": {
+        "label": "SEARCH",
+        "firstEvidenceSource": "public domain signals",
+        "focus": [
+          "rankings",
+          "technical structure",
+          "search intent",
+          "internal signals"
+        ]
+      },
+      "ai_search": {
+        "label": "AI SEARCH",
+        "firstEvidenceSource": "public domain and entity signals",
+        "focus": [
+          "ChatGPT",
+          "Gemini",
+          "Perplexity",
+          "Google AI Overviews",
+          "entities",
+          "answers",
+          "citation readiness"
+        ]
+      },
+      "paid_acquisition": {
+        "label": "PAID ACQUISITION",
+        "firstEvidenceSource": "public paid-acquisition pre-check",
+        "requiresReadOnlyForFullAccountFinding": true,
+        "focus": [
+          "Google Ads",
+          "signal quality",
+          "tracking",
+          "lead quality",
+          "budget efficiency"
+        ]
+      },
+      "unsure": {
+        "label": "ICH BIN MIR NICHT SICHER",
+        "firstEvidenceSource": "public domain signals",
+        "behavior": "SEESZN routes based on observed evidence"
+      }
+    }
+  },
+  "paidFlow": {
+    "stage1": {
+      "name": "public_precheck",
+      "requiresEmail": false,
+      "requiresOAuth": false,
+      "inputs": [
+        {
+          "id": "domain",
+          "type": "domain"
+        },
+        {
+          "id": "spendBand",
+          "type": "select",
+          "options": [
+            "< 10.000 EUR / Monat",
+            "10.000 bis 50.000 EUR / Monat",
+            "50.000 bis 250.000 EUR / Monat",
+            "> 250.000 EUR / Monat",
+            "Ich weiss es nicht"
+          ]
+        }
+      ],
+      "mayEvaluate": [
+        "public tag and measurement signals",
+        "consent implementation",
+        "landing page performance",
+        "conversion path",
+        "form friction",
+        "landing page structure",
+        "technical errors",
+        "message clarity"
+      ],
+      "mustNotClaimWithoutAccountAccess": [
+        "complete conversion action configuration",
+        "full attribution settings",
+        "search-term waste",
+        "PMax incrementality",
+        "brand versus non-brand spend",
+        "offline conversion quality",
+        "full lead quality"
+      ]
+    },
+    "stage2": {
+      "name": "read_only_account_review",
+      "trigger": "after visible public value is shown",
+      "cta": "Google Ads read-only verbinden",
+      "writeAccess": false,
+      "revocable": true,
+      "noCampaignChangesBeforePurchase": true,
+      "mayEvaluate": [
+        "brand leakage",
+        "search-term waste",
+        "PMax incrementality",
+        "conversion signal quality",
+        "campaign fragmentation",
+        "landing page mismatch",
+        "lead and value signal quality when available"
+      ]
+    }
+  },
+  "fitCheck": {
+    "questionCount": 3,
+    "questions": [
+      {
+        "id": "implementation",
+        "question": "Wie kann der Move umgesetzt werden?",
+        "options": [
+          "SEESZN bekommt Zugriff",
+          "Unser internes Team setzt um",
+          "Unsere bestehende Agentur / Entwickler setzen um",
+          "Aktuell gibt es keinen Umsetzungsweg"
+        ]
+      },
+      {
+        "id": "approval",
+        "question": "Wie ist der Freigabeweg?",
+        "options": [
+          "Direkte Entscheidung möglich",
+          "Interne Abstimmung 1 bis 2 Personen",
+          "Externe Freigabe",
+          "Noch unklar"
+        ]
+      },
+      {
+        "id": "complexity",
+        "question": "Wie komplex ist der Scope?",
+        "prefillFromScan": true,
+        "options": [
+          "Einfach",
+          "Mittel",
+          "Hoch",
+          "Sehr hoch"
+        ],
+        "rule": "complexity does not automatically change price; it controls eligibility"
+      }
+    ]
+  },
+  "gates": [
+    {
+      "id": "no_implementation_path",
+      "condition": "implementation == 'Aktuell gibt es keinen Umsetzungsweg'",
+      "checkout": "stop",
+      "nextStep": "Umsetzungsweg klären"
+    },
+    {
+      "id": "approval_unknown",
+      "condition": "approval == 'Noch unklar'",
+      "checkout": "pause",
+      "nextStep": "Freigabeweg klären"
+    },
+    {
+      "id": "paid_full_finding_without_read_only",
+      "condition": "route == 'paid_acquisition' and fullAccountFindingRequested == true and readOnlyConnected == false",
+      "checkout": "do not present account-level finding as qualified",
+      "nextStep": "show public finding, then offer read-only connection"
+    },
+    {
+      "id": "enterprise_scale",
+      "conditionExamples": [
+        ">= 50000 URLs",
+        "very complex paid account"
+      ],
+      "checkout": "scoped review",
+      "nextStep": "explain why self-serve is not appropriate"
+    },
+    {
+      "id": "multi_market",
+      "conditionExamples": [
+        ">= 4 markets with SEESZN implementation"
+      ],
+      "checkout": "scoped review",
+      "nextStep": "explain scope constraint"
+    },
+    {
+      "id": "capacity",
+      "condition": "runtime capacity is genuinely full",
+      "checkout": "next real execution window only",
+      "fakeScarcityForbidden": true
+    }
+  ],
+  "resultState": {
+    "headline": "Ein belastbarer Engpass wurde qualifiziert.",
+    "fields": [
+      "finding",
+      "impact",
+      "confidence",
+      "effort",
+      "proposedFirstMove",
+      "scope",
+      "measurementHypothesis"
+    ],
+    "primaryCTA": "Umsetzung prüfen",
+    "secondaryCTA": "Ergebnis per E-Mail senden"
+  },
+  "proof": {
+    "build": {
+      "label": "BUILD",
+      "name": "French Beret",
+      "descriptor": "E-Commerce · International · SEO + GEO",
+      "heroKpi": {
+        "value": "3.59K",
+        "label": "Organic Clicks",
+        "period": "in 3 Monaten"
+      },
+      "secondary": [
+        "752K Google Impressions",
+        "Ø Position 8,3"
+      ],
+      "asset": "/first-move/case-build-french-beret.webp"
+    },
+    "transform": {
+      "label": "TRANSFORM",
+      "name": "Established DACH Tourism Provider",
+      "descriptor": "DACH · SEO + AI Search",
+      "heroKpi": {
+        "value": "5,3 → 2,2",
+        "label": "Average Position in AI Search",
+        "period": "45 Tage"
+      },
+      "confidentiality": "Client confidential",
+      "asset": "/first-move/case-transform-tourism.webp",
+      "evidence": [
+        "constant prompt set",
+        "ChatGPT",
+        "Gemini",
+        "Perplexity",
+        "Google AI Overviews",
+        "same measurement logic before and after"
+      ]
+    },
+    "scale": {
+      "label": "SCALE",
+      "name": "European B2B Workspace Brand",
+      "descriptor": "DACH · Google Ads",
+      "heroKpi": {
+        "value": "2,5 bis 3,0 Mio. EUR",
+        "label": "Annual Media Spend"
+      },
+      "secondary": [
+        "CPL 167 bis 216 EUR → 100 bis 130 EUR",
+        "Conversion Value 14K → 37K",
+        "2020 bis 2025"
+      ],
+      "attribution": "Led by Philipp Ehrhardt · Paid Acquisition at SEESZN",
+      "confidentiality": "Client confidential",
+      "asset": "/first-move/case-scale-b2b-workspace.webp",
+      "forbiddenPublicClaim": "20 Mio. EUR+ Revenue"
+    }
+  },
+  "mechanism": [
+    {
+      "id": "find",
+      "label": "FIND",
+      "rule": "observation before opinion; use meaningful evidence; reject generic noise"
+    },
+    {
+      "id": "ship",
+      "label": "SHIP",
+      "rule": "one bounded intervention goes live"
+    },
+    {
+      "id": "prove",
+      "label": "PROVE",
+      "rule": "confirm implementation and document impact only when data supports attribution"
+    }
+  ],
+  "assets": {
+    "hero": "/first-move/first-move-hero-stone.webp",
+    "build": "/first-move/case-build-french-beret.webp",
+    "transform": "/first-move/case-transform-tourism.webp",
+    "scale": "/first-move/case-scale-b2b-workspace.webp",
+    "footerOptional": "/first-move/first-move-footer-texture.webp"
+  },
+  "seo": {
+    "master": {
+      "title": "SEESZN First Move | Den wichtigsten Akquisitionsengpass finden",
+      "description": "SEESZN findet den stärksten belegbaren Engpass in Search, AI Search oder Paid Acquisition, setzt einen klar begrenzten First Move um und dokumentiert die Wirkung. 1.490 EUR netto."
+    },
+    "googleAds": {
+      "title": "Google Ads First Move | Budget- und Signalprobleme finden | SEESZN",
+      "description": "SEESZN zeigt zuerst öffentliche Paid-Acquisition-Signale und vertieft den Befund bei Bedarf per Google Ads Read-only. Ein First Move, 1.490 EUR netto."
+    }
+  },
+  "analyticsEvents": [
+    "first_move_view",
+    "domain_submit",
+    "route_select",
+    "spend_band_select",
+    "public_scan_start",
+    "public_scan_signal",
+    "public_scan_complete",
+    "finding_view",
+    "evidence_expand",
+    "paid_connect_click",
+    "implementation_check_start",
+    "fit_check_step",
+    "fit_check_complete",
+    "checkout_start",
+    "checkout_complete"
+  ],
+  "hardRules": {
+    "visibleCopyForbidden": [
+      "anonymisiert",
+      "anonymer Kunde",
+      "anonymisierte Marke",
+      "20 Mio. EUR+ Revenue",
+      "kostenloses Audit",
+      "kostenloser SEO Scan"
+    ],
+    "emDashForbidden": true,
+    "fakeScarcityForbidden": true,
+    "serviceMenuForbidden": true,
+    "multiplePriceBoxesForbidden": true,
+    "salesCallAsPrimaryCTAForbidden": true
+  },
+  "implementation": {
+    "recordedAt": "2026-08-09",
+    "status": "shipped",
+    "routes": {
+      "/first-move": "static, index,follow, self-canonical",
+      "/google-ads/first-move": "static, index,follow, self-canonical",
+      "/api/first-move/scan": "NDJSON stream, search / ai_search / unsure",
+      "/api/first-move/paid-check": "NDJSON stream, paid stage 1",
+      "/api/first-move/request": "result email and binding request"
+    },
+    "sourceOfTruthInCode": {
+      "lockedValues": "lib/first-move/product.ts",
+      "contractTypes": "lib/first-move/types.ts",
+      "qualification": "lib/first-move/qualify.ts",
+      "paidStageOne": "lib/first-move/paid.ts",
+      "orchestration": "lib/first-move/scan.ts",
+      "structuredData": "lib/first-move/schema.ts",
+      "analytics": "lib/first-move/analytics.ts"
+    },
+    "deviations": [
+      {
+        "topic": "assets",
+        "fact": "All five assets were delivered as PNG with encoded separators in the filename and were converted to WebP at the exact specified paths. No stock image was substituted.",
+        "handling": "all three proof cards render their photo; the typographic evidence plate remains the fallback if an ASSETS path is null"
+      },
+      {
+        "topic": "legacy_route_diagnosis",
+        "fact": "/diagnosis is a technically distinct tool, so V5 forbids a blind redirect, while also forbidding two competing indexable product pages.",
+        "handling": "kept live and functional, now noindex,follow and removed from the sitemap; product CTAs sitewide repointed to /first-move; /en/diagnosis untouched and still indexable"
+      },
+      {
+        "topic": "google_ads_read_only",
+        "fact": "OAuth is not production ready",
+        "handling": "connect step gated behind FIRST_MOVE_ADS_OAUTH=enabled; no fake connection; Read-only is set up during kickoff until then"
+      },
+      {
+        "topic": "checkout",
+        "fact": "no payment provider exists in the repository",
+        "handling": "checkout is a binding request at the fixed price; lead source first_move_checkout; scope confirmation in writing, then invoice"
+      },
+      {
+        "topic": "analytics",
+        "fact": "the public site has no tag manager and no consent banner",
+        "handling": "no new script added; all fourteen V5 events are dispatched to window.dataLayer and window.gtag when present, otherwise a no-op"
+      }
+    ],
+    "qualificationGuards": [
+      "a non-200 entry page qualifies nothing; bot protection pages answer 403 with noindex, no H1 and no tag",
+      "product detail paths are excluded from the competing-intent cluster",
+      "only one page per variant family survives the cluster",
+      "sales boilerplate is removed before overlap is measured; a match needs overlap >= 0.5 and at least two shared non-boilerplate words"
+    ],
+    "openBeforeBroadRollout": [
+      "blind scan review against 20 real domains (Maxim, search and ai_search)",
+      "blind paid review against 5 Ads accounts (Philipp)",
+      "Google Ads Read-only OAuth flow including token handling",
+      "payment provider, if the fixed price should be collected in the flow rather than by invoice"
+    ]
+  }
+}

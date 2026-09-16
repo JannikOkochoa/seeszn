@@ -13,7 +13,8 @@ export const de: Translations = {
     services: "ENTDECKEN",
     work: "ERGEBNISSE",
     insights: "INSIGHTS",
-    about: "ÜBER SEESZN",
+    pricing: "PREISE",
+    about: "STUDIO",
     cta: "FIRST MOVE",
     servicesTagline: "Wir bauen die Oberflächen, die Maschinen abrufen und Menschen vertrauen.",
     enterOperatingRoom: "SYSTEM ENTDECKEN",
@@ -189,8 +190,12 @@ export const de: Translations = {
     nav: [
       { name: "ENTDECKEN", href: "/services" },
       { name: "ERGEBNISSE", href: "/work" },
+      { name: "PREISE",    href: "/pricing" },
       { name: "INSIGHTS",  href: "/insights" },
-      { name: "ÜBER SEESZN", href: "/about" },
+      // STUDIO ist aus dem Kopf entfallen, bleibt hier aber stehen: /about ist
+      // indexiert, und eine Seite ohne einen einzigen internen Link verliert
+      // genau die Sichtbarkeit, die dieses Haus verkauft.
+      { name: "STUDIO",    href: "/about" },
     ],
     legal: [
       { name: "Rechtliches", href: "/legal" },

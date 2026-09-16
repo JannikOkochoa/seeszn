@@ -9,8 +9,11 @@ export const en = {
     services: "DISCOVER",
     work: "RESULTS",
     insights: "INSIGHTS",
-    about: "ABOUT SEESZN",
-    cta: "CHECK BRAND VISIBILITY",
+    // The commercial entry point. Lives on the German tree only for now, the
+    // same way the product page does; Nav hides it outside German.
+    pricing: "PRICING",
+    about: "STUDIO",
+    cta: "FIRST MOVE",
     servicesTagline: "We build the surfaces machines retrieve and people trust.",
     enterOperatingRoom: "ENTER THE SYSTEM",
     allServices: "DISCOVER",
@@ -186,13 +189,17 @@ export const en = {
       { name: "DISCOVER", href: "/en/services" },
       { name: "RESULTS",  href: "/en/work" },
       { name: "INSIGHTS", href: "/en/insights" },
-      { name: "ABOUT SEESZN", href: "/en/about" },
+      // Kept in the footer only; see the German dictionary for the reasoning.
+      { name: "STUDIO",   href: "/en/about" },
     ],
     legal: [
       { name: "Legal Notice",   href: "/en/legal" },
       { name: "Privacy Policy", href: "/en/privacy" },
       { name: "Contact",        href: "/en/diagnosis" },
-      { name: "KI-Sichtbarkeits-Brief", href: "/brief/ki-sichtbarkeit" },
+      // Der Brief erscheint nur im deutschen Footer: es gibt ihn ausschließlich
+      // auf Deutsch, und ein deutscher Produktname zwischen englischen
+      // Rechtslinks ist genau die Art Leck, die eine Sprachfassung unfertig
+      // aussehen lässt.
     ],
     copy: "© 2026 Okri Holdings LLC",
   },

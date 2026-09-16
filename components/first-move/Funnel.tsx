@@ -251,6 +251,22 @@ const READS: string[] = [
   "semantische Muster",
 ];
 
+/**
+ * Dieselbe Liste auf Englisch. War bis zu diesem Durchgang die einzige
+ * verbliebene unbedingt deutsche Textstelle im Instrument der englischen
+ * Seite: die Übersicht "Was wir dabei öffentlich lesen" öffnete sich auf
+ * /en/first-move korrekt übersetzt, ihr Inhalt aber nicht.
+ */
+const READS_EN: string[] = [
+  "Domain and reachability",
+  "robots.txt",
+  "Sitemap and scope",
+  "a sample of public pages",
+  "page templates",
+  "technical signals",
+  "semantic patterns",
+];
+
 const PAID_READS: string[] = [
   "Domain und Erreichbarkeit",
   "öffentlich sichtbare Mess- und Tag-Signale",
@@ -1041,7 +1057,7 @@ export default function FirstMoveFunnel({
                       <summary>{copy.reads}</summary>
                       <div className="fm-details-body">
                         <ul className="fm-log">
-                          {(isPaid ? PAID_READS : READS).map((item) => (
+                          {(isPaid ? PAID_READS : pageLocale === "en" ? READS_EN : READS).map((item) => (
                             <li key={item}>
                               <span className="fm-log-label">{item}</span>
                             </li>
@@ -1181,7 +1197,7 @@ export default function FirstMoveFunnel({
                   Ausgang der Prüfung. */}
               {settled && outcome ? (
                 <div className="fm-outcome" data-step={step}>
-                  <ol className="fm-seq" aria-label="Fortschritt">
+                  <ol className="fm-seq" aria-label={pageLocale === "en" ? "Progress" : "Fortschritt"}>
                     {(["diagnosis", "context", "signals", "move"] as Step[]).map((id, i) => (
                       <li
                         key={id}

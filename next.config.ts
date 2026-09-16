@@ -37,11 +37,41 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
         ],
       },
+      // Die Rückkehr aus dem Stripe-Checkout. Sie trägt eine Sitzungs-ID in der
+      // Adresse und hat nur für den Käufer einen Sinn. Zusätzlich zum
+      // robots-Meta der Seite selbst, aus demselben Grund wie oben.
+      {
+        source: "/pricing/briefing",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+      {
+        source: "/en/pricing/briefing",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
     ];
   },
 
   async redirects() {
     return [
+      // ── Die kommerzielle Fläche heißt PREISE und liegt unter /pricing ─────
+      // Sie hieß in der Konzeption MARKET, danach kurz MOVES. Beide Namen sind
+      // nicht öffentlich geworden; "Preise" ist das Wort, das ein Einkäufer in
+      // der Navigation sucht. Die Umleitungen stehen trotzdem, weil ausgehende
+      // Mails und Notizen die alten Pfade tragen können.
+      //
+      // Reihenfolge: der Konfigurator zuerst, sonst schluckt die allgemeine
+      // Regel darunter den Anker.
+      { source: "/moves/backlinks", destination: "/pricing#backlinks", statusCode: 301 },
+      { source: "/market/backlinks", destination: "/pricing#backlinks", statusCode: 301 },
+      { source: "/moves/briefing", destination: "/pricing/briefing", statusCode: 301 },
+      { source: "/moves", destination: "/pricing", statusCode: 301 },
+      { source: "/moves/:slug", destination: "/pricing", statusCode: 301 },
+      { source: "/market", destination: "/pricing", statusCode: 301 },
+      { source: "/market/:slug", destination: "/pricing", statusCode: 301 },
       // ── Die eigenständige deutsche Sichtbarkeitsprüfung ──────────────────
       // /diagnosis und /diagnosis/result waren eine zweite deutsche
       // Konversionsfläche für dieselbe Absicht wie /first-move. Seit der

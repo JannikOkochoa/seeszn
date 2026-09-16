@@ -4,8 +4,11 @@ import { de } from "@/lib/case-studies/de";
 import { en as enCase } from "@/lib/case-studies/en";
 import {
   FB_FIGURES,
+  FB_FIGURES_EN,
   FB_HERO_IMAGE,
+  FB_HERO_IMAGE_EN,
   FB_PATH,
+  FB_PATH_EN,
 } from "@/lib/case-studies/french-beret";
 import {
   PA_FIGURES,
@@ -56,8 +59,8 @@ const COPY = {
   en: {
     eyebrow: "Case Studies",
     title: "Results",
-    lede: "Two publicly documented case studies. Starting position, interventions, outcome and measurement setup are all on the record. Where a client cannot be named, we say so.",
-    disciplines: "SEO · AI Search · Google Ads · Paid Acquisition",
+    lede: "Three publicly documented case studies. Starting position, interventions, outcome and measurement setup are all on the record. Where a client cannot be named, we say so.",
+    disciplines: "SEO · AI Search · E-Commerce · Google Ads",
     registerLeft: "Public register",
     action: "View case study",
     counter: (n: number) => `0${n} ${n === 1 ? "entry" : "entries"}`,
@@ -126,8 +129,27 @@ const DE_ENTRIES: Entry[] = [
 
 const EN_ENTRIES: Entry[] = [
   {
-    id: "transform",
+    id: "build",
     index: "01",
+    discipline: "Build",
+    title: "French Beret",
+    href: FB_PATH_EN,
+    meta: [
+      { key: "Discipline", value: "SEO · E-Commerce · Search Architecture" },
+      { key: "Outcome", value: `${FB_FIGURES_EN.clicks} organic clicks in ${FB_FIGURES_EN.windowMonthsIn}` },
+      { key: "Impressions", value: `${FB_FIGURES_EN.impressionsShort} on Google` },
+      { key: "Avg. position", value: FB_FIGURES_EN.position },
+    ],
+    image: {
+      src: FB_HERO_IMAGE_EN.src,
+      width: FB_HERO_IMAGE_EN.width,
+      height: FB_HERO_IMAGE_EN.height,
+    },
+    focus: "50% 54%",
+  },
+  {
+    id: "transform",
+    index: "02",
     discipline: "Transform",
     title: "Tourism",
     href: enCase.path,
@@ -146,7 +168,7 @@ const EN_ENTRIES: Entry[] = [
   },
   {
     id: "scale",
-    index: "02",
+    index: "03",
     discipline: "Scale",
     title: "Paid Acquisition at Scale",
     href: PA_PATH,

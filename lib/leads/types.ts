@@ -27,7 +27,13 @@ export type LeadSource =
   | "first_move_request"
   | "first_move_result_email"
   /** Der nachgeordnete Weg von der Startseite: "Befund gemeinsam prüfen". */
-  | "first_move_review";
+  | "first_move_review"
+  /**
+   * Die kostenlose Mengenempfehlung aus dem Backlink-Rechner. Kein Audit und
+   * kein Verkaufstermin: der Absender bekommt eine geprüfte Startmenge per
+   * Mail. Die Prüfung macht ein Mensch, nicht eine Schnittstelle.
+   */
+  | "pricing_backlink_recommendation";
 
 /** Nicht mehr geschriebene Quellen. Nur für die Anzeige von Altbestand. */
 export type LegacyLeadSource = "first_move_checkout";
@@ -128,6 +134,7 @@ export const LEAD_SOURCE_LABEL: Record<string, string> = {
   first_move_request: "First Move Anfrage",
   first_move_result_email: "First Move Ergebnisversand",
   first_move_review: "First Move Befundprüfung",
+  pricing_backlink_recommendation: "Backlink-Mengenempfehlung",
   // Altbestand vor der Umbenennung im August 2026. Wird nicht mehr geschrieben.
   first_move_checkout: "First Move Anfrage (alt)",
 };

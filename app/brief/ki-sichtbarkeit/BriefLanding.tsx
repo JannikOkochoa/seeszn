@@ -692,10 +692,10 @@ export default function BriefLanding() {
           font-family: var(--font-body), sans-serif;
           font-size: 14px;
           letter-spacing: 0;
-          color: #c4d83f;
+          color: var(--accent-on-dark);
         }
         .bf-form--dark .bf-btn-arrow {
-          color: #c8df3f;
+          color: var(--accent-on-dark);
         }
         .bf-consent {
           font-family: var(--font-body), sans-serif;
@@ -896,7 +896,7 @@ export default function BriefLanding() {
           border-top: 1px solid #343226;
         }
         .bl-learn-dash {
-          color: #c8df3f;
+          color: var(--accent-on-dark);
           flex-shrink: 0;
           font-size: 0.85rem;
         }
@@ -956,7 +956,7 @@ export default function BriefLanding() {
         .bl-contents-dot {
           width: 4px;
           height: 4px;
-          background: #c4d83f;
+          background: var(--accent-on-dark);
           flex-shrink: 0;
         }
 

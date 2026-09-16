@@ -275,3 +275,338 @@ export const FB_HERO_IMAGE = {
   height: 1024,
   alt: "French Beret in Schwarz, Creme und Braun in einer ruhigen Produktkomposition auf Travertinsteinen",
 };
+
+// ─── English edition ──────────────────────────────────────────────────────────
+// Same canonical numbers as FB_FIGURES above, reformatted to English notation
+// (comma thousands separator, period decimal) the same way lib/case-studies/en.ts
+// reformats the Tourism case's figures. No value here is independently sourced —
+// every number is carried over from the German original, which stays the
+// factual source of truth.
+
+export const FB_PATH_EN = "/en/case-studies/french-beret-ecommerce-seo";
+export const FB_INDEX_PATH_EN = "/en/work";
+
+export const FB_FIGURES_EN = {
+  impressions: "752,000",
+  impressionsShort: "752K",
+  clicks: "3,590",
+  position: "7.1",
+  products: "245",
+  windowMonths: "3 months",
+  windowMonthsIn: "3 months",
+} as const;
+
+export const FB_H1_TEXT_EN = `${FB_FIGURES_EN.clicks} organic clicks in ${FB_FIGURES_EN.windowMonthsIn}.`;
+
+export const FB_VISUAL_CAPTION_EN = "Conceptual visualization of the system architecture.";
+
+export const FB_META_EN = {
+  title: "French Beret Case Study: E-Commerce SEO From the Ground Up | SEESZN",
+  description:
+    `How SEESZN built a search architecture from the ground up for French Beret: ` +
+    `${FB_FIGURES_EN.impressions} impressions, ${FB_FIGURES_EN.clicks} organic clicks, ` +
+    `avg. position ${FB_FIGURES_EN.position} in three months.`,
+  ogTitle: FB_H1_TEXT_EN,
+  ogDescription:
+    "Case study: how SEESZN built an e-commerce and search architecture from the ground up for French Beret.",
+  ogImage: `${FB_ASSETS}/french-beret-hero.webp`,
+  datePublished: "2026-08-10",
+  dateModified: "2026-08-10",
+  about: ["Search Engine Optimization", "E-Commerce", "Information Architecture", "Content Architecture"],
+} as const;
+
+export const FB_FACTS_EN: { key: string; value: string }[] = [
+  { key: "Brand", value: "French Beret" },
+  { key: "Business model", value: "E-Commerce" },
+  { key: "Starting position", value: "Building a new search-driven commerce system" },
+  {
+    key: "Goal",
+    value: "Systematically capture organic demand and create scalable shop structures",
+  },
+  { key: "Approach", value: "SEO, E-Commerce Architecture, Editorial Search" },
+  { key: "Scope", value: `${FB_FIGURES_EN.products} live products, collections, advice hub` },
+  {
+    key: "Outcome",
+    value: `${FB_FIGURES_EN.impressionsShort} impressions · ${FB_FIGURES_EN.clicks} clicks · avg. position ${FB_FIGURES_EN.position}`,
+  },
+  { key: "Measurement window", value: FB_FIGURES_EN.windowMonths },
+];
+
+export const FB_FLOW_EN: { index: string; mark: FlowMark; title: string; text: string }[] = [
+  {
+    index: "01",
+    mark: "demand",
+    title: "Search Demand",
+    text: "Understand relevant search demand and search intent.",
+  },
+  {
+    index: "02",
+    mark: "collections",
+    title: "Collection Architecture",
+    text: "Translate demand into logical commercial categories.",
+  },
+  {
+    index: "03",
+    mark: "products",
+    title: "Product Coverage",
+    text: "Make relevant products discoverable through clear structure.",
+  },
+  {
+    index: "04",
+    mark: "editorial",
+    title: "Editorial Content",
+    text: "Answer information needs and build expertise.",
+  },
+  {
+    index: "05",
+    mark: "links",
+    title: "Internal Connections",
+    text: "Meaningfully connect commercial and editorial pages.",
+  },
+  {
+    index: "06",
+    mark: "discovery",
+    title: "Organic Discovery",
+    text: "Create more relevant entry points through search.",
+  },
+];
+
+export const FB_TAXONOMY_EN = [
+  "Material",
+  "Color",
+  "Target audience",
+  "Style",
+  "Product type",
+  "Care",
+  "Fit",
+] as const;
+
+export const FB_KPIS_EN: { value: string; label: string }[] = [
+  { value: FB_FIGURES_EN.impressions, label: "Google impressions" },
+  { value: FB_FIGURES_EN.clicks, label: "Organic clicks" },
+  { value: `Avg. ${FB_FIGURES_EN.position}`, label: "Average position" },
+  { value: FB_FIGURES_EN.windowMonths, label: "Measurement window" },
+];
+
+export const FB_HERO_KPIS_EN: { value: string; label: string }[] = [
+  { value: FB_FIGURES_EN.impressionsShort, label: "Google impressions" },
+  { value: FB_FIGURES_EN.clicks, label: "Organic clicks" },
+  { value: `Avg. ${FB_FIGURES_EN.position}`, label: "Average position" },
+  { value: FB_FIGURES_EN.products, label: "Live products" },
+];
+
+export const FB_MODULES_EN: FbModule[] = [
+  {
+    ...FB_MODULES[0],
+    title: `${FB_FIGURES_EN.products} Live Products`,
+    text: "Broad product coverage creates commercial entry points for different search intents.",
+    image: {
+      ...FB_MODULES[0].image,
+      alt: "Product overview of different French Beret models and colors in a filtered list view",
+    },
+  },
+  {
+    ...FB_MODULES[1],
+    text: "Products are structured across relevant dimensions such as material, color and style.",
+    image: {
+      ...FB_MODULES[1].image,
+      alt: "Illustration of a beret collection organized by material, color and style",
+    },
+  },
+  {
+    ...FB_MODULES[2],
+    text: "Editorial content answers information needs around selection, styling and care.",
+    image: {
+      ...FB_MODULES[2].image,
+      alt: "Editorial advice hub with content on styling, materials and care for berets",
+    },
+  },
+  {
+    ...FB_MODULES[3],
+    text: "Commerce, brand and organic discoverability are treated as one connected system.",
+    image: {
+      ...FB_MODULES[3].image,
+      alt: "Editorial e-commerce presentation of French Beret with navigation, brand statement and entry into the shop",
+    },
+  },
+];
+
+export const FB_LEARNINGS_EN: { index: string; title: string; text: string }[] = [
+  {
+    index: "01",
+    title: "Architecture before content volume.",
+    text: "A clear structure carries further than a large volume of unstructured content.",
+  },
+  {
+    index: "02",
+    title: "Commerce and content as one system.",
+    text: "Products, categories and content all pay into the same demand.",
+  },
+  {
+    index: "03",
+    title: "SEO starts before the first blog post.",
+    text: "Taxonomy, navigation and internal linking are part of the search strategy.",
+  },
+  {
+    index: "04",
+    title: "Continuity over one-off actions.",
+    text: "Search results come from continuous optimizing, measuring and improving.",
+  },
+];
+
+export const FB_METHOD_FACTS_EN: { key: string; value: string }[] = [
+  { key: "Measurement source", value: "Google Search Console, the shop's property" },
+  { key: "Measurement window", value: FB_FIGURES_EN.windowMonths },
+  { key: "Metrics", value: "Impressions · clicks · average position" },
+  { key: "Reporting", value: "Directly measured values, no extrapolation" },
+  { key: "Data as of", value: FB_DATA_AS_OF },
+];
+
+// English case studies only ever link to English-published content — see the
+// same rule already established in components/case-studies/Archive.tsx. Two of
+// the three German "Weiterlesen" links point at insight articles that have no
+// English edition yet, so they are left out here rather than pointed at a
+// German-only page or invented.
+export const FB_RELATED_EN: { label: string; href: string }[] = [
+  { label: "How we work", href: "/en/services" },
+];
+
+export const FB_HERO_IMAGE_EN = {
+  ...FB_HERO_IMAGE,
+  alt: "French Beret in black, cream and brown in a calm product composition on travertine stone",
+};
+
+// ── UI-Chrome, das im Component selbst stand ─────────────────────────────────
+// Alles, was FrenchBeretCase.tsx bisher als Literal in der JSX trug: Breadcrumb,
+// Abschnitts-Eyebrows/-Überschriften, Fließtext und CTA. Die deutsche Spalte ist
+// wortgleich mit dem, was vorher im Component stand.
+export const FB_UI = {
+  de: {
+    breadcrumb: { home: "Start", homeHref: "/", index: "Ergebnisse", leaf: "French Beret" },
+    eyebrow: { num: "01 · Build", label: "Case Study" },
+    heroTail: "organische Klicks",
+    heroSub:
+      "Wie SEESZN für French Beret eine E-Commerce- und Search-Architektur von Grund auf aufgebaut hat.",
+    heroMeta: { client: "Kunde", period: "Zeitraum", website: "Website" },
+    overview: { label: "Überblick", h2a: "Der Case in", h2b: "20 Sekunden." },
+    approach: {
+      label: "Ausgangslage",
+      h2a: "Kein Legacy-SEO.",
+      h2b: "Ein System von Grund auf.",
+      p1: "French Beret war kein klassisches SEO-Relaunch-Projekt. Shop-Struktur, kommerzielle Landingpages, Produktarchitektur und redaktionelle Inhalte konnten von Beginn an gemeinsam gedacht werden.",
+      p2: "Das Ziel war deshalb nicht, einzelne Rankings nachträglich zu reparieren. Es ging darum, eine E-Commerce-Struktur aufzubauen, in der Suchnachfrage, Navigation, Produkte und Inhalte dieselbe Architektur nutzen.",
+      quoteA: "Search wurde nicht auf den Shop gesetzt.",
+      quoteB: "Search wurde Teil des Shops.",
+    },
+    flow: {
+      label: "Architektur",
+      h2: "Von Suchnachfrage zur Shop-Architektur.",
+      note: "Sechs Ebenen, eine Struktur. Jede Ebene baut auf der vorherigen auf, damit Nachfrage, Kategorien, Produkte und Inhalte nicht getrennt voneinander entstehen.",
+      taxonomyLabel: "Taxonomie-Dimensionen",
+    },
+    range: {
+      label: "Sortiment",
+      h2: (products: string) => `${products} Live-Produkte.`,
+      note: (products: string) =>
+        `Nicht ${products} isolierte URLs, sondern ein Commerce-System aus Produkten, Collections und redaktionellen Einstiegspunkten.`,
+      collectionsBy: "Collections nach",
+      collectionsList: ["Material", "Farbe", "Zielgruppe", "Stil"],
+      editorial: "Editorial Search",
+      editorialText: "Inhalte rund um Auswahl, Styling, Nutzung und Pflege.",
+    },
+    result: {
+      label: "Ergebnis",
+      h2: "Drei Monate Search.",
+      note: "Vier Werte aus einer Quelle, im selben Messfenster erhoben. Mehr Kennzahlen gibt die Datenlage nicht her, und mehr braucht sie auch nicht.",
+      source: (windowMonthsIn: string) =>
+        `Quelle: Google Search Console, Property des Shops. Dokumentiertes Messfenster von ${windowMonthsIn}.`,
+      hard: "Keine Hochrechnung.",
+    },
+    modules: {
+      label: "System",
+      h2: "Die Systembausteine.",
+      note: "Vier Bausteine tragen das System: Produktabdeckung, Collection-Struktur, redaktionelle Ebene und Storefront. Sie greifen ineinander, statt nebeneinander zu stehen.",
+    },
+    learnings: { label: "Erkenntnisse", h2: "Was funktioniert hat." },
+    method: {
+      label: "Methodik",
+      h2: "So messen wir.",
+      lead: "Search-Daten werden über ein fest definiertes Messfenster ausgewertet. Wir zeigen die Werte, die direkt in der verwendeten Datenquelle gemessen wurden, und trennen dokumentierte Ergebnisse von Interpretation.",
+      footnote: (position: string) =>
+        `Ø Position ${position} ist die durchschnittliche Position aller Queries in der Google Search Console. Sie bedeutet nicht, dass einzelne Keywords auf Platz ${position} ranken, und sie ist kein Ranking für ein bestimmtes Keyword.`,
+    },
+    cta: {
+      label: "Nächster Schritt",
+      h2a: "Wie sichtbar ist",
+      h2b: "dein Commerce-System?",
+      copy: "Finde heraus, wo deine Marke heute in Google und AI Search steht und welcher Engpass als Nächstes gelöst werden sollte.",
+      button: "First Move starten",
+      buttonHref: "/first-move",
+      relatedLabel: "Weiterlesen",
+    },
+  },
+  en: {
+    breadcrumb: { home: "Home", homeHref: "/en", index: "Results", leaf: "French Beret" },
+    eyebrow: { num: "01 · Build", label: "Case Study" },
+    heroTail: "organic clicks",
+    heroSub:
+      "How SEESZN built an e-commerce and search architecture from the ground up for French Beret.",
+    heroMeta: { client: "Client", period: "Period", website: "Website" },
+    overview: { label: "Overview", h2a: "The case in", h2b: "20 seconds." },
+    approach: {
+      label: "Starting Position",
+      h2a: "No legacy SEO.",
+      h2b: "A system from the ground up.",
+      p1: "French Beret wasn't a classic SEO relaunch project. Shop structure, commercial landing pages, product architecture and editorial content could be designed together from day one.",
+      p2: "The goal wasn't to fix individual rankings after the fact. It was to build an e-commerce structure in which search demand, navigation, products and content share the same architecture.",
+      quoteA: "Search wasn't bolted onto the shop.",
+      quoteB: "Search became part of the shop.",
+    },
+    flow: {
+      label: "Architecture",
+      h2: "From search demand to shop architecture.",
+      note: "Six layers, one structure. Each layer builds on the previous one so demand, categories, products and content don't develop in isolation.",
+      taxonomyLabel: "Taxonomy dimensions",
+    },
+    range: {
+      label: "Range",
+      h2: (products: string) => `${products} Live Products.`,
+      note: (products: string) =>
+        `Not ${products} isolated URLs, but a commerce system of products, collections and editorial entry points.`,
+      collectionsBy: "Collections by",
+      collectionsList: ["Material", "Color", "Target audience", "Style"],
+      editorial: "Editorial Search",
+      editorialText: "Content around selection, styling, use and care.",
+    },
+    result: {
+      label: "Result",
+      h2: "Three months of search.",
+      note: "Four values from one source, measured in the same window. The data doesn't support more metrics, and it doesn't need to.",
+      source: (windowMonthsIn: string) =>
+        `Source: Google Search Console, the shop's property. Documented measurement window of ${windowMonthsIn}.`,
+      hard: "No extrapolation.",
+    },
+    modules: {
+      label: "System",
+      h2: "The system building blocks.",
+      note: "Four building blocks carry the system: product coverage, collection structure, editorial layer and storefront. They interlock rather than sit side by side.",
+    },
+    learnings: { label: "Learnings", h2: "What worked." },
+    method: {
+      label: "Methodology",
+      h2: "How we measure.",
+      lead: "Search data is evaluated over a fixed measurement window. We show the values measured directly in the data source used, and separate documented results from interpretation.",
+      footnote: (position: string) =>
+        `Avg. position ${position} is the average position across all queries in Google Search Console. It doesn't mean individual keywords rank at position ${position}, and it isn't a ranking for any specific keyword.`,
+    },
+    cta: {
+      label: "Next Step",
+      h2a: "How visible is",
+      h2b: "your commerce system?",
+      copy: "Find out where your brand stands today in Google and AI Search, and which bottleneck to solve next.",
+      button: "Start First Move",
+      buttonHref: "/en/first-move",
+      relatedLabel: "Read more",
+    },
+  },
+} as const;

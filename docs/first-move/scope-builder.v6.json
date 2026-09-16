@@ -1,0 +1,690 @@
+{
+  "schemaVersion": "6.0.2",
+  "sourceOfTruth": {
+    "name": "SEESZN First Move V6",
+    "supersedes": [
+      "scope-builder.v5.json",
+      "CLAUDE_PRODUCT_PAGE_v5.md (funnel, price, disclosure, routing, proof, copy)",
+      "SCAN_API_CONTRACT_v5.md (public response shape)"
+    ],
+    "scope": "Product page funnel for /first-move and /google-ads/first-move",
+    "rule": "If an older implementation, comment, document, mockup or configuration conflicts with V6, V6 wins.",
+    "notInScope": [
+      "internal Move Library (S01…, A01…, P01…)"
+    ],
+    "location": "docs/first-move/ (internal, never under public/)",
+    "correctionPass": "pre-launch: internal docs moved out of public, example finding restored, intervention type disclosed, internal scan intelligence retained, French Beret average position removed from the card, request analytics renamed, development write guard, reduced paid FAQ, AI objection FAQ, Ads connect gated by implementation."
+  },
+  "product": {
+    "name": "SEESZN First Move",
+    "headerLabel": "FIRST MOVE",
+    "internalSystemName": "Constraint Engine",
+    "price": {
+      "amount": 2490,
+      "currency": "EUR",
+      "taxMode": "net",
+      "previousVersion": 1490
+    },
+    "priceRules": [
+      "one fixed price for one product",
+      "no 'ab' pricing",
+      "no channel-specific price",
+      "no launch discount",
+      "no crossed-out price",
+      "no fake scarcity, urgency or countdown",
+      "complexity never changes the public price"
+    ],
+    "delivery": {
+      "businessDaysMin": 5,
+      "businessDaysMax": 7,
+      "display": "5–7 Werktage nach vollständigem Zugriff",
+      "startsWhen": [
+        "complete access",
+        "clarified approval path"
+      ]
+    },
+    "clientEffort": {
+      "maxMinutes": 15,
+      "purpose": "access and approval"
+    },
+    "measurementWindow": {
+      "weeksMin": 4,
+      "weeksMax": 8
+    },
+    "dataRetentionDays": 30,
+    "hostingRegion": "France / EU",
+    "riskReversal": {
+      "trigger": "confirmed First Move is not implementable after verification",
+      "options": [
+        "equivalent replacement move",
+        "100 percent refund"
+      ],
+      "customerChooses": true,
+      "forbiddenWording": [
+        "risikofrei",
+        "Geld zurück, wenn kein Signal gefunden wird",
+        "Ergebnisgarantie",
+        "Ranking-Garantie",
+        "Performance-Garantie"
+      ]
+    },
+    "customerDelay": {
+      "accessDeadlineDays": 14,
+      "behavior": "service pauses if required access is not provided within 14 days",
+      "refundRule": "customer-caused delay does not create a refund claim arising from that delay"
+    },
+    "positioning": "Wir verifizieren den Befund, setzen eine klar begrenzte Änderung um und dokumentieren anschließend das Ergebnis.",
+    "singleSourceInCode": "lib/first-move/product.ts"
+  },
+  "routes": {
+    "master": {
+      "path": "/first-move",
+      "canonical": "/first-move",
+      "indexing": "index,follow",
+      "proofOrder": [
+        "transform",
+        "build",
+        "scale"
+      ]
+    },
+    "googleAds": {
+      "path": "/google-ads/first-move",
+      "canonical": "/google-ads/first-move",
+      "indexing": "index,follow",
+      "proofOrder": [
+        "scale",
+        "transform",
+        "build"
+      ],
+      "sameProduct": true,
+      "samePrice": true,
+      "neverCanonicalToMaster": true
+    }
+  },
+  "lanes": {
+    "discovery": [
+      "hero",
+      "domain",
+      "public check",
+      "signal",
+      "relevant proof",
+      "offer",
+      "fit",
+      "start"
+    ],
+    "fast": [
+      "hero",
+      "header CTA",
+      "offer",
+      "fit",
+      "start"
+    ],
+    "rule": "The public scan is never required to buy. The header CTA anchors to #angebot.",
+    "noAgencyExits": [
+      "services",
+      "about",
+      "blog",
+      "case studies",
+      "contact"
+    ]
+  },
+  "pageOrder": [
+    {
+      "id": "header",
+      "rendering": "server"
+    },
+    {
+      "id": "hero",
+      "anchor": null,
+      "rendering": "server shell, client field"
+    },
+    {
+      "id": "publicCheck",
+      "anchor": "#pruefung",
+      "rendering": "client"
+    },
+    {
+      "id": "process",
+      "anchor": "#ablauf",
+      "rendering": "server"
+    },
+    {
+      "id": "proof",
+      "anchor": "#proof",
+      "rendering": "server"
+    },
+    {
+      "id": "offer",
+      "anchor": "#angebot",
+      "rendering": "server"
+    },
+    {
+      "id": "fitAndStart",
+      "anchor": "#start",
+      "rendering": "client"
+    },
+    {
+      "id": "faq",
+      "anchor": "#faq",
+      "rendering": "server"
+    },
+    {
+      "id": "closing",
+      "anchor": null,
+      "rendering": "server shell, client field"
+    }
+  ],
+  "header": {
+    "left": "SEESZN",
+    "right": [
+      "FIRST MOVE",
+      "FIRST MOVE STARTEN"
+    ],
+    "price": "not shown in header",
+    "ctaTarget": "#angebot"
+  },
+  "hero": {
+    "master": {
+      "eyebrow": "SEESZN First Move",
+      "h1": "Finde den nächsten Engpass, den wir belegen und direkt beheben können.",
+      "lead": "Wir prüfen deine Domain auf öffentliche Signale. Wenn sich ein relevanter Befund zeigt, siehst du ihn direkt. Vor einer Umsetzung verifizieren wir ihn.",
+      "input": [
+        "domain"
+      ],
+      "cta": "Domain prüfen"
+    },
+    "googleAds": {
+      "eyebrow": "Google Ads · SEESZN First Move",
+      "h1": "Dein Budget läuft. Die Frage ist, welcher Engpass es aufhält.",
+      "input": [
+        "domain",
+        "spendBand"
+      ],
+      "cta": "Paid Check starten",
+      "noOAuthInHero": true
+    },
+    "factLine": "2.490 € Festpreis · 5–7 Werktage · max. 15 Min. auf Kundenseite",
+    "factLineWeight": "secondary",
+    "routeSelectorInHero": false
+  },
+  "channelContext": {
+    "question": "Wo merkst du das Problem aktuell am stärksten?",
+    "options": [
+      "Search",
+      "AI Search",
+      "Paid Acquisition",
+      "Weiß ich nicht"
+    ],
+    "askedWhen": "only in the no-signal state, where the answer sharpens the next step",
+    "event": "route_select",
+    "sentAs": "channelContext"
+  },
+  "publicScan": {
+    "role": "demonstration of how SEESZN looks at acquisition problems, not the product",
+    "width": "full content width",
+    "fakeProgress": false,
+    "exampleFinding": false,
+    "ariaLive": "polite",
+    "focusMovesToResult": true,
+    "stateLabels": [
+      "Domain erkannt",
+      "robots.txt geprüft",
+      "Sitemap geprüft",
+      "Scope bestimmt",
+      "Relevante Seiten verglichen",
+      "Technische Signale geprüft",
+      "Muster abgeglichen",
+      "Signale werden abgeglichen",
+      "Relevantes Signal erkannt",
+      "Kein starkes öffentliches Signal"
+    ]
+  },
+  "resultState": {
+    "label": "Relevantes Signal",
+    "publicFields": [
+      "title",
+      "summary",
+      "evidence (max 2)",
+      "impact",
+      "confidence",
+      "interventionType (class of action, never the target)"
+    ],
+    "verificationLine": "Wir würden diesen Befund vor einer Umsetzung verifizieren.",
+    "primaryCTA": "First Move prüfen",
+    "secondaryCTA": "Ergebnis per E-Mail senden",
+    "neverPublic": [
+      "exact winning URL",
+      "URLs to consolidate",
+      "canonical plan",
+      "redirect plan",
+      "internal link changes",
+      "implementation instructions",
+      "execution checklist",
+      "measurement hypothesis",
+      "QA plan",
+      "effort",
+      "detailed proposed First Move scope",
+      "baseline values"
+    ],
+    "enforcedBy": "lib/first-move/disclosure.ts toPublicFinding()",
+    "forbiddenWording": [
+      "Ein belastbarer Engpass wurde qualifiziert."
+    ],
+    "exampleBeforeFirstScan": {
+      "label": "Beispiel · noch keine Prüfung gelaufen",
+      "source": "lib/first-move/example.ts",
+      "rules": [
+        "own type, never a PublicFinding",
+        "never sent in a lead payload",
+        "never tracked as a scan result",
+        "disappears when a real scan starts",
+        "abstract, no real domain"
+      ],
+      "cta": "Gib deine Domain ein. Danach erscheint hier ein Befund zu deiner Website."
+    },
+    "internalRetention": {
+      "store": "public.first_move_scan_context",
+      "migration": "supabase/migrations/20260809120000_first_move_scan_context.sql",
+      "module": "lib/first-move/scanStore.ts",
+      "idFormat": "fm_ + 32 hex from randomUUID, non-guessable",
+      "ttlHours": 6,
+      "retentionCeilingDays": 30,
+      "access": "server-only, RLS on with no policies, grants for service_role only",
+      "publicReadRoute": null,
+      "expiry": "logical on read, opportunistic delete on write and on expired read",
+      "failure": "scan and request continue, internal notification states the context could not be recovered",
+      "development": "process memory via persistenceAllowed() in lib/devGuard.ts",
+      "customerMail": "public information only"
+    }
+  },
+  "noSignalState": {
+    "title": "Öffentlich ist hier noch kein Befund stark genug für eine Empfehlung.",
+    "fabricateFinding": false,
+    "primaryCTA": "First Move trotzdem prüfen",
+    "rule": "The scan is never a gate for purchasing First Move."
+  },
+  "contextualProof": {
+    "rule": "after a result show exactly one relevant case, keep the rest one click away",
+    "mapping": {
+      "paid_acquisition": "scale",
+      "commerce": "build",
+      "default": "transform"
+    },
+    "expandControl": "Weitere Ergebnisse ansehen",
+    "sectionHeading": "Ausgewählte Ergebnisse",
+    "cases": {
+      "transform": {
+        "name": "Established DACH Tourism Provider",
+        "lead": "5,3 → 2,2 Average Position in AI Search",
+        "secondary": [
+          "45 Tage"
+        ],
+        "note": "Client confidential"
+      },
+      "build": {
+        "name": "French Beret",
+        "lead": "3.59K Organic Clicks in 3 Monaten",
+        "secondary": [
+          "752K Google Impressions"
+        ],
+        "note": "Average position 7.1 stays in the methodology block, not on the card."
+      },
+      "scale": {
+        "name": "European B2B Workspace Brand",
+        "lead": "2,5 bis 3,0 Mio. € Annual Media Spend",
+        "secondary": [
+          "CPL 167–216 € → 100–130 €",
+          "Conversion Value 14K → 37K"
+        ],
+        "period": "2020–2025",
+        "attribution": "Led by Philipp Ehrhardt · Paid Acquisition at SEESZN",
+        "note": "Client confidential"
+      }
+    },
+    "forbidden": [
+      "20 Mio revenue claim",
+      "invented metrics",
+      "anonymisiert"
+    ]
+  },
+  "offer": {
+    "heading": "SEESZN First Move",
+    "price": "2.490 €",
+    "priceSub": "Netto · Festpreis",
+    "prominentFacts": [
+      "5–7 Werktage nach vollständigem Zugriff",
+      "max. 15 Minuten Aufwand auf Kundenseite",
+      "Umsetzung enthalten",
+      "QA enthalten",
+      "Messung enthalten, 4–8 Wochen",
+      "Evidence Record, dokumentiertes Vorher/Nachher"
+    ],
+    "progressiveDisclosure": [
+      "included list",
+      "not included list"
+    ]
+  },
+  "fitCheck": {
+    "questionCount": 3,
+    "worksWithoutScan": true,
+    "questions": [
+      {
+        "id": "implementation",
+        "question": "Wie kann der Move umgesetzt werden?",
+        "options": [
+          "SEESZN bekommt Zugriff",
+          "Unser internes Team setzt um",
+          "Unsere Agentur oder Entwickler setzen um",
+          "Aktuell gibt es keinen Umsetzungsweg"
+        ]
+      },
+      {
+        "id": "approval",
+        "question": "Wie ist der Freigabeweg?",
+        "options": [
+          "Direkte Entscheidung möglich",
+          "Interne Abstimmung, 1 bis 2 Personen",
+          "Externe Freigabe nötig",
+          "Noch unklar"
+        ]
+      },
+      {
+        "id": "complexity",
+        "question": "Wie komplex ist die Umsetzung?",
+        "prefillFromScan": true,
+        "options": [
+          "Einfach",
+          "Mittel",
+          "Hoch",
+          "Sehr hoch"
+        ],
+        "rule": "complexity controls eligibility, never the public price"
+      }
+    ]
+  },
+  "gates": [
+    {
+      "id": "no_implementation_path",
+      "checkout": "stop",
+      "nextStep": "Umsetzungsweg klären"
+    },
+    {
+      "id": "approval_unknown",
+      "checkout": "pause",
+      "nextStep": "Freigabeweg klären"
+    },
+    {
+      "id": "very_high_complexity",
+      "checkout": "scoped review",
+      "nextStep": "Scope eingrenzen"
+    },
+    {
+      "id": "enterprise_scale",
+      "conditionExamples": [
+        ">= 50000 URLs"
+      ],
+      "checkout": "scoped review",
+      "nextStep": "Scope eingrenzen"
+    },
+    {
+      "id": "multi_market",
+      "conditionExamples": [
+        ">= 4 markets"
+      ],
+      "checkout": "scoped review",
+      "nextStep": "Scope eingrenzen"
+    },
+    {
+      "id": "paid_full_finding_without_read_only",
+      "checkout": "public finding only",
+      "nextStep": "read-only after purchase intent or in kickoff"
+    },
+    {
+      "id": "capacity",
+      "condition": "only with real runtime data",
+      "fakeScarcityForbidden": true
+    }
+  ],
+  "startState": {
+    "paymentProvider": null,
+    "summaryBeforeSubmit": [
+      "Produkt",
+      "Preis",
+      "Umfang",
+      "Lieferung",
+      "Nächster Schritt"
+    ],
+    "microcopy": "Die Anfrage ist verbindlich für den Festpreis. Eine Zahlung erfolgt hier nicht.",
+    "forbiddenStates": [
+      "payment successful",
+      "checkout completed",
+      "card charged",
+      "purchase complete"
+    ]
+  },
+  "paidFlow": {
+    "stage1": {
+      "input": [
+        "domain",
+        "spendBand"
+      ],
+      "spendBands": [
+        "< 10.000 € / Monat",
+        "10.000–50.000 €",
+        "50.000–250.000 €",
+        "> 250.000 €",
+        "Weiß ich nicht"
+      ],
+      "allowedPublicSignals": [
+        "landing page clarity",
+        "visible conversion path",
+        "page friction",
+        "public tagging and consent indicators",
+        "message alignment",
+        "form friction",
+        "public site quality"
+      ],
+      "forbiddenPublicClaims": [
+        "full conversion tracking correctness",
+        "attribution correctness",
+        "search-term waste",
+        "PMax incrementality",
+        "complete brand vs non-brand spend",
+        "offline conversion quality",
+        "lead quality",
+        "account-level economic inefficiency"
+      ]
+    },
+    "stage2": {
+      "featureFlag": "FIRST_MOVE_ADS_OAUTH=enabled",
+      "offeredAfter": "a real public paid signal",
+      "guarantees": [
+        "no write scope",
+        "no campaign changes before purchase",
+        "revocable",
+        "tokens never logged"
+      ],
+      "whenDisabled": "read-only is set up in the kickoff, no fake connection capability",
+      "implementationGate": "ADS_CONNECT_ROUTE_IMPLEMENTED in lib/first-move/paid.ts; while false the connect step stays hidden even with FIRST_MOVE_ADS_OAUTH=enabled"
+    }
+  },
+  "copyRules": {
+    "forbiddenCharacters": [
+      "em dash U+2014"
+    ],
+    "forbiddenPhrases": [
+      "Ein Produkt. Ein Move. Ein Nachweis.",
+      "Drei Cases. Drei Fragen. Eine Systemkompetenz.",
+      "Du kaufst keinen Audit",
+      "Das ist keine Leistungsauswahl",
+      "Antworten ohne Umweg",
+      "risikofrei",
+      "anonymisiert",
+      "20 Mio"
+    ],
+    "forbiddenPatterns": [
+      "nicht X, sondern Y",
+      "kein X, ein Y",
+      "slogan tricolons",
+      "generic AI consulting filler",
+      "keyword stuffing"
+    ],
+    "replacements": {
+      "Ein Produkt. Ein Move. Ein Nachweis.": "So läuft ein First Move ab",
+      "Du kaufst keinen Audit. Du kaufst eine begrenzte Intervention mit dokumentiertem Vorher/Nachher-Nachweis.": "Wir verifizieren den Befund, setzen eine klar begrenzte Änderung um und dokumentieren anschließend das Ergebnis.",
+      "Drei Cases. Drei Fragen. Eine Systemkompetenz.": "Ausgewählte Ergebnisse",
+      "Antworten ohne Umweg.": "Häufige Fragen",
+      "Beobachtung vor Meinung. Mindestens zwei sinnvolle Signale. Kein generisches Rauschen.": "Ein Finding wird erst berücksichtigt, wenn mehrere Signale auf denselben Engpass hindeuten."
+    },
+    "process": {
+      "publicLanguage": [
+        "Befund verifizieren",
+        "Änderung umsetzen",
+        "Ergebnis dokumentieren"
+      ],
+      "internalOnly": [
+        "find",
+        "ship",
+        "prove"
+      ],
+      "rule": "only one public process language, no parallel branded triads"
+    }
+  },
+  "seo": {
+    "master": {
+      "title": "SEESZN First Move | Den wichtigsten Akquisitionsengpass finden",
+      "description": "SEESZN prüft deine Domain auf öffentliche Signale, verifiziert den Befund, setzt eine klar begrenzte Änderung um und dokumentiert das Ergebnis. 2.490 € netto."
+    },
+    "googleAds": {
+      "title": "Google Ads First Move | Budget- und Signalprobleme finden | SEESZN",
+      "description": "SEESZN prüft zuerst öffentliche Paid-Acquisition-Signale und vertieft den Befund bei Bedarf per Google Ads Read-only. Ein First Move, 2.490 € netto."
+    },
+    "structuredData": [
+      "WebPage",
+      "Service",
+      "Offer",
+      "FAQPage",
+      "BreadcrumbList"
+    ],
+    "offerPrice": "2490",
+    "forbidden": [
+      "AggregateRating",
+      "Review",
+      "invented availability",
+      "SEO-only visible sections"
+    ]
+  },
+  "analyticsEvents": {
+    "unchanged": [
+      "first_move_view",
+      "domain_submit",
+      "route_select",
+      "spend_band_select",
+      "public_scan_start",
+      "public_scan_signal",
+      "public_scan_complete",
+      "finding_view",
+      "evidence_expand",
+      "paid_connect_click",
+      "implementation_check_start",
+      "fit_check_step",
+      "fit_check_complete"
+    ],
+    "added": [
+      "offer_view",
+      "proof_expand"
+    ],
+    "addedDimensions": {
+      "lane": [
+        "discovery",
+        "fast"
+      ],
+      "signal": "boolean"
+    },
+    "routeSelectRule": "fires only when the visitor actually supplies channel context",
+    "renamed": {
+      "checkout_start": "first_move_request_start",
+      "checkout_complete": "first_move_request_submit"
+    },
+    "renameRule": "There is no online checkout. A submitted request is not a purchase, payment or conversion to a paying customer."
+  },
+  "assets": {
+    "hero": "/first-move/first-move-hero-stone.webp",
+    "build": "/first-move/case-build-french-beret.webp",
+    "transform": "/first-move/case-transform-tourism.webp",
+    "scale": "/first-move/case-scale-b2b-workspace.webp",
+    "footerTexture": "/first-move/first-move-footer-texture.webp",
+    "rule": "use as is, no regeneration, no renaming, no stock substitutes, text stays real HTML"
+  },
+  "hardRules": [
+    "no fake scan results",
+    "no fake payment",
+    "no fake scarcity or urgency",
+    "no performance guarantee",
+    "no overclaim that a public scan found the root cause",
+    "public scan never blocks the purchase",
+    "structured data matches visible reality",
+    "crawler-visible and user-visible content stay identical",
+    "WCAG AA, visible focus, keyboard operable disclosure controls",
+    "no weakening of URL fetch protections or rate limiting"
+  ],
+  "implementation": {
+    "funnel": "components/first-move/Funnel.tsx",
+    "serverSections": "components/first-move/Sections.tsx",
+    "paidSections": "components/first-move/PaidSections.tsx",
+    "chrome": "components/first-move/Chrome.tsx",
+    "styles": "components/first-move/styles.tsx",
+    "lockedValues": "lib/first-move/product.ts",
+    "disclosure": "lib/first-move/disclosure.ts",
+    "qualification": [
+      "lib/first-move/qualify.ts",
+      "lib/first-move/paid.ts"
+    ],
+    "scan": "lib/first-move/scan.ts",
+    "schema": "lib/first-move/schema.ts",
+    "analytics": "lib/first-move/analytics.ts",
+    "apiRoutes": [
+      "app/api/first-move/scan",
+      "app/api/first-move/paid-check",
+      "app/api/first-move/request"
+    ],
+    "tests": "tests/first-move-v6.test.mjs",
+    "scanStore": "lib/first-move/scanStore.ts",
+    "example": "lib/first-move/example.ts",
+    "devGuard": "lib/devGuard.ts",
+    "scanSpike": "scripts/first-move-scan-spike.mjs",
+    "docs": "docs/first-move/",
+    "scanContextMigration": "supabase/migrations/20260809120000_first_move_scan_context.sql"
+  },
+  "faq": {
+    "master": "comprehensive, includes the Claude / AI objection question",
+    "paid": "8 paid-specific questions, visible text and FAQPage schema identical, master FAQ is not appended",
+    "aiObjection": "Kann ich die Probleme nicht einfach selbst mit Claude oder einem SEO-Tool finden?"
+  },
+  "development": {
+    "guard": "lib/devGuard.ts",
+    "default": "NODE_ENV !== production: no lead write, no mail, route answers ok with devSuppressed:true",
+    "overrides": {
+      "FIRST_MOVE_DEV_ALLOW_WRITES": "true lifts the suppression locally",
+      "SEESZN_DEV_MAIL_TO": "redirects local mail to a test address"
+    },
+    "production": "never affected",
+    "notCovered": [
+      "/api/contact",
+      "/api/brief-request"
+    ],
+    "scanSpike": "scripts/first-move-scan-spike.mjs calls the real scan logic directly, no HTTP, no rate-limit involvement, no writes, no mail, manual A/B/C/D scoring",
+    "persistence": "persistenceAllowed() in lib/devGuard.ts; development never writes scan context to the shared database"
+  },
+  "rateLimits": {
+    "scan": "8 per IP per 10 minutes",
+    "paidCheck": "8 per IP per 10 minutes",
+    "request": "5 per sender domain and IP per 10 minutes",
+    "bypass": "none, in any environment"
+  },
+  "leads": {
+    "source": "first_move_request",
+    "resultEmailSource": "first_move_result_email",
+    "legacy": "first_move_checkout is no longer written; kept only as a CRM label for historical rows"
+  }
+}

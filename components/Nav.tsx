@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import SignalAperture from "./SignalAperture";
 import LanguageSwitch from "./LanguageSwitch";
 import ScrollProgress from "./ScrollProgress";
@@ -114,20 +115,34 @@ export default function Nav({ variant = "full", cta }: NavProps = {}) {
   const base = isDE ? "" : "/en";
   const isProduct = variant === "product";
 
-  // All four nav links as direct links — no dropdown, no mega panel
+  // Vier Rubriken, direkte Links, kein Dropdown, kein Mega-Panel.
+  //
+  //   ENTDECKEN  was SEESZN tut
+  //   ERGEBNISSE die Belege
+  //   PREISE     der kommerzielle Einstieg
+  //   INSIGHTS   die redaktionelle Schicht
+  //
+  // Die Reihenfolge ist der Weg vom Verstehen über den Beleg zur Handlung.
+  // STUDIO ist aus dem Kopf entfallen; /about bleibt über den Footer erreichbar,
+  // damit die Seite nicht ohne interne Verlinkung dasteht.
+  //
+  // PREISE nur auf dem deutschen Baum: es gibt keine englische Preisfläche, und
+  // ein Link, der die Sprache wechselt, ist schlechter als kein Link. Sobald es
+  // sie gibt, fällt die Bedingung weg.
   const NAV_LINKS = isProduct
     ? []
     : [
         { label: n.services, href: `${base}/services` },
         { label: n.work,     href: `${base}/work`     },
+        ...(isDE ? [{ label: n.pricing, href: "/pricing" }] : []),
         { label: n.insights, href: `${base}/insights` },
-        { label: n.about,    href: `${base}/about`    },
       ];
 
   const [mobileOpen, setMobileOpen]   = useState(false);
   const [scrolled,   setScrolled]     = useState(false);
   const [hoveredNav, setHoveredNav]   = useState<string | null>(null);
   const reduced = useReducedMotion();
+  const pathname = usePathname() ?? "/";
 
   // Scroll detection
   useEffect(() => {
@@ -159,7 +174,7 @@ export default function Nav({ variant = "full", cta }: NavProps = {}) {
     display: "block",
     width: "100%",
     height: thick && active ? 2 : 1,
-    background: "var(--signal)",
+    background: "var(--accent)",
     transform: active ? "scaleX(1)" : "scaleX(0)",
     transformOrigin: "left",
     transition: reduced
@@ -167,6 +182,16 @@ export default function Nav({ variant = "full", cta }: NavProps = {}) {
       : `transform 520ms cubic-bezier(${EASE.join(",")})`,
     marginTop: 5,
   });
+
+  /**
+   * Die Rubrik, in der der Besucher gerade steht.
+   *
+   * Präfixvergleich statt Gleichheit, damit /insights/was-ist-geo die Rubrik
+   * INSIGHTS markiert und nicht nur die Rubrikstartseite selbst. Die Startseite
+   * markiert bewusst nichts: sie ist keine Rubrik.
+   */
+  const isActiveHref = (href: string): boolean =>
+    href !== "/" && href !== "/en" && (pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <>
@@ -293,36 +318,43 @@ export default function Nav({ variant = "full", cta }: NavProps = {}) {
               className="hidden lg:flex"
               style={{ gap: "clamp(20px, 2.6vw, 36px)", alignItems: "center" }}
             >
-              {NAV_LINKS.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={closeAll}
-                  onMouseEnter={() => setHoveredNav(item.label)}
-                  onMouseLeave={() => setHoveredNav(null)}
-                  style={{
-                    fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    color: "var(--text-primary)",
-                    textDecoration: "none",
-                    padding: "8px 0",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    minHeight: 44,
-                    justifyContent: "center",
-                  }}
-                >
-                  {item.label}
-                  <span
-                    aria-hidden="true"
-                    style={signalLine(hoveredNav === item.label)}
-                  />
-                </Link>
-              ))}
+              {NAV_LINKS.map((item) => {
+                const active = isActiveHref(item.href);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={closeAll}
+                    aria-current={active ? "page" : undefined}
+                    onMouseEnter={() => setHoveredNav(item.label)}
+                    onMouseLeave={() => setHoveredNav(null)}
+                    style={{
+                      fontFamily: "var(--font-body), 'Helvetica Neue', sans-serif",
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      letterSpacing: "0.07em",
+                      textTransform: "uppercase",
+                      color: active ? "var(--ink-strong)" : "var(--text-primary)",
+                      textDecoration: "none",
+                      padding: "8px 0",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      minHeight: 44,
+                      justifyContent: "center",
+                    }}
+                  >
+                    {item.label}
+                    {/* Die aktive Rubrik trägt dieselbe Linie wie der Hover, nur
+                        dauerhaft und zwei Pixel stark. Ein zweites Gestaltungs-
+                        mittel für denselben Zweck gibt es nicht. */}
+                    <span
+                      aria-hidden="true"
+                      style={signalLine(active || hoveredNav === item.label, active)}
+                    />
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* Language switch + theme toggle + CTA.

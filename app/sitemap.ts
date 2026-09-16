@@ -28,6 +28,12 @@ const deRoutes: Entry[] = [
   { path: "/chatgpt-sichtbarkeit", priority: 0.9, changeFrequency: "monthly" },
   { path: "/b2b-seo-agentur", priority: 0.9, changeFrequency: "monthly" },
   { path: "/seo-agentur-bremen", priority: 0.8, changeFrequency: "monthly" },
+  // Die kommerzielle Fläche. Eine Adresse für beide Produkte: First Move und
+  // Backlinks liegen als Panels auf /pricing, der Konfigurator zusätzlich unter
+  // dem Anker #backlinks.
+  // /pricing/briefing steht bewusst nicht hier: die Seite ist noindex und hat
+  // nur mit einer Stripe-Sitzung in der Adresse einen Sinn.
+  { path: "/pricing", priority: 1.0, changeFrequency: "monthly" },
   // Rooms
   { path: "/services", priority: 0.8, changeFrequency: "monthly" },
   { path: "/work", priority: 0.7, changeFrequency: "monthly" },
@@ -57,10 +63,12 @@ const deRoutes: Entry[] = [
 
 // ── English surface (secondary, under /en) ───────────────────────────────────
 const enRoutes: Entry[] = [
+  { path: "/en/pricing", priority: 0.9, changeFrequency: "monthly" },
   { path: "/en", priority: 0.7, changeFrequency: "weekly" },
   { path: "/en/services", priority: 0.5, changeFrequency: "monthly" },
   { path: "/en/work", priority: 0.4, changeFrequency: "monthly" },
   { path: "/en/case-studies/seo-aio-tourism", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/en/case-studies/french-beret-ecommerce-seo", priority: 0.6, changeFrequency: "monthly" },
   { path: "/en/insights", priority: 0.4, changeFrequency: "monthly" },
   { path: "/en/about", priority: 0.3, changeFrequency: "monthly" },
   // Die englische Sichtbarkeitsprüfung bleibt gelistet: sie ist die einzige

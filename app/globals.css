@@ -44,10 +44,30 @@
   --border-btn:         rgba(31, 30, 26, 0.38);
   --border-btn-hovered: rgba(31, 30, 26, 0.65);
 
-  /* Signal / accent */
-  --olive:          #c4d83f;
-  --signal:         #c4d83f;
-  --signal-soft:    #d7e76a;
+  /* ── Akzent ──────────────────────────────────────────────────────────
+     Gedämpftes Tabak / gebranntes Umbra. Der Akzent ist eine Markierung,
+     keine Fläche: aktive Unterstreichung, Pfeilspitze, gewählter Zustand,
+     Reglerfortschritt. Fließtext bleibt Tinte, nie Akzent.
+
+     --accent        der Normalzustand
+     --accent-strong gedrückt, gehovert, aktiv
+     --accent-soft   die eine zulässige Aufhellung, für Flächen unter Text
+
+     --olive und --signal sind die historischen Namen derselben Rolle. Sie
+     bleiben als Aliasse bestehen, weil rund achtzig Dateien sie benutzen;
+     ein Umbenennen über den ganzen Baum wäre Bewegung ohne Gewinn. */
+  --accent:         #7a4e3b;
+  --accent-strong:  #5e392d;
+  --accent-soft:    #a87358;
+
+  /* Für Bausteine, die unabhängig vom Seitenthema auf dunklem Grund liegen
+     (Brief-Formular, Landingpage-Panels, das Diagnose-Formular). Dort gilt
+     immer der angehobene Ton, sonst verschwindet der Akzent im Dunkeln. */
+  --accent-on-dark: #b07a5e;
+
+  --olive:          var(--accent);
+  --signal:         var(--accent);
+  --signal-soft:    var(--accent-soft);
 
   /* Button system */
   --button-bg:       transparent;
@@ -106,9 +126,16 @@
   --border-btn:         rgba(238, 230, 214, 0.32);
   --border-btn-hovered: rgba(238, 230, 214, 0.60);
 
-  --olive:          #c8df3f;
-  --signal:         #c8df3f;
-  --signal-soft:    #dff16a;
+  /* Auf dunklem Papier trägt #7a4e3b nicht: gegen #0f100d liegt der Kontrast
+     bei etwa 3,5:1 und eine 1px-Linie verschwindet. Derselbe Ton, angehoben,
+     hält die Rolle und bleibt lesbar. */
+  --accent:         #b07a5e;
+  --accent-strong:  #c79070;
+  --accent-soft:    #8c5e46;
+
+  --olive:          var(--accent);
+  --signal:         var(--accent);
+  --signal-soft:    var(--accent-soft);
 
   --button-bg:       transparent;
   --button-text:     #eee6d6;
@@ -225,6 +252,8 @@ button {
 }
 
 ::selection {
-  background: var(--signal);
-  color: var(--ink-strong);
+  background: var(--accent);
+  /* Auf der hellen Acid-Fläche stand vorher Tinte. Auf Tabak wäre das
+     unlesbar, deshalb kehrt sich das Verhältnis um. */
+  color: var(--paper);
 }

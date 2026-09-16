@@ -174,7 +174,8 @@ export const LANDING_CSS = `
     --lp-bone-soft: #b9b3a3;
     --lp-bone-faint: #7c776a;
     --lp-panel-line: rgba(236, 230, 214, 0.14);
-    --lp-acid: #c8df3f;
+    /* Dauerhaft dunkles Panel: der angehobene Ton, nicht der Grundton. */
+    --lp-acid: var(--accent-on-dark);
 
     background: var(--paper);
     color: var(--text-body);

@@ -29,7 +29,7 @@ import {
 import { MASTER_FAQ } from "@/lib/first-move/faq";
 import { MASTER_PROOF_ORDER } from "@/lib/first-move/proof";
 import { firstMoveFaq, firstMoveService, firstMoveWebPage } from "@/lib/first-move/schema";
-import { MASTER_PATH, PRICE_DISPLAY_NET } from "@/lib/first-move/product";
+import { EN_MASTER_PATH, MASTER_PATH, PRICE_DISPLAY_NET } from "@/lib/first-move/product";
 import { isAdsOAuthEnabled } from "@/lib/first-move/paid";
 
 const TITLE = "SEESZN First Move | Den wichtigsten Akquisitionsengpass finden";
@@ -40,6 +40,7 @@ export const metadata: Metadata = buildMetadata({
   description: DESCRIPTION,
   path: MASTER_PATH,
   locale: "de",
+  altPath: EN_MASTER_PATH,
 });
 
 export default function FirstMovePage() {

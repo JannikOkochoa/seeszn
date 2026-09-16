@@ -9,11 +9,12 @@ import {
   FB_INDEX_PATH,
   FB_META,
   FB_PATH,
+  FB_PATH_EN,
 } from "@/lib/case-studies/french-beret";
 
 // ─── Case Study: French Beret — E-Commerce & Search Architecture ─────────────
-// Deutsch only. Es gibt keine englische Fassung, also auch kein hreflang-Paar:
-// die Seite ist selbstreferenzierend kanonisch.
+// Deutsche Fassung. Die englische Fassung steht unter FB_PATH_EN
+// (app/en/case-studies/french-beret-ecommerce-seo).
 
 export const metadata: Metadata = {
   ...buildMetadata({
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     description: FB_META.description,
     path: FB_PATH,
     locale: "de",
+    altPath: FB_PATH_EN,
     type: "article",
     ogImage: FB_META.ogImage,
   }),
@@ -86,7 +88,7 @@ export default function Page() {
   return (
     <>
       <JsonLd data={[article, breadcrumb]} />
-      <FrenchBeretCase />
+      <FrenchBeretCase locale="de" />
       {/* Die Kernzahlen zusätzlich als ein zusammenhängender Satz — identisch zu
           den sichtbaren Werten in Abschnitt 06, kein zusätzlicher Claim. */}
       <p className="tc-sr">

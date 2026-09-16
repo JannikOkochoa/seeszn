@@ -91,7 +91,7 @@ export default function HomeFaqDe() {
 
       <style>{`
         .hf {
-          --hf-acid: #c8df3f;
+          --hf-acid: var(--accent);
           background: var(--paper-soft);
           border-top: 1px solid var(--warm-black);
           padding: clamp(64px, 8vw, 104px) clamp(20px, 5vw, 64px) clamp(72px, 9vw, 104px);

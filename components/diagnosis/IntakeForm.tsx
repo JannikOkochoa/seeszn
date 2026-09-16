@@ -269,7 +269,7 @@ const css = `
     --d-faint:  #6f695b;
     --d-line:   rgba(238, 230, 214, 0.14);
     --d-line2:  rgba(238, 230, 214, 0.28);
-    --d-olive:  #c8df3f;
+    --d-olive:  var(--accent-on-dark);
     width: 100%;
     max-width: 480px;
     background: #15150f;
