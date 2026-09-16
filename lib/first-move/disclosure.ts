@@ -79,8 +79,10 @@ export const PUBLIC_VERIFY_LINE =
   "Wir würden diesen Befund vor einer Umsetzung verifizieren.";
 
 export const PUBLIC_EVIDENCE_LABEL = "Belege";
+export const PUBLIC_EVIDENCE_LABEL_EN = "Evidence";
 
 export const PUBLIC_INTERVENTION_LABEL = "Möglicher First Move";
+export const PUBLIC_INTERVENTION_LABEL_EN = "Possible First Move";
 
 // ─── Die vier Ergebniszustände ────────────────────────────────────────────────
 //
@@ -225,6 +227,7 @@ export const PAID_LIMITATION_BODY: Record<EvidenceLimitation, string> = {
 
 /** Überschrift über der Beobachtungsliste im Ergebnis. */
 export const OBSERVATIONS_LABEL = "Was wir gelesen haben";
+export const OBSERVATIONS_LABEL_EN = "What we read";
 
 /** Beschriftung der Sicherheit der Interpretation. */
 export const CONFIDENCE_LABEL: Record<"low" | "medium" | "high", string> = {

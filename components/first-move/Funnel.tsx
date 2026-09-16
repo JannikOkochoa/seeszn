@@ -61,8 +61,11 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { track } from "@/lib/first-move/analytics";
 import {
   OBSERVATIONS_LABEL,
+  OBSERVATIONS_LABEL_EN,
   PUBLIC_EVIDENCE_LABEL,
+  PUBLIC_EVIDENCE_LABEL_EN,
   PUBLIC_INTERVENTION_LABEL,
+  PUBLIC_INTERVENTION_LABEL_EN,
 } from "@/lib/first-move/disclosure";
 import { EXAMPLE_FINDING, EXAMPLE_FINDING_EN, EXAMPLE_FINDING_PAID } from "@/lib/first-move/example";
 import { FUNNEL_STRINGS, REQUEST_STRINGS, type FmLocale } from "@/lib/first-move/copy";
@@ -1128,7 +1131,7 @@ export default function FirstMoveFunnel({
                   <p className="fm-serif">{example.summary}</p>
 
                   <div className="fm-block">
-                    <span className="fm-block-k">{PUBLIC_EVIDENCE_LABEL}</span>
+                    <span className="fm-block-k">{pageLocale === "en" ? PUBLIC_EVIDENCE_LABEL_EN : PUBLIC_EVIDENCE_LABEL}</span>
                     <ul className="fm-evidence">
                       {example.evidence.map((item) => (
                         <li key={item.id}>{item.observation}</li>
@@ -1150,7 +1153,7 @@ export default function FirstMoveFunnel({
                   </div>
 
                   <div className="fm-block">
-                    <span className="fm-block-k">{PUBLIC_INTERVENTION_LABEL}</span>
+                    <span className="fm-block-k">{pageLocale === "en" ? PUBLIC_INTERVENTION_LABEL_EN : PUBLIC_INTERVENTION_LABEL}</span>
                     <p className="fm-block-v">{example.interventionType}</p>
                   </div>
 
@@ -1262,7 +1265,7 @@ export default function FirstMoveFunnel({
                             }
                           }}
                         >
-                          <summary>{OBSERVATIONS_LABEL}</summary>
+                          <summary>{pageLocale === "en" ? OBSERVATIONS_LABEL_EN : OBSERVATIONS_LABEL}</summary>
                           <div className="fm-details-body">
                             <dl className="fm-readout">
                               {outcome.evidence.map((e) => (

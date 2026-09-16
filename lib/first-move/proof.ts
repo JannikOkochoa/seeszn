@@ -65,7 +65,7 @@ export const PROOF_CASES: Record<ProofCase["id"], ProofCase> = {
     name: "French Beret",
     descriptor: "E-Commerce · International · SEO + GEO",
     leadValue: "3.59K",
-    leadCaption: "Organic Clicks in 3 Monaten",
+    leadCaption: "Organic Clicks in 3 Months",
     // Ø 7,1 steht bewusst nicht auf der Karte: eine durchschnittliche Position
     // über alle Queries hinweg ist als Marketingzahl schwach und lenkt vom
     // Leitwert ab. Als Kontext bleibt sie in der Methodik erhalten. Derselbe
@@ -94,7 +94,7 @@ export const PROOF_CASES: Record<ProofCase["id"], ProofCase> = {
     label: "SCALE",
     name: "European B2B Workspace Brand",
     descriptor: "DACH · Google Ads",
-    leadValue: "2,5 bis 3,0 Mio. €",
+    leadValue: "€2.5–3.0M",
     leadCaption: "Annual Media Spend",
     secondary: [
       { value: "167 bis 216 € → 100 bis 130 €", caption: "CPL" },
