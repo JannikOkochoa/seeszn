@@ -126,15 +126,16 @@ export default function Nav({ variant = "full", cta }: NavProps = {}) {
   // STUDIO ist aus dem Kopf entfallen; /about bleibt über den Footer erreichbar,
   // damit die Seite nicht ohne interne Verlinkung dasteht.
   //
-  // PREISE nur auf dem deutschen Baum: es gibt keine englische Preisfläche, und
-  // ein Link, der die Sprache wechselt, ist schlechter als kein Link. Sobald es
-  // sie gibt, fällt die Bedingung weg.
+  // PREISE stand früher nur auf dem deutschen Baum, weil es keine englische
+  // Preisfläche gab und ein Link, der die Sprache wechselt, schlechter ist als
+  // kein Link. /en/pricing gibt es jetzt, also steht der Eintrag in beiden
+  // Sprachen und bleibt im jeweiligen Baum.
   const NAV_LINKS = isProduct
     ? []
     : [
         { label: n.services, href: `${base}/services` },
         { label: n.work,     href: `${base}/work`     },
-        ...(isDE ? [{ label: n.pricing, href: "/pricing" }] : []),
+        { label: n.pricing,  href: `${base}/pricing`  },
         { label: n.insights, href: `${base}/insights` },
       ];
 

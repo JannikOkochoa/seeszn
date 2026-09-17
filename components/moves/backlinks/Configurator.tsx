@@ -36,7 +36,6 @@ import {
   euroIn,
   priceFor,
   anchorQuantities,
-  minimumCommitmentCents,
   unitEuroIn,
 } from "@/lib/moves/backlinks";
 import { DEFAULT_MARKET } from "@/lib/moves/markets";
@@ -97,7 +96,6 @@ export default function Configurator() {
 
   const anchors = anchorQuantities(mode);
   const price = priceFor(quantity, mode)!;
-  const commitmentCents = minimumCommitmentCents(price.totalCents);
   // Zahlenformat folgt der Sprache: 1.235,00 € gegen €1,235.00
   const euro = (c: number) => euroIn(c, locale);
   const unitEuro = (c: number) => unitEuroIn(c, locale);
@@ -280,18 +278,12 @@ export default function Configurator() {
                 <Amount text={euro(price.totalCents)} />
               </SwapNumber>
               <span className="mv-cfg-sub">{monthly ? t.netMonthly : t.netOnce}</span>
-              {/* Die Bindung steht am Preis, nicht in den Bedingungen. */}
+              {/* Die Laufzeit steht am Preis, nicht in den Bedingungen. Eine
+                  zweite Zeile mit dem dreifachen Monatsbetrag stand hier
+                  früher auch; sie ist entfallen, weil die Laufzeit die
+                  Bindung bereits vollständig benennt. */}
               {monthly ? (
-                <span className="mv-cfg-term">
-                  {t.minTerm(MIN_TERM_MONTHS)}
-                  <br />
-                  {t.minCommitment(euro(commitmentCents))}
-                </span>
-              ) : null}
-              {monthly ? (
-                <span className="mv-cfg-note mv-cfg-note--signal">
-                  {t.savingNote(euro(price.savingCents))}
-                </span>
+                <span className="mv-cfg-term">{t.minTerm(MIN_TERM_MONTHS)}</span>
               ) : null}
             </>
           )}
@@ -306,11 +298,9 @@ export default function Configurator() {
               <Amount text={unitEuro(price.unitCents)} />
             </SwapNumber>
           )}
-          <span className="mv-cfg-note">
-            {/* Gilt seit der Preiskurve für beide Kaufarten und für jede ganze
-                Zahl, nicht mehr nur zwischen den Ankern. */}
-            {t.unitNote}
-          </span>
+          {/* Hier stand ein erklärender Satz zum Stückpreis. Er ist entfallen:
+              die Zahl daneben ändert sich sichtbar mit der Menge und erklärt
+              sich damit selbst. */}
         </div>
       </div>
 
@@ -423,7 +413,6 @@ export default function Configurator() {
             unit={unitEuro(price.unitCents)}
             total={euro(price.totalCents)}
             saving={monthly ? euro(price.savingCents) : null}
-            commitment={monthly ? euro(commitmentCents) : null}
             termMonths={MIN_TERM_MONTHS}
             busy={false}
             onBack={() => setPhase("idle")}

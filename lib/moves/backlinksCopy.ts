@@ -139,11 +139,11 @@ export const BACKLINKS = {
     items: [
       {
         q: "Was kostet ein Backlink bei SEESZN?",
-        a: "Der Stückpreis liegt zwischen 19,80 € und 14,45 € netto und sinkt mit der Menge. Einmalig kosten 5 Platzierungen 99 €, 100 Platzierungen 1.599 €. Monatlich beginnt die Staffel bei 10 Platzierungen für 162 € im Monat und endet bei 100 für 1.445 € im Monat.",
+        a: "Der Stückpreis richtet sich nach der gewählten Mengenstufe und liegt zwischen 19,80 € und 16,90 € netto. Einmalig kosten 5 Platzierungen 99 €, 100 Platzierungen 1.690 €. Monatlich beginnt die Staffel bei 10 Platzierungen für 161 € im Monat und endet bei 100 für 1.520 € im Monat.",
       },
       {
         q: "Kann ich genau 6 oder 17 Backlinks bestellen?",
-        a: "Ja. Backlink-Bestellungen lassen sich in Schritten von einer Platzierung konfigurieren. Einmalbestellungen beginnen bei 5 Platzierungen, Monatspläne bei 10. Jede exakte Menge bis 100 ist wählbar, also auch 6, 17 oder 43. Der Preis je Platzierung sinkt dabei auf jeder ganzen Zahl.",
+        a: "Ja. Backlink-Bestellungen lassen sich in Schritten von einer Platzierung konfigurieren. Einmalbestellungen beginnen bei 5 Platzierungen, Monatspläne bei 10. Jede exakte Menge bis 100 ist wählbar, also auch 6, 17 oder 43. Der Preis je Platzierung richtet sich nach der erreichten Mengenstufe.",
       },
       {
         q: "Wie viele Backlinks sollte ich pro Monat aufbauen?",
@@ -151,7 +151,7 @@ export const BACKLINKS = {
       },
       {
         q: "Wie lange läuft ein monatlicher Backlink-Plan?",
-        a: "Monatliche Backlink-Pläne haben eine Mindestlaufzeit von drei Monaten. Der Monatspreis und die Mindestbindung über drei Monate stehen vor dem Checkout, nicht erst in den Bedingungen. Bei 20 Platzierungen im Monat sind das 320 € monatlich und 960 € netto Mindestbindung.",
+        a: "Monatliche Backlink-Pläne haben eine Mindestlaufzeit von drei Monaten. Sie steht vor dem Checkout am Preis, nicht erst in den Bedingungen. Bei 20 Platzierungen im Monat sind das 319 € netto im Monat.",
       },
       {
         q: "Was passiert, wenn ein Backlink entfernt wird?",

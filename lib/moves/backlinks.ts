@@ -6,13 +6,26 @@
 // Gleitkommazahlen liefert in JavaScript Werte wie 161.10000000000002, und ein
 // solcher Wert darf weder angezeigt noch an Stripe gereicht werden.
 //
-// Die Monatsstaffel ist eine eigene, gepflegte Tabelle und wird NICHT aus der
-// Einmalstaffel gerechnet. Ein Abzug von exakt zehn Prozent liefert Beträge wie
-// 161,10 € oder 472,50 €; das sind rechnerisch richtige und kaufmännisch
-// schlechte Preise. Die Monatsbeträge unten sind glatt gewählt und liegen je
-// nach Stufe zwischen 9,5 und 9,9 Prozent unter dem Einmalpreis.
+// MENGENSTUFEN, KEINE KURVE
+// Der Stückpreis wird nicht mehr zwischen Ankern interpoliert. Er ist je
+// Mengenstufe ein fester Wert und ändert sich ausschließlich an der Schwelle
+// zur nächsten Stufe. Wählbar bleibt trotzdem jede ganze Menge: der Regler
+// steht weiter auf Schrittweite 1, und 17 Stück sind 17 Stück zum Preis der
+// Stufe 10 bis 19.
 //
-// Genau deshalb steht am Schalter "ca. 10 % günstiger" und nicht "10 %".
+// Zwei Eigenschaften müssen über die gesamte Staffel gelten, und der Test in
+// tests/backlink-pricing.test.mjs prüft beide für jede einzelne Menge:
+//
+//   1. Der Gesamtpreis steigt streng. Eine Einheit mehr kostet nie weniger.
+//   2. Der Stückpreis steigt nie. Er fällt nur an den Stufenschwellen.
+//
+// Die zweite Eigenschaft allein genügt nicht. Fällt der Stückpreis an einer
+// Schwelle zu stark, wird der Gesamtpreis dort billiger, obwohl die Menge
+// steigt. Die Stufenwerte unten sind genau so gewählt, dass das nicht passiert.
+//
+// Die Monatsstaffel ist eine eigene, gepflegte Tabelle und wird NICHT aus der
+// Einmalstaffel gerechnet. Sie liegt je Stufe rund zehn Prozent darunter,
+// deshalb steht am Schalter "ca. 10 % günstiger" und nicht "10 %".
 
 export type PurchaseMode = "once" | "monthly";
 
@@ -33,28 +46,35 @@ export const BACKLINK_TYPES: readonly { id: BacklinkType; label: string; note: s
  */
 export const MONTHLY_DISCOUNT_APPROX_PERCENT = 10;
 
-/** Die Einmalstaffel. Feste Werte, nicht gerundet, nicht abgeleitet. */
-const ONE_TIME_TOTALS: readonly { quantity: number; totalCents: number }[] = [
-  { quantity: 5, totalCents: 9_900 },
-  { quantity: 10, totalCents: 17_900 },
-  { quantity: 20, totalCents: 35_500 },
-  { quantity: 30, totalCents: 52_500 },
-  { quantity: 50, totalCents: 84_900 },
-  { quantity: 75, totalCents: 123_500 },
-  { quantity: 100, totalCents: 159_900 },
+/** Eine Mengenstufe: ab `from` Stück gilt `unitCents` je Backlink. */
+interface Tier {
+  readonly from: number;
+  readonly unitCents: number;
+}
+
+/** Die Einmalstaffel. Feste Stückpreise je Stufe, nicht abgeleitet. */
+const ONE_TIME_TIERS: readonly Tier[] = [
+  { from: 5, unitCents: 1_980 },
+  { from: 10, unitCents: 1_790 },
+  { from: 20, unitCents: 1_775 },
+  { from: 30, unitCents: 1_750 },
+  { from: 50, unitCents: 1_720 },
+  { from: 75, unitCents: 1_700 },
+  { from: 100, unitCents: 1_690 },
 ];
 
 /**
- * Die Monatsstaffel. Eigene Beträge, glatt gewählt. Fünf Stück gibt es hier
- * nicht: eine Monatsmenge unterhalb von zehn ist betrieblich nicht sinnvoll.
+ * Die Monatsstaffel. Eigene Stückpreise, rund zehn Prozent unter der
+ * Einmalstaffel. Fünf Stück gibt es hier nicht: eine Monatsmenge unterhalb von
+ * zehn ist betrieblich nicht sinnvoll.
  */
-const MONTHLY_TOTALS: readonly { quantity: number; totalCents: number }[] = [
-  { quantity: 10, totalCents: 16_200 },
-  { quantity: 20, totalCents: 32_000 },
-  { quantity: 30, totalCents: 47_500 },
-  { quantity: 50, totalCents: 76_500 },
-  { quantity: 75, totalCents: 111_500 },
-  { quantity: 100, totalCents: 144_500 },
+const MONTHLY_TIERS: readonly Tier[] = [
+  { from: 10, unitCents: 1_610 },
+  { from: 20, unitCents: 1_595 },
+  { from: 30, unitCents: 1_575 },
+  { from: 50, unitCents: 1_545 },
+  { from: 75, unitCents: 1_525 },
+  { from: 100, unitCents: 1_520 },
 ];
 
 /** Die Monatsstaffel beginnt bei 10. Fünf gibt es nur einmalig. */
@@ -66,36 +86,28 @@ export const MAX_SELF_SERVICE = 100;
 /** Mindestlaufzeit der Monatsstaffel. Steht am Preis, nicht in den Bedingungen. */
 export const MIN_TERM_MONTHS = 3;
 
+function tiersFor(mode: PurchaseMode): readonly Tier[] {
+  return mode === "monthly" ? MONTHLY_TIERS : ONE_TIME_TIERS;
+}
+
 /**
- * Die Ankerpunkte sind Stützstellen einer Kurve, keine Paketgrößen.
- *
- * Wählbar ist jede ganze Zahl von der Mindestmenge bis 100. Zwischen zwei
- * Ankern wird der STÜCKPREIS linear interpoliert, nicht der Gesamtpreis. Das
- * ist der entscheidende Unterschied: eine Gerade durch die Gesamtpreise ergäbe
- * zwischen den Ankern einen steigenden Stückpreis, und wer eine Einheit mehr
- * kauft, zahlte je Einheit mehr. Über den Stückpreis interpoliert fällt er auf
- * jeder ganzen Zahl.
- *
- * Der Gesamtpreis entsteht danach aus Menge × angezeigtem Stückpreis. Damit
- * passen die drei angezeigten Zahlen zueinander und niemand muss nachrechnen.
- *
- * Auf einem Anker gilt immer der Ankerwert, nie das Rechenergebnis.
+ * Der Stückpreis einer Menge: der Wert der höchsten Stufe, die sie erreicht.
+ * Die Tabellen stehen aufsteigend, deshalb wird von hinten gesucht.
  */
-function anchorsFor(mode: PurchaseMode): readonly { quantity: number; totalCents: number }[] {
-  return mode === "monthly" ? MONTHLY_TOTALS : ONE_TIME_TOTALS;
-}
-
-/** Kaufmännisch auf Cent runden, ohne die Gleitkomma-Eigenheiten. */
-function roundCents(value: number): number {
-  return Math.round(value + (value >= 0 ? 1e-9 : -1e-9));
+function unitCentsFor(mode: PurchaseMode, quantity: number): number {
+  const tiers = tiersFor(mode);
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    if (quantity >= tiers[i]!.from) return tiers[i]!.unitCents;
+  }
+  return tiers[0]!.unitCents;
 }
 
 /**
- * Die beschrifteten Stützstellen unter der Schiene. NICHT die wählbaren
+ * Die beschrifteten Stufenschwellen unter der Schiene. NICHT die wählbaren
  * Mengen: sonst stünden 96 Zahlen unter dem Regler.
  */
 export function anchorQuantities(mode: PurchaseMode): readonly number[] {
-  return anchorsFor(mode).map((t) => t.quantity);
+  return tiersFor(mode).map((t) => t.from);
 }
 
 export interface Price {
@@ -103,9 +115,7 @@ export interface Price {
   mode: PurchaseMode;
   /** Gesamtpreis in Cent. Der Wert, der an Stripe geht. */
   totalCents: number;
-  /** Stückpreis in Cent, ungerundet. Nur zum Rechnen. */
-  unitCentsExact: number;
-  /** Stückpreis in Cent, kaufmännisch gerundet. Der angezeigte Wert. */
+  /** Stückpreis der Mengenstufe in Cent. Der angezeigte Wert. */
   unitCents: number;
   /**
    * Ersparnis gegenüber derselben Menge einmalig. Null bei Einmalkauf.
@@ -114,67 +124,35 @@ export interface Price {
   savingCents: number;
 }
 
-/** Stückpreis zwischen zwei Ankern, daraus der Gesamtpreis. */
-function interpolatedTotalCents(
-  anchors: readonly { quantity: number; totalCents: number }[],
-  quantity: number,
-): number {
-  let lower = anchors[0]!;
-  let upper = anchors[anchors.length - 1]!;
-  for (let i = 0; i < anchors.length - 1; i++) {
-    if (quantity > anchors[i]!.quantity && quantity < anchors[i + 1]!.quantity) {
-      lower = anchors[i]!;
-      upper = anchors[i + 1]!;
-      break;
-    }
-  }
-
-  const lowerUnit = lower.totalCents / lower.quantity;
-  const upperUnit = upper.totalCents / upper.quantity;
-  const t = (quantity - lower.quantity) / (upper.quantity - lower.quantity);
-  // Erst der Stückpreis auf Cent, dann daraus der Gesamtpreis: der angezeigte
-  // Stückpreis ist genau der, mit dem gerechnet wurde.
-  const unitCents = roundCents(lowerUnit + (upperUnit - lowerUnit) * t);
-  return roundCents(unitCents * quantity);
-}
-
-/** Der Einmalpreis derselben Menge. Bezugsgröße der Monatsersparnis. */
-function oneTimeTotalCents(quantity: number): number {
-  const exact = ONE_TIME_TOTALS.find((a) => a.quantity === quantity);
-  return exact ? exact.totalCents : interpolatedTotalCents(ONE_TIME_TOTALS, quantity);
-}
-
 /**
  * Der Preis einer Konfiguration. `null` außerhalb der Selbstbedienung; dort
  * übernimmt die Custom-Anfrage, und es wird nichts hochgerechnet.
+ *
+ * Menge mal Stufenpreis, beides ganze Zahlen. Es wird nichts gerundet, weil
+ * nichts zu runden ist.
  */
 export function priceFor(quantity: number, mode: PurchaseMode): Price | null {
   if (!Number.isInteger(quantity)) return null;
   if (quantity < MIN_QUANTITY[mode] || quantity > MAX_SELF_SERVICE) return null;
 
-  const anchors = anchorsFor(mode);
-  const exact = anchors.find((a) => a.quantity === quantity);
-  const totalCents = exact ? exact.totalCents : interpolatedTotalCents(anchors, quantity);
-  const unitCents = roundCents(totalCents / quantity);
+  const unitCents = unitCentsFor(mode, quantity);
+  const totalCents = unitCents * quantity;
 
   return {
     quantity,
     mode,
     totalCents,
-    unitCentsExact: totalCents / quantity,
     unitCents,
-    savingCents: mode === "monthly" ? Math.max(0, oneTimeTotalCents(quantity) - totalCents) : 0,
+    savingCents:
+      mode === "monthly"
+        ? Math.max(0, unitCentsFor("once", quantity) * quantity - totalCents)
+        : 0,
   };
 }
 
-/** Die Ankerpreise einer Kaufart. Für die Staffelansicht. */
+/** Die Preise an den Stufenschwellen. Für die Staffelansicht. */
 export function priceTable(mode: PurchaseMode): readonly Price[] {
   return anchorQuantities(mode).map((q) => priceFor(q, mode)!);
-}
-
-/** Die Mindestbindung der Monatsstaffel in Cent: drei Monatsbeträge. */
-export function minimumCommitmentCents(monthlyTotalCents: number): number {
-  return monthlyTotalCents * MIN_TERM_MONTHS;
 }
 
 // ── Anzeige ───────────────────────────────────────────────────────────────────
@@ -187,9 +165,9 @@ const nf = (locale: string, min: number, max: number) =>
 
 /**
  * Betrag ohne Währungszeichen. Ganze Euro stehen ohne Nachkommastellen, weil
- * die Ankerpreise glatt sind und "179,00 €" neben "116,52 €" nur Rauschen wäre.
- * Zwischenbeträge tragen Cent, weil sie sonst die streng fallende Staffel
- * zerstören würden.
+ * "179,00 €" neben "525 €" nur Rauschen wäre. Beträge mit Cent tragen zwei
+ * Stellen: bei einem Stückpreis wie 17,75 € trifft das jede Menge, die kein
+ * Vielfaches davon ist.
  */
 export function amountIn(cents: number, locale: "de" | "en" = "de"): string {
   const whole = cents % 100 === 0;

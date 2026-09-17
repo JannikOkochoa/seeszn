@@ -1,31 +1,56 @@
-// ─── Tests: die Backlink-Preiskurve ───────────────────────────────────────────
-// Die Preise entstehen nicht mehr aus einer Tabelle, sondern aus einer Kurve
-// durch Ankerpunkte. Damit ist jede ganze Menge kaufbar, und damit sind zwei
-// Eigenschaften nicht mehr offensichtlich, sondern müssen geprüft werden:
+// ─── Tests: die Backlink-Mengenstufen ─────────────────────────────────────────
+// Der Stückpreis entsteht nicht mehr aus einer Kurve durch Ankerpunkte, sondern
+// aus festen Mengenstufen. Wählbar bleibt jede ganze Menge, deshalb bleiben zwei
+// Eigenschaften prüfbedürftig und werden hier für JEDE Menge geprüft, nicht an
+// Stichproben:
 //
-//   1. Der Stückpreis fällt auf JEDER ganzen Zahl. Wer mehr kauft, zahlt je
-//      Einheit weniger. Fiele er auch nur einmal nicht, wäre die Staffel an
-//      dieser Stelle ein Argument gegen die größere Menge.
-//   2. Der Gesamtpreis steigt auf JEDER ganzen Zahl. Wer eine Einheit mehr
-//      kauft, zahlt insgesamt mehr. Andernfalls gäbe es eine Menge, die
-//      günstiger ist als eine kleinere, und das ist ein Fehler im Katalog.
+//   1. Der Gesamtpreis steigt streng. Wer eine Einheit mehr kauft, zahlt
+//      insgesamt mehr. Andernfalls gäbe es eine Menge, die günstiger ist als
+//      eine kleinere, und das ist ein Fehler im Katalog.
+//   2. Der Stückpreis steigt nie. Er fällt nur an einer Stufenschwelle und
+//      bleibt innerhalb einer Stufe konstant.
 //
-// Beide Eigenschaften werden hier für alle 96 beziehungsweise 91 Mengen
-// geprüft, nicht an Stichproben.
+// Eigenschaft 1 folgt NICHT aus Eigenschaft 2. Fällt der Stückpreis an einer
+// Schwelle zu stark, wird der Gesamtpreis dort billiger, obwohl die Menge
+// steigt. Genau dieser Fall hat die alte Staffel unbrauchbar gemacht
+// (49 × 17,50 € = 857,50 € gegen 50 × 16,98 € = 849,00 €) und wird hier
+// ausdrücklich ausgeschlossen.
 //
-// Stichprobenartig geprüft wird zusätzlich der Wertebereich 5 bis 10 gegen die
-// abgestimmten Sollwerte, weil dort die Kurve am steilsten ist.
+// Zusätzlich geprüft: der Stückpreis wechselt ausschließlich an den definierten
+// Schwellen, nirgendwo sonst.
 
 import assert from "node:assert/strict";
 
-// Die Ankerwerte stehen hier bewusst noch einmal als unabhängige Kopie. Ein
+// Die Stufenwerte stehen hier bewusst noch einmal als unabhängige Kopie. Ein
 // Test, der seine Erwartung aus derselben Datei liest wie die Implementierung,
 // prüft nur, dass eine Datei sich selbst gleicht.
-const ONCE_ANCHORS = { 5: 9900, 10: 17900, 20: 35500, 30: 52500, 50: 84900, 75: 123500, 100: 159900 };
-const MONTHLY_ANCHORS = { 10: 16200, 20: 32000, 30: 47500, 50: 76500, 75: 111500, 100: 144500 };
+const ONCE_TIERS = [
+  [5, 1980],
+  [10, 1790],
+  [20, 1775],
+  [30, 1750],
+  [50, 1720],
+  [75, 1700],
+  [100, 1690],
+];
+const MONTHLY_TIERS = [
+  [10, 1610],
+  [20, 1595],
+  [30, 1575],
+  [50, 1545],
+  [75, 1525],
+  [100, 1520],
+];
 
-const { priceFor, MIN_QUANTITY, MAX_SELF_SERVICE, MIN_TERM_MONTHS, minimumCommitmentCents } =
-  await import("../lib/moves/backlinks.ts");
+/** Der erwartete Stückpreis aus der unabhängigen Kopie oben. */
+const expectedUnit = (tiers, q) => {
+  let unit = tiers[0][1];
+  for (const [from, cents] of tiers) if (q >= from) unit = cents;
+  return unit;
+};
+
+const backlinks = await import("../lib/moves/backlinks.ts");
+const { priceFor, MIN_QUANTITY, MAX_SELF_SERVICE, MIN_TERM_MONTHS, anchorQuantities } = backlinks;
 
 let failures = 0;
 const check = (name, fn) => {
@@ -62,12 +87,12 @@ check("Keine Bruchmengen", () => {
   assert.equal(priceFor(17.5, "once"), null);
 });
 
-// ── Die beiden Kurveneigenschaften, über jede ganze Menge ────────────────────
-for (const [mode, anchors, min] of [
-  ["once", ONCE_ANCHORS, 5],
-  ["monthly", MONTHLY_ANCHORS, 10],
+// ── Die beiden Staffeleigenschaften, über jede ganze Menge ───────────────────
+for (const [mode, tiers, min] of [
+  ["once", ONCE_TIERS, 5],
+  ["monthly", MONTHLY_TIERS, 10],
 ]) {
-  check(`${mode}: ${min} bis 100 vollständig, Stückpreis fällt streng`, () => {
+  check(`${mode}: ${min} bis 100 vollständig, Gesamtpreis steigt streng`, () => {
     let previous = null;
     for (let q = min; q <= 100; q++) {
       const p = priceFor(q, mode);
@@ -76,48 +101,71 @@ for (const [mode, anchors, min] of [
       assert.ok(p.unitCents > 0, `Menge ${q}: Stückpreis nicht positiv`);
       if (previous) {
         assert.ok(
-          p.unitCents < previous.unitCents,
-          `Menge ${q}: Stückpreis ${p.unitCents} nicht kleiner als ${previous.unitCents} bei ${q - 1}`,
-        );
-        assert.ok(
           p.totalCents > previous.totalCents,
           `Menge ${q}: Gesamtpreis ${p.totalCents} nicht größer als ${previous.totalCents} bei ${q - 1}`,
+        );
+        assert.ok(
+          p.unitCents <= previous.unitCents,
+          `Menge ${q}: Stückpreis ${p.unitCents} höher als ${previous.unitCents} bei ${q - 1}`,
         );
       }
       previous = p;
     }
   });
 
-  check(`${mode}: Ankerpreise exakt wie abgestimmt`, () => {
-    for (const [q, cents] of Object.entries(anchors)) {
+  check(`${mode}: Stückpreis stimmt mit der Stufentabelle überein`, () => {
+    for (let q = min; q <= 100; q++) {
       assert.equal(
-        priceFor(Number(q), mode).totalCents,
-        cents,
-        `Anker ${q} weicht ab`,
+        priceFor(q, mode).unitCents,
+        expectedUnit(tiers, q),
+        `Menge ${q}: falscher Stufenpreis`,
       );
     }
   });
 
-  check(`${mode}: Gesamtpreis ist Menge × angezeigtem Stückpreis`, () => {
+  check(`${mode}: Stückpreis wechselt nur an den Schwellen`, () => {
+    const thresholds = new Set(tiers.map(([from]) => from));
+    for (let q = min + 1; q <= 100; q++) {
+      const changed = priceFor(q, mode).unitCents !== priceFor(q - 1, mode).unitCents;
+      if (changed) {
+        assert.ok(thresholds.has(q), `Menge ${q}: Stückpreis wechselt außerhalb einer Schwelle`);
+      } else {
+        assert.ok(!thresholds.has(q), `Menge ${q}: Schwelle ohne Preiswechsel`);
+      }
+    }
+  });
+
+  check(`${mode}: Gesamtpreis ist immer Menge × angezeigtem Stückpreis`, () => {
     for (let q = min; q <= 100; q++) {
       const p = priceFor(q, mode);
-      // Auf einem Anker darf der Gesamtpreis vom Produkt abweichen, weil der
-      // Ankerwert gilt. Dazwischen muss die angezeigte Rechnung aufgehen.
-      if (anchors[q] !== undefined) continue;
       assert.equal(p.totalCents, p.unitCents * q, `Menge ${q}: ${p.unitCents} × ${q} ≠ ${p.totalCents}`);
     }
   });
+
+  check(`${mode}: die Reglermarken sind die Stufenschwellen`, () => {
+    assert.deepEqual([...anchorQuantities(mode)], tiers.map(([from]) => from));
+  });
 }
 
-// ── Die abgestimmten Sollwerte 5 bis 10 ──────────────────────────────────────
-check("Sollwerte 5 bis 10 stimmen auf den Cent", () => {
+// ── Die abgestimmten Sollwerte ───────────────────────────────────────────────
+check("Sollwerte einmalig stimmen auf den Cent", () => {
   const expected = {
     5: [1980, 9900],
-    6: [1942, 11652],
-    7: [1904, 13328],
-    8: [1866, 14928],
-    9: [1828, 16452],
+    6: [1980, 11880],
+    7: [1980, 13860],
+    8: [1980, 15840],
+    9: [1980, 17820],
     10: [1790, 17900],
+    19: [1790, 34010],
+    20: [1775, 35500],
+    29: [1775, 51475],
+    30: [1750, 52500],
+    49: [1750, 85750],
+    50: [1720, 86000],
+    74: [1720, 127280],
+    75: [1700, 127500],
+    99: [1700, 168300],
+    100: [1690, 169000],
   };
   for (const [q, [unit, total]] of Object.entries(expected)) {
     const p = priceFor(Number(q), "once");
@@ -126,18 +174,44 @@ check("Sollwerte 5 bis 10 stimmen auf den Cent", () => {
   }
 });
 
-// ── Mindestbindung ───────────────────────────────────────────────────────────
+// ── Die Schwellen aus der Vorgabe, einzeln ───────────────────────────────────
+check("an jeder Schwelle steigt der Gesamtpreis und fällt der Stückpreis", () => {
+  for (const q of [10, 20, 30, 50, 75, 100]) {
+    const before = priceFor(q - 1, "once");
+    const after = priceFor(q, "once");
+    assert.ok(
+      after.totalCents > before.totalCents,
+      `einmalig ${q - 1} → ${q}: Gesamtpreis fällt (${before.totalCents} → ${after.totalCents})`,
+    );
+    assert.ok(
+      after.unitCents < before.unitCents,
+      `einmalig ${q - 1} → ${q}: Stückpreis fällt nicht`,
+    );
+  }
+  for (const q of [20, 30, 50, 75, 100]) {
+    const before = priceFor(q - 1, "monthly");
+    const after = priceFor(q, "monthly");
+    assert.ok(
+      after.totalCents > before.totalCents,
+      `monatlich ${q - 1} → ${q}: Gesamtpreis fällt (${before.totalCents} → ${after.totalCents})`,
+    );
+    assert.ok(after.unitCents < before.unitCents, `monatlich ${q - 1} → ${q}: Stückpreis fällt nicht`);
+  }
+});
+
+// ── Mindestlaufzeit ──────────────────────────────────────────────────────────
 check("Mindestlaufzeit sind drei Monate", () => {
   assert.equal(MIN_TERM_MONTHS, 3);
 });
 
-check("Mindestbindung ist der dreifache Monatsbetrag, über alle Mengen", () => {
-  for (let q = 10; q <= 100; q++) {
-    const p = priceFor(q, "monthly");
-    assert.equal(minimumCommitmentCents(p.totalCents), p.totalCents * 3, `Menge ${q}`);
-  }
-  // Der Wert aus der Vorgabe: 20 Stück monatlich, 320 €, Bindung 960 €.
-  assert.equal(minimumCommitmentCents(priceFor(20, "monthly").totalCents), 96000);
+// Die Mindestbindung als angezeigter Betrag ist entfallen. Der Rechenweg dafür
+// existiert nicht mehr, und kein Modul darf ihn wieder einführen.
+check("es gibt keine Mindestbindungs-Rechnung mehr", () => {
+  assert.equal(
+    backlinks.minimumCommitmentCents,
+    undefined,
+    "minimumCommitmentCents ist wieder da: die Mindestbindung darf nicht zurückkehren",
+  );
 });
 
 // ── Monatlich ist immer günstiger als derselbe Einmalkauf ────────────────────
@@ -145,6 +219,7 @@ check("Monatspreis liegt unter dem Einmalpreis derselben Menge", () => {
   for (let q = 10; q <= 100; q++) {
     const m = priceFor(q, "monthly");
     const o = priceFor(q, "once");
+    assert.ok(m.unitCents < o.unitCents, `Menge ${q}: Stückpreis monatlich nicht unter einmalig`);
     assert.ok(m.totalCents < o.totalCents, `Menge ${q}: monatlich ${m.totalCents} nicht unter ${o.totalCents}`);
     assert.ok(m.savingCents > 0, `Menge ${q}: keine Ersparnis ausgewiesen`);
     assert.equal(m.savingCents, o.totalCents - m.totalCents, `Menge ${q}: Ersparnis falsch`);

@@ -23,7 +23,6 @@ export default function OrderReview({
   unit,
   total,
   saving,
-  commitment,
   termMonths,
   busy,
   onBack,
@@ -36,8 +35,6 @@ export default function OrderReview({
   unit: string;
   total: string;
   saving: string | null;
-  /** Dreifacher Monatsbetrag. Nur bei monatlicher Abrechnung gesetzt. */
-  commitment: string | null;
   termMonths: number;
   busy: boolean;
   onBack: () => void;
@@ -90,13 +87,9 @@ export default function OrderReview({
           {t.net}
           {saving ? t.savingSuffix(saving) : ""}
         </span>
-        {/* Die Summe, auf die sich der Käufer tatsächlich festlegt. Sie steht
-            vor der Zahlung, nicht danach. */}
-        {commitment ? (
-          <span className="mv-review-commit">
-            {t.commitment(termMonths, commitment)}
-          </span>
-        ) : null}
+        {/* Hier stand der dreifache Monatsbetrag als Mindestbindung. Die
+            Mindestlaufzeit steht weiterhin in der Abrechnungszeile darüber
+            und benennt die Bindung vollständig. */}
       </div>
 
       <button

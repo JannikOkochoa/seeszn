@@ -5,19 +5,21 @@
 // Kachelfeld, und kein Etikett wie "beliebteste Wahl", für das es hier ohnehin
 // keine Belege gäbe.
 //
+// Jede Zeile ist eine Mengenstufe: ab dieser Menge gilt der Stückpreis
+// daneben, bis zur nächsten Zeile. Deshalb sind es genau die Schwellen und
+// nicht alle 96 wählbaren Mengen.
+//
 // Die letzte Spalte zeigt je Kaufart eine andere Größe, weil je Kaufart eine
 // andere Frage ansteht:
 //
-//   EINMALIG   "was spare ich je Backlink, wenn ich mehr nehme"
-//              Der Stückpreis fällt hier über die ganze Staffel, von 19,80 €
-//              auf 15,99 €. Die Ersparnis je Stück ist damit die passende Größe.
+//   EINMALIG   "was spare ich je Backlink, wenn ich eine Stufe höher gehe"
+//              Der Stückpreis fällt über die Staffel von 19,80 € auf 16,90 €.
+//              Die Ersparnis je Stück ist damit die passende Größe.
 //
 //   MONATLICH  "was spare ich gegenüber demselben Einmalkauf"
-//              Der Stückpreis fällt auch hier durchgehend, von 16,20 € auf
-//              14,45 €. Trotzdem steht in dieser Spalte die Ersparnis gegenüber
-//              dem Einmalkauf: wer monatlich bucht, vergleicht nicht mit der
-//              kleinsten Monatsmenge, sondern mit dem Preis, den dieselbe Menge
-//              einmalig kosten würde. Das ist die Entscheidung, die ansteht.
+//              Wer monatlich bucht, vergleicht nicht mit der kleinsten
+//              Monatsmenge, sondern mit dem Preis, den dieselbe Menge einmalig
+//              kosten würde. Das ist die Entscheidung, die ansteht.
 //
 // Der Balken läuft in beiden Fällen von null aus über eine echte Größe. Eine
 // abgeschnittene Achse, die einen Unterschied größer macht, als er ist, kommt
