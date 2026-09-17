@@ -188,6 +188,7 @@ export const en = {
     nav: [
       { name: "DISCOVER", href: "/en/services" },
       { name: "RESULTS",  href: "/en/work" },
+      { name: "PRICING",  href: "/en/pricing" },
       { name: "INSIGHTS", href: "/en/insights" },
       // Kept in the footer only; see the German dictionary for the reasoning.
       { name: "STUDIO",   href: "/en/about" },
